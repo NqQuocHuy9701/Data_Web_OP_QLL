@@ -373,21 +373,6 @@ export default function Home() {
     return "bg-slate-50 text-slate-600 border-slate-200"; 
   };
 
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      "bg-amber-100 text-amber-700 border-amber-200",
-      "bg-indigo-100 text-indigo-700 border-indigo-200",
-      "bg-pink-100 text-pink-700 border-pink-200",
-      "bg-cyan-100 text-cyan-700 border-cyan-200",
-      "bg-teal-100 text-teal-700 border-teal-200"
-    ];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
-  };
-
   return (
     <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0"></div>
@@ -487,7 +472,7 @@ export default function Home() {
             </div>
             <input 
               type="text" 
-              placeholder="Tìm kiếm nhanh Mã lớp, Mã GV, Môn học..." 
+              placeholder="Tìm kiếm nhanh Mã lớp, Môn học..." 
               className="w-full pl-12 pr-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 text-slate-700 placeholder-slate-400 transition-all duration-300 text-sm font-medium hover:bg-white focus:bg-white focus:shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -622,11 +607,12 @@ export default function Home() {
                     <th className="px-6 py-4">Loại lớp</th>
                     <th className="px-6 py-4 text-center">Khối</th>
                     <th className="px-6 py-4">Trình độ</th>
-                    <th className="px-6 py-4">Mã GV</th>
                     <th className="px-6 py-4">Giáo trình</th>
-                    <th className="px-6 py-4">Lịch học</th>
                     
-                    {/* BỎ HOÀN TOÀN CỘT ĐANG HỌC Ở TẤT CẢ CÁC MÀN HÌNH */}
+                    {/* THÊM CỘT "M: KHUNG CHƯƠNG TRÌNH" Ở MÀN 1 VÀ 2 (ĐANG HỌC & KHAI GIẢNG) */}
+                    {activeNav !== "Giữ Slot" && <th className="px-6 py-4 text-sky-700">M: Khung chương trình</th>}
+
+                    <th className="px-6 py-4">Lịch học</th>
                     
                     {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-center text-orange-600">Số slot còn</th>}
                     {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-right pr-8 text-orange-600">Thao tác giữ</th>}
@@ -637,8 +623,6 @@ export default function Home() {
                     currentTableData.map((row, index) => {
                       const maLop = row["Mã lớp"];
                       const subjectStr = row["Môn học"] || "";
-                      const teacherStr = row["Mã GV"] || "GV";
-                      const teacherInitials = teacherStr.substring(0, 2).toUpperCase();
                       const currentStudents = Number(row["Đang học"]) || 0;
                       const loaiLopStr = row["Loại lớp"] || "";
 
@@ -664,20 +648,16 @@ export default function Home() {
                           <td className="px-6 py-4 text-slate-500 text-[13px]">{loaiLopStr}</td>
                           <td className="px-6 py-4 text-center font-bold text-slate-600">{row["Khối"]}</td>
                           <td className="px-6 py-4 font-medium text-slate-600">{row["Trình độ"]}</td>
-                          
-                          <td className="px-6 py-4 font-bold text-slate-700">
-                            <div className="flex items-center gap-2">
-                              <span className={`flex items-center justify-center w-7 h-7 rounded-full text-[10px] border ${getAvatarColor(teacherStr)} shadow-sm`}>
-                                {teacherInitials}
-                              </span>
-                              <span>{teacherStr}</span>
-                            </div>
-                          </td>
-
                           <td className="px-6 py-4 text-slate-500 text-[13px] truncate max-w-[120px]">{row["Giáo trình"]}</td>
+
+                          {/* HIỂN THỊ DỮ LIỆU CỘT M: KHUNG CHƯƠNG TRÌNH Ở MÀN 1 VÀ 2 */}
+                          {activeNav !== "Giữ Slot" && (
+                            <td className="px-6 py-4 font-semibold text-sky-600 text-[13px]">
+                              {row["M: Khung chương trình"] || row["Khung chương trình"] || "-"}
+                            </td>
+                          )}
+
                           <td className="px-6 py-4 font-medium text-slate-600">{row["Lịch học"]}</td>
-                          
-                          {/* BỎ HOÀN TOÀN Ô ĐANG HỌC Ở TẤT CẢ CÁC MÀN HÌNH */}
 
                           {activeNav === "Giữ Slot" && (
                             <>
@@ -712,7 +692,7 @@ export default function Home() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={activeNav === "Giữ Slot" ? 10 : 9} className="px-6 py-24 text-center">
+                      <td colSpan={10} className="px-6 py-24 text-center">
                         <div className="flex flex-col items-center justify-center text-slate-400">
                           <div className="w-20 h-20 mb-4 rounded-full bg-slate-50 flex items-center justify-center border-2 border-dashed border-slate-200">
                             <span className="text-3xl opacity-60">📭</span>
@@ -755,9 +735,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* ========================================== */}
       {/* POPUP NHẬP SID HOẶC CID (TỐI ĐA 8 SỐ) */}
-      {/* ========================================== */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-slide-up">
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100 relative">
