@@ -378,7 +378,7 @@ export default function Home() {
   }, [data, activeNav]);
 
   // ==========================================
-  // RULE THÉP TÍNH TOÁN SLOT CÒN THEO YÊU CẦU
+  // RULE THÉP TÍNH TOÁN SLOT CÒN THEO YÊU CẦU CŨ
   // ==========================================
   const calculateAvailableSlots = (row: any, heldCount: number) => {
     const monHoc = (row["Môn học"] || "").toString().toLowerCase().trim();
@@ -394,7 +394,7 @@ export default function Home() {
       else if (loaiLop === "1:10") maxAllowed = 10;
       else if (loaiLop === "1:15") maxAllowed = 20;
     } 
-    else if (monHoc.includes("tiếng anh") || monHoc.includes("tieng anh") || monHocRule_includes_moet(monHoc)) {
+    else if (monHoc.includes("tiếng anh") || monHoc.includes("tieng anh") || monHoc.includes("moet")) {
       if (loaiLop === "1:4") maxAllowed = 3;
     } 
     else if (monHoc.includes("khtn")) {
@@ -404,14 +404,41 @@ export default function Home() {
       if (loaiLop === "1:4") maxAllowed = 4;
     }
 
-    // Công thức: Slot còn = maxAllowed - Số lớp đang học - Số slot đang giữ
     const remaining = maxAllowed - dangHoc - heldCount;
     return remaining > 0 ? remaining : 0;
   };
 
-  function monHocRule_includes_moet(s: string) {
-    return s.includes("moet");
-  }
+  // ==========================================
+  // RULE THÉP KIỂM TRA CHÉO SI SỐ (MỚI THEO YÊU CẦU)
+  // ==========================================
+  const checkAttendanceStatus = (row: any) => {
+    const monHoc = (row["Môn học"] || "").toString().toLowerCase().trim();
+    const loaiLopRaw = (row["Loại lớp"] || "").toString().trim();
+    const loaiLop = loaiLopRaw.replace(/^Lớp\s+/i, "").trim();
+    const dangHoc = Number(row["Đang học"]) || 0;
+
+    let threshold = 999; // Mốc sĩ số tối đa để bị cảnh báo "Thiếu sĩ số quá !!"
+
+    if (monHoc.includes("toán") || monHoc.includes("toan")) {
+      if (loaiLop === "1:6") threshold = 3;       // Đang học <= 3
+      else if (loaiLop === "1:8") threshold = 7;     // Đang học <= 7
+      else if (loaiLop === "1:10") threshold = 6;    // Đang học <= 6
+    } 
+    else if (monHoc.includes("tiếng anh") || monHoc.includes("tieng anh") || monHoc.includes("moet")) {
+      if (loaiLop === "1:4") threshold = 1;       // Đang học <= 1
+    } 
+    else if (monHoc.includes("khtn")) {
+      if (loaiLop === "1:10") threshold = 10;    // Đang học <= 10
+    } 
+    else if (monHoc.includes("ngữ văn") || monHoc.includes("ngu van") || monHoc.includes("văn")) {
+      if (loaiLop === "1:4") threshold = 1;       // Đang học <= 1
+    }
+
+    if (dangHoc <= threshold) {
+      return { isLow: true, text: "⚠️ Thiếu sĩ số quá !!" };
+    }
+    return { isLow: false, text: "✅ Đạt chuẩn" };
+  };
 
   const filteredData = useMemo(() => {
     const today = new Date().getDay();
@@ -1209,6 +1236,10 @@ export default function Home() {
                         <th className="px-6 py-4">Lịch học</th>
                         
                         {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-center text-orange-600">Số slot còn</th>}
+                        
+                        {/* BỔ SUNG CỘT CẢNH BÁO TRẠNG THÁI SĨ SỐ KHI Ở TAB GIỮ SLOT */}
+                        {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-center text-rose-600">Trạng thái sĩ số</th>}
+
                         {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-right pr-8 text-orange-600">Thao tác giữ</th>}
                       </tr>
                     </thead>
@@ -1220,9 +1251,8 @@ export default function Home() {
                           const currentStudents = Number(row["Đang học"]) || 0;
                           
                           const heldCount = getActiveHeldCount(maLop);
-                          
-                          // Áp dụng RULE THÉP tính số slot còn
                           const availableSlots = calculateAvailableSlots(row, heldCount);
+                          const attendanceCheck = checkAttendanceStatus(row);
                           const isFull = availableSlots <= 0;
                           const isLoading = isHoldingSlot === maLop;
 
@@ -1258,6 +1288,20 @@ export default function Home() {
                                       {availableSlots > 0 ? `Còn ${availableSlots} slot` : "Đã hết slot"}
                                     </span>
                                   </td>
+
+                                  {/* HIỂN THỊ CỘT CẢNH BÁO SĨ SỐ THEO RULE THÉP MỚI */}
+                                  <td className="px-6 py-4 text-center">
+                                    {attendanceCheck.isLow ? (
+                                      <span className="px-2.5 py-1 rounded-md font-bold text-xs bg-red-50 text-red-600 border border-red-200 animate-pulse">
+                                        ⚠️ Thiếu sĩ số quá !!
+                                      </span>
+                                    ) : (
+                                      <span className="px-2.5 py-1 rounded-md font-bold text-xs bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                        ✅ Đạt chuẩn
+                                      </span>
+                                    )}
+                                  </td>
+
                                   <td className="px-6 py-4 text-right pr-6 min-w-[130px]">
                                     <button 
                                       onClick={() => handleOpenPopup(row, availableSlots)}
