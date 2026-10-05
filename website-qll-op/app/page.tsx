@@ -34,6 +34,9 @@ export default function Home() {
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  // State lưu trạng thái "Đã xếp / Done" cho các dòng lịch sử (Lưu qua localStorage để đồng bộ)
+  const [completedSlots, setCompletedSlots] = useState<Record<string, boolean>>({});
+
   const [filterMonHoc, setFilterMonHoc] = useState("Tất cả");
   const [filterKhoi, setFilterKhoi] = useState("Tất cả");
   const [filterLoaiLop, setFilterLoaiLop] = useState("Tất cả");
@@ -61,12 +64,17 @@ export default function Home() {
 
   const SHEET_CSV_URL = "/api/sheet";
   // Cập nhật link CSV chuẩn của tab LichSuGiuSlot
-  const HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH99w75D-KMdtC6KIH-bfza_bdHF_vz3grGlz6cXRNgaalR-_wHQRWI4PYESwWmJHxs_rXPVo7TKCv/pub?gid=1190427124&single=true&output=csv"; 
+  const HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH99w75D-KMdtC6KIH-bfza_bdHF_vz3grGlz6cXRNgaalR-_wHQRWI4PYESwWmJHxs_rXPVo7TKCv/pub?gid=1190427124&single=true&output=csv";
 
   useEffect(() => {
     const savedAdmins = localStorage.getItem("qll_admin_accounts");
     if (savedAdmins) {
       try { setAdminList(JSON.parse(savedAdmins)); } catch (e) { console.error(e); }
+    }
+
+    const savedCompleted = localStorage.getItem("qll_completed_slots");
+    if (savedCompleted) {
+      try { setCompletedSlots(JSON.parse(savedCompleted)); } catch (e) { console.error(e); }
     }
 
     const savedHeld = localStorage.getItem("qll_held_slots_data");
@@ -111,6 +119,46 @@ export default function Home() {
     return holds.filter(item => now - item.timestamp < TWENTY_FOUR_HOURS).length;
   };
 
+  // Hàm tính thời gian đếm ngược 24h dựa trên chuỗi thời gian ghi nhận ở cột "Thời gian"
+  const calculateTimeRemaining = (timeString: string) => {
+    try {
+      // Định dạng chuỗi gốc từ sheet: "DD/MM/YYYY HH:MM:SS"
+      const parts = timeString.split(" ");
+      if (parts.length < 2) return "Đang cập nhật";
+      const dateParts = parts[0].split("/");
+      const timeParts = parts[1].split(":");
+      
+      const logDate = new Date(
+        parseInt(dateParts[2]), 
+        parseInt(dateParts[1]) - 1, 
+        parseInt(dateParts[0]), 
+        parseInt(timeParts[0]), 
+        parseInt(timeParts[1]), 
+        parseInt(timeParts[2] || "0")
+      );
+
+      const targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const diff = targetTime - now;
+
+      if (diff <= 0) return "⏰ Đã hết hạn (24h)";
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      return `${hours}h ${minutes}m ${seconds}s còn lại`;
+    } catch (e) {
+      return "24h";
+    }
+  };
+
+  const handleMarkAsDone = (rowKey: string) => {
+    const updated = { ...completedSlots, [rowKey]: true };
+    setCompletedSlots(updated);
+    localStorage.setItem("qll_completed_slots", JSON.stringify(updated));
+  };
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -136,7 +184,7 @@ export default function Home() {
         return;
       }
       setNamecode(matchedAdmin.username);
-      setTeamLead("Quản trị viên"); // Đổi hiển thị thành Quản trị viên cho tài khoản Admin
+      setTeamLead("Quản trị viên");
       const userData = { namecode: matchedAdmin.username, teamLead: "Quản trị viên", role: "Admin" };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
     }
@@ -560,7 +608,7 @@ export default function Home() {
               onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
               className={`py-2 text-xs font-bold rounded-xl transition-all ${loginRole === "QLL" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              👩‍‍💻 Quản Lý Lớp (QLL)
+              👩‍💻 Quản Lý Lớp (QLL)
             </button>
             <button
               type="button"
@@ -768,7 +816,6 @@ export default function Home() {
           )}
         </nav>
 
-        {/* THÔNG TIN USER Ở CHÂN SIDEBAR (HIỂN THỊ "Quản trị viên" CHO ADMIN, HIỂN THỊ TÊN TEAM LEAD CHO QLL) */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm ${loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700"}`}>
@@ -843,6 +890,9 @@ export default function Home() {
           </div>
         </header>
 
+        {/* ========================================================= */}
+        {/* MÀN HÌNH 1: DANH SÁCH LỊCH SỬ GIỮ SLOT (CÓ TIME CÒN LẠI & DONE) */}
+        {/* ========================================================= */}
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col h-full overflow-hidden">
@@ -865,9 +915,9 @@ export default function Home() {
                       <th className="px-6 py-4">Môn học</th>
                       <th className="px-6 py-4">Người giữ</th>
                       <th className="px-6 py-4">Team</th>
-                      <th className="px-6 py-4">Ngày bắt đầu</th>
-                      <th className="px-6 py-4">Ngày hết hạn</th>
+                      <th className="px-6 py-4">Time còn lại (24h)</th>
                       <th className="px-6 py-4">Lưu ý (Note)</th>
+                      <th className="px-6 py-4 text-right pr-6">Thao tác xếp</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -876,18 +926,51 @@ export default function Home() {
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Đang tải dữ liệu từ Google Sheet...</td>
                       </tr>
                     ) : slotHistoryData.length > 0 ? (
-                      slotHistoryData.map((row, index) => (
-                        <tr key={index} className="hover:bg-orange-50/30 transition-colors">
-                          <td className="px-6 py-4 text-slate-500 text-xs">{row["Thời gian"] || "-"}</td>
-                          <td className="px-6 py-4 font-bold text-sky-600">{row["Mã lớp giữ"] || row["Mã lớp"] || "-"}</td>
-                          <td className="px-6 py-4 font-medium text-slate-700">{row["Môn học"] || "-"}</td>
-                          <td className="px-6 py-4 font-bold text-orange-600">{row["Người giữ"] || "-"}</td>
-                          <td className="px-6 py-4 text-slate-600">{row["Team"] || "-"}</td>
-                          <td className="px-6 py-4 text-slate-600">{row["ngày bắt đầu giữ slot"] || "-"}</td>
-                          <td className="px-6 py-4 text-rose-600 font-semibold">{row["ngày hết hạn giữ slot"] || "-"}</td>
-                          <td className="px-6 py-4 text-slate-700 font-medium">{row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-"}</td>
-                        </tr>
-                      ))
+                      slotHistoryData.map((row, index) => {
+                        const timeStr = row["Thời gian"] || "";
+                        const maLop = row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                        const rowKey = `${timeStr}-${maLop}-${index}`;
+                        const isDone = completedSlots[rowKey];
+
+                        return (
+                          <tr key={index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : "hover:bg-orange-50/30"}`}>
+                            <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
+                            <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
+                            <td className="px-6 py-4 font-medium text-slate-700">{row["Môn học"] || "-"}</td>
+                            <td className="px-6 py-4 font-bold text-orange-600">{row["Người giữ"] || "-"}</td>
+                            <td className="px-6 py-4 text-slate-600">{row["Team"] || "-"}</td>
+                            
+                            {/* CỘT TIME CÒN LẠI 24H */}
+                            <td className="px-6 py-4">
+                              {isDone ? (
+                                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs">Đã hoàn thành</span>
+                              ) : (
+                                <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-lg text-xs animate-pulse">
+                                  {calculateTimeRemaining(timeStr)}
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="px-6 py-4 text-slate-700 font-medium">{row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-"}</td>
+                            
+                            {/* NÚT THAO TÁC ĐÃ XẾP / DONE */}
+                            <td className="px-6 py-4 text-right pr-6">
+                              {isDone ? (
+                                <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
+                                  <span>✅</span> Đã xếp xong
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => handleMarkAsDone(rowKey)}
+                                  className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
+                                >
+                                  Đã xếp (Done)
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
                         <td colSpan={8} className="px-6 py-24 text-center text-slate-400 font-semibold">Chưa có dữ liệu lịch sử giữ slot nào được ghi nhận.</td>
@@ -899,6 +982,9 @@ export default function Home() {
             </div>
           </div>
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
+          /* ========================================================= */
+          /* MÀN HÌNH 2: QUẢN TRỊ ADMIN (THÊM TÀI KHOẢN)                  */
+          /* ========================================================= */
           <div className="flex-1 p-8 overflow-y-auto">
             <div className="max-w-xl mx-auto bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
@@ -968,6 +1054,9 @@ export default function Home() {
             </div>
           </div>
         ) : (
+          /* ========================================================= */
+          /* MÀN HÌNH CHÍNH: CÁC TAB BÁO CÁO & GIỮ SLOT (ĐANG HỌC, KHAI GIẢNG) */
+          /* ========================================================= */
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
               <div className="flex items-center gap-4 mb-6">
@@ -1279,8 +1368,7 @@ export default function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        `}} />
+      `}} />
     </div>
   );
 }
