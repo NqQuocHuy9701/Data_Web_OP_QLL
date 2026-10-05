@@ -36,14 +36,15 @@ export default function Home() {
       transformHeader: (h) => h.trim(),
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          setData(results.data);
+          // TRẢ LẠI: Lưu TOÀN BỘ dữ liệu gốc để thẻ Card Thống Kê đếm đúng tổng (5123, 5039...)
+          setData(results.data); 
         }
         setLoading(false);
         
         const now = new Date();
         const timeStr = now.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const dateStr = now.toLocaleDateString("vi-VN");
-        setLastUpdated(`${timeStr} - ${dateStr}`);
+        setLastUpdated(`${timeStr}\n${dateStr}`);
       },
       error: (err) => {
         console.error("Lỗi:", err);
@@ -98,7 +99,7 @@ export default function Home() {
     };
   }, [data]);
 
-  // Thống kê toàn hệ thống
+  // Thống kê toàn hệ thống (Vẫn đếm chuẩn trên data gốc)
   const stats = useMemo(() => {
     const currentTabBase = data.filter(item => {
       const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
@@ -113,9 +114,40 @@ export default function Home() {
     };
   }, [data, activeNav]);
 
-  // Bộ lọc dữ liệu bảng
+  // =====================================================================
+  // BỘ LỌC DỮ LIỆU BẢNG (CHỈ ÁP DỤNG RULE THÉP CHO BẢNG HIỂN THỊ)
+  // =====================================================================
   const filteredData = useMemo(() => {
     return data.filter((item) => {
+      
+      // 1. ÁP DỤNG RULE THÉP TRƯỚC
+      const monHocRule = (item["Môn học"] || "").toString().toLowerCase().trim();
+      const loaiLopRawRule = (item["Loại lớp"] || "").toString().trim();
+      const loaiLopRule = loaiLopRawRule.replace(/^Lớp\s+/i, "").trim();
+      const dangHocRule = Number(item["Đang học"]) || 0;
+
+      let isPassRule = false;
+
+      if (monHocRule.includes("toán") || monHocRule.includes("toan")) {
+        if (loaiLopRule === "1:6") isPassRule = dangHocRule <= 5;
+        else if (loaiLopRule === "1:8") isPassRule = dangHocRule <= 8;
+        else if (loaiLopRule === "1:10") isPassRule = dangHocRule <= 9;
+        else if (loaiLopRule === "1:15") isPassRule = dangHocRule <= 19;
+      } 
+      else if (monHocRule.includes("tiếng anh") || monHocRule.includes("tieng anh") || monHocRule.includes("moet")) {
+        if (loaiLopRule === "1:4") isPassRule = dangHocRule <= 2;
+      } 
+      else if (monHocRule.includes("khtn")) {
+        if (loaiLopRule === "1:10") isPassRule = dangHocRule <= 9;
+      } 
+      else if (monHocRule.includes("ngữ văn") || monHocRule.includes("ngu van") || monHocRule.includes("văn")) {
+        if (loaiLopRule === "1:4") isPassRule = dangHocRule <= 3;
+      }
+
+      // Nếu KHÔNG qua Rule thép -> Giấu khỏi bảng luôn
+      if (!isPassRule) return false;
+
+      // 2. NẾU ĐÃ QUA RULE THÉP -> TIẾP TỤC KIỂM TRA BỘ LỌC TÌM KIẾM & DROPDOWN CỦA BẠN
       const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
       const matchNav = activeNav === "Đang học" ? status.includes("đang học") : status.includes("khai giảng");
       
@@ -139,7 +171,7 @@ export default function Home() {
         if (!matchSearch) return false;
       }
 
-      return true;
+      return true; // Qua hết các ải thì mới cho hiển thị lên bảng
     });
   }, [data, activeNav, searchTerm, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc]);
 
@@ -447,7 +479,6 @@ export default function Home() {
                         <td className="px-6 py-4 text-center">
                           <span className="px-2.5 py-1 bg-sky-50/80 text-sky-600 border border-sky-100 rounded-md font-bold">{row["Đang học"] || 0}</span>
                         </td>
-                        {/* Đã đồng bộ sang tên cột mới: HS chờ vào lớp */}
                         <td className="px-6 py-4 text-center">
                           <span className="px-2.5 py-1 bg-orange-50/80 text-orange-600 border border-orange-100 rounded-md font-bold">{row["HS chờ vào lớp"] || 0}</span>
                         </td>
