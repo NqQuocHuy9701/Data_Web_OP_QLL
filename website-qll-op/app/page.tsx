@@ -4,6 +4,14 @@ import React, { useState, useEffect, useMemo } from "react";
 import Papa from "papaparse";
 
 export default function Home() {
+  // ==========================================
+  // STATE ĐĂNG NHẬP & PHÂN QUYỀN (TASK 3)
+  // ==========================================
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [namecode, setNamecode] = useState("");
+  const [teamLead, setTeamLead] = useState("Team Lead A"); // Mặc định hoặc để trống
+  const [loginError, setLoginError] = useState("");
+
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>("");
@@ -43,6 +51,46 @@ export default function Home() {
 
   const SHEET_CSV_URL = "/api/sheet";
 
+  // Kiểm tra đăng nhập từ localStorage khi load trang
+  useEffect(() => {
+    const savedUser = localStorage.getItem("qll_logged_user");
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed.namecode) {
+          setNamecode(parsed.namecode);
+          setTeamLead(parsed.teamLead || "");
+          setIsLoggedIn(true);
+        }
+      } catch (e) {
+        console.error("Lỗi đọc session", e);
+      }
+    }
+  }, []);
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!namecode.trim()) {
+      setLoginError("Vui lòng nhập Namecode của bạn!");
+      return;
+    }
+    if (!teamLead.trim()) {
+      setLoginError("Vui lòng chọn hoặc nhập Team Lead!");
+      return;
+    }
+
+    const userData = { namecode: namecode.trim(), teamLead: teamLead.trim() };
+    localStorage.setItem("qll_logged_user", JSON.stringify(userData));
+    setIsLoggedIn(true);
+    setLoginError("");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("qll_logged_user");
+    setIsLoggedIn(false);
+    setNamecode("");
+  };
+
   const loadData = () => {
     setLoading(true);
     Papa.parse(SHEET_CSV_URL, {
@@ -68,10 +116,12 @@ export default function Home() {
   };
 
   useEffect(() => {
-    loadData();
-    const intervalId = setInterval(() => loadData(), 60 * 60 * 1000); 
-    return () => clearInterval(intervalId);
-  }, []);
+    if (isLoggedIn) {
+      loadData();
+      const intervalId = setInterval(() => loadData(), 60 * 60 * 1000); 
+      return () => clearInterval(intervalId);
+    }
+  }, [isLoggedIn]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -256,6 +306,7 @@ export default function Home() {
 
       const formatDate = (date: Date) => date.toLocaleDateString("vi-VN");
 
+      // Gửi dữ liệu kèm Namecode và Team lead của người dùng đang đăng nhập
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
@@ -263,8 +314,8 @@ export default function Home() {
         body: JSON.stringify({
           maLop: maLop,
           monHoc: row["Môn học"] || "",
-          nguoiGiu: "Admin VH",
-          team: "Vận Hành VH",
+          nguoiGiu: namecode, // Lấy từ thông tin đăng nhập
+          team: teamLead,     // Lấy từ thông tin đăng nhập
           ngayBatDau: formatDate(startDate),
           ngayHetHan: formatDate(expiryDate),
           note: `SID/CID: ${cleanVal}`
@@ -373,6 +424,77 @@ export default function Home() {
     return "bg-slate-50 text-slate-600 border-slate-200"; 
   };
 
+  // ==========================================
+  // MÀN HÌNH ĐĂNG NHẬP (NẾU CHƯA ĐĂNG NHẬP)
+  // ==========================================
+  if (!isLoggedIn) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[#F4F7FE] font-vietnam relative overflow-hidden">
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-sky-200/50 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-orange-200/50 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="bg-white/80 backdrop-blur-xl border border-white rounded-[32px] p-8 w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.08)] relative z-10 animate-fade-slide-up">
+          <div className="flex flex-col items-center text-center mb-6">
+            <img 
+              src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
+              alt="Vuihoc Logo" 
+              className="h-8 w-auto object-contain mb-3 drop-shadow-sm"
+            />
+            <h1 className="text-xl font-extrabold text-slate-800">Hệ Thống Vận Hành QLL</h1>
+            <p className="text-xs text-slate-500 mt-1">Vui lòng đăng nhập để tiếp tục tác vụ</p>
+          </div>
+
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Namecode (Tên định danh) <span className="text-red-500">*</span>
+              </label>
+              <input 
+                type="text"
+                placeholder="VD: huynq, lananh..."
+                value={namecode}
+                onChange={(e) => {
+                  setNamecode(e.target.value);
+                  setLoginError("");
+                }}
+                className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 text-slate-800 font-bold text-sm transition-all"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Team Lead <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={teamLead}
+                onChange={(e) => setTeamLead(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 text-slate-800 font-bold text-sm transition-all cursor-pointer"
+              >
+                <option value="Team Lead A">Team Lead A</option>
+                <option value="Team Lead B">Team Lead B</option>
+                <option value="Team Lead C">Team Lead C</option>
+                <option value="Team Lead D">Team Lead D</option>
+                <option value="Khác">Khác / Vận hành chung</option>
+              </select>
+            </div>
+
+            {loginError && (
+              <p className="text-xs font-bold text-red-500 text-center">{loginError}</p>
+            )}
+
+            <button 
+              type="submit"
+              className="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-sky-500/30 transition-all cursor-pointer active:scale-95 mt-2"
+            >
+              Đăng nhập hệ thống
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0"></div>
@@ -447,19 +569,24 @@ export default function Home() {
           </button>
         </nav>
 
-        <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0">
-          <div className="flex items-center gap-3 px-2 cursor-pointer group">
-            <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-orange-500 font-bold shadow-sm group-hover:border-orange-200 transition-colors">
-              AD
+        {/* THÔNG TIN USER ĐANG ĐĂNG NHẬP & NÚT ĐĂNG XUẤT */}
+        <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0 flex items-center justify-between">
+          <div className="flex items-center gap-3 px-1 cursor-pointer group">
+            <div className="w-9 h-9 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-700 font-bold text-xs shadow-sm">
+              {namecode.substring(0, 2).toUpperCase()}
             </div>
-            <div className="text-sm">
-              <p className="font-bold text-slate-700 group-hover:text-orange-500 transition-colors">Admin VH</p>
-              <div className="flex items-center gap-1.5 text-emerald-500 text-xs mt-0.5 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Connected
-              </div>
+            <div className="text-xs truncate max-w-[110px]">
+              <p className="font-bold text-slate-700 truncate" title={namecode}>{namecode}</p>
+              <p className="text-[10px] text-slate-400 truncate" title={teamLead}>{teamLead}</p>
             </div>
           </div>
+          <button 
+            onClick={handleLogout}
+            title="Đăng xuất"
+            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+          >
+            🚪
+          </button>
         </div>
       </aside>
 
@@ -609,7 +736,6 @@ export default function Home() {
                     <th className="px-6 py-4">Trình độ</th>
                     <th className="px-6 py-4">Giáo trình</th>
                     
-                    {/* THÊM CỘT "M: KHUNG CHƯƠNG TRÌNH" Ở MÀN 1 VÀ 2 (ĐANG HỌC & KHAI GIẢNG) */}
                     {activeNav !== "Giữ Slot" && <th className="px-6 py-4 text-sky-700">M: Khung chương trình</th>}
 
                     <th className="px-6 py-4">Lịch học</th>
@@ -650,7 +776,6 @@ export default function Home() {
                           <td className="px-6 py-4 font-medium text-slate-600">{row["Trình độ"]}</td>
                           <td className="px-6 py-4 text-slate-500 text-[13px] truncate max-w-[120px]">{row["Giáo trình"]}</td>
 
-                          {/* HIỂN THỊ DỮ LIỆU CỘT M: KHUNG CHƯƠNG TRÌNH Ở MÀN 1 VÀ 2 */}
                           {activeNav !== "Giữ Slot" && (
                             <td className="px-6 py-4 font-semibold text-sky-600 text-[13px]">
                               {row["M: Khung chương trình"] || row["Khung chương trình"] || "-"}
