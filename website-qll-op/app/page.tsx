@@ -16,7 +16,6 @@ export default function Home() {
   const [adminPassword, setAdminPassword] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  // Quản lý tài khoản Admin mở rộng
   const [adminList, setAdminList] = useState<{username: string, pass: string}[]>([
     { username: "op_vanhanh", pass: "vanhanhvuihoc" }
   ]);
@@ -29,9 +28,12 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   
-  const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot" | "QuanTriAdmin">("Giữ Slot");
+  const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot" | "QuanTriAdmin" | "LichSuSlotAdmin">("Giữ Slot");
   const [searchTerm, setSearchTerm] = useState("");
   
+  const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   const [filterMonHoc, setFilterMonHoc] = useState("Tất cả");
   const [filterKhoi, setFilterKhoi] = useState("Tất cả");
   const [filterLoaiLop, setFilterLoaiLop] = useState("Tất cả");
@@ -44,7 +46,7 @@ export default function Home() {
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [heldSlots, setHeldSlots] = useState<Record<string, number>>({});
+  const [heldSlots, setHeldSlots] = useState<Record<string, { timestamp: number }[]>>({});
   const [isHoldingSlot, setIsHoldingSlot] = useState<string | null>(null);
 
   const [showModal, setShowModal] = useState(false);
@@ -58,14 +60,31 @@ export default function Home() {
   const itemsPerPage = 50;
 
   const SHEET_CSV_URL = "/api/sheet";
+  const HISTORY_CSV_URL = "/api/history-sheet"; 
 
   useEffect(() => {
     const savedAdmins = localStorage.getItem("qll_admin_accounts");
     if (savedAdmins) {
+      try { setAdminList(JSON.parse(savedAdmins)); } catch (e) { console.error(e); }
+    }
+
+    const savedHeld = localStorage.getItem("qll_held_slots_data");
+    if (savedHeld) {
       try {
-        setAdminList(JSON.parse(savedAdmins));
+        const parsed = JSON.parse(savedHeld);
+        const now = Date.now();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        const cleaned: Record<string, { timestamp: number }[]> = {};
+
+        Object.keys(parsed).forEach(maLop => {
+          const validHolds = parsed[maLop].filter((item: { timestamp: number }) => now - item.timestamp < TWENTY_FOUR_HOURS);
+          if (validHolds.length > 0) {
+            cleaned[maLop] = validHolds;
+          }
+        });
+        setHeldSlots(cleaned);
       } catch (e) {
-        console.error("Lỗi đọc danh sách admin", e);
+        console.error("Lỗi đọc held slots", e);
       }
     }
 
@@ -79,11 +98,17 @@ export default function Home() {
           setLoginRole(parsed.role || "QLL");
           setIsLoggedIn(true);
         }
-      } catch (e) {
-        console.error("Lỗi đọc session", e);
-      }
+      } catch (e) { console.error(e); }
     }
   }, []);
+
+  const getActiveHeldCount = (maLop: string) => {
+    const holds = heldSlots[maLop];
+    if (!holds || !Array.isArray(holds)) return 0;
+    const now = Date.now();
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    return holds.filter(item => now - item.timestamp < TWENTY_FOUR_HOURS).length;
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,8 +135,8 @@ export default function Home() {
         return;
       }
       setNamecode(matchedAdmin.username);
-      setTeamLead("Ban Quản Trị Tối Cao");
-      const userData = { namecode: matchedAdmin.username, teamLead: "Ban Quản Trị Tối Cao", role: "Admin" };
+      setTeamLead("Quản trị viên"); // Đổi hiển thị thành Quản trị viên cho tài khoản Admin
+      const userData = { namecode: matchedAdmin.username, teamLead: "Quản trị viên", role: "Admin" };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
     }
 
@@ -178,13 +203,36 @@ export default function Home() {
     });
   };
 
+  const loadSlotHistory = () => {
+    setLoadingHistory(true);
+    Papa.parse(HISTORY_CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (h) => h.trim(),
+      complete: (results) => {
+        if (results.data && results.data.length > 0) {
+          setSlotHistoryData(results.data);
+        }
+        setLoadingHistory(false);
+      },
+      error: (err) => {
+        console.error("Lỗi tải lịch sử giữ slot:", err);
+        setLoadingHistory(false);
+      }
+    });
+  };
+
   useEffect(() => {
     if (isLoggedIn) {
       loadData();
+      if (loginRole === "Admin") {
+        loadSlotHistory();
+      }
       const intervalId = setInterval(() => loadData(), 60 * 60 * 1000); 
       return () => clearInterval(intervalId);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, loginRole]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -249,7 +297,7 @@ export default function Home() {
   const stats = useMemo(() => {
     const currentTabBase = data.filter(item => {
       const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
-      if (activeNav === "Giữ Slot" || activeNav === "QuanTriAdmin") return true;
+      if (activeNav === "Giữ Slot" || activeNav === "QuanTriAdmin" || activeNav === "LichSuSlotAdmin") return true;
       return activeNav === "Đang học" ? status.includes("đang học") : status.includes("khai giảng");
     });
 
@@ -291,7 +339,7 @@ export default function Home() {
 
       if (!isPassRule) return false;
 
-      if (activeNav !== "Giữ Slot" && activeNav !== "QuanTriAdmin") {
+      if (activeNav !== "Giữ Slot" && activeNav !== "QuanTriAdmin" && activeNav !== "LichSuSlotAdmin") {
         const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
         const matchNav = activeNav === "Đang học" ? status.includes("đang học") : status.includes("khai giảng");
         if (!matchNav) return false;
@@ -364,7 +412,7 @@ export default function Home() {
 
       const startDate = new Date();
       const expiryDate = new Date();
-      expiryDate.setDate(startDate.getDate() + 2);
+      expiryDate.setDate(startDate.getDate() + 1);
 
       const formatDate = (date: Date) => date.toLocaleDateString("vi-VN");
 
@@ -376,17 +424,20 @@ export default function Home() {
           maLop: maLop,
           monHoc: row["Môn học"] || "",
           nguoiGiu: namecode,
-          team: teamLead,
+          team: loginRole === "Admin" ? "Quản trị viên" : teamLead,
           ngayBatDau: formatDate(startDate),
           ngayHetHan: formatDate(expiryDate),
           note: `SID/CID: ${cleanVal}`
         })
       });
 
-      setHeldSlots(prev => ({
-        ...prev,
-        [maLop]: (prev[maLop] || 0) + 1
-      }));
+      setHeldSlots(prev => {
+        const currentList = prev[maLop] || [];
+        const updatedList = [...currentList, { timestamp: Date.now() }];
+        const newHeld = { ...prev, [maLop]: updatedList };
+        localStorage.setItem("qll_held_slots_data", JSON.stringify(newHeld));
+        return newHeld;
+      });
 
       setSuccessMessage("Vận hành đã nhận thông tin và kiểm tra.");
       setTimeout(() => setSuccessMessage(""), 4000);
@@ -508,7 +559,7 @@ export default function Home() {
               onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
               className={`py-2 text-xs font-bold rounded-xl transition-all ${loginRole === "QLL" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              👩‍💻 Quản Lý Lớp (QLL)
+              👩‍‍💻 Quản Lý Lớp (QLL)
             </button>
             <button
               type="button"
@@ -683,12 +734,24 @@ export default function Home() {
             <span>Giữ Slot Lớp</span>
           </button>
 
-          {/* TAB QUẢN TRỊ ADMIN CHO PHÉP THÊM TÀI KHOẢN ADMIN MỚI */}
           {loginRole === "Admin" && (
             <>
               <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
                 Hệ thống Quản trị
               </div>
+
+              <button
+                onClick={() => { setActiveNav("LichSuSlotAdmin"); loadSlotHistory(); }}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out focus:outline-none relative group ${
+                  activeNav === "LichSuSlotAdmin" 
+                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
+                    : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
+                }`}
+              >
+                <span className="text-xl">📋</span>
+                <span>Danh Sách Giữ Slot</span>
+              </button>
+
               <button
                 onClick={() => setActiveNav("QuanTriAdmin")}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out focus:outline-none relative group ${
@@ -704,6 +767,7 @@ export default function Home() {
           )}
         </nav>
 
+        {/* THÔNG TIN USER Ở CHÂN SIDEBAR (HIỂN THỊ "Quản trị viên" CHO ADMIN, HIỂN THỊ TÊN TEAM LEAD CHO QLL) */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm ${loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700"}`}>
@@ -711,7 +775,9 @@ export default function Home() {
             </div>
             <div className="text-xs truncate max-w-[110px]">
               <p className="font-bold text-slate-700 truncate" title={namecode}>{namecode}</p>
-              <p className="text-[10px] text-slate-400 truncate" title={teamLead}>{teamLead}</p>
+              <p className="text-[10px] text-slate-400 truncate" title={loginRole === "Admin" ? "Quản trị viên" : teamLead}>
+                {loginRole === "Admin" ? "Quản trị viên" : teamLead}
+              </p>
             </div>
           </div>
           <button 
@@ -748,15 +814,14 @@ export default function Home() {
             )}
             
             <button 
-              onClick={loadData}
-              disabled={loading}
+              onClick={() => { loadData(); if(loginRole === "Admin") loadSlotHistory(); }}
+              disabled={loading || loadingHistory}
               className={`px-6 py-2.5 text-sm font-bold rounded-full shadow-sm transition-all duration-300 flex items-center gap-2.5 focus:outline-none active:scale-95
-                ${loading 
+                ${(loading || loadingHistory) 
                   ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
                   : "bg-sky-500 text-white hover:bg-sky-600 border border-sky-500 hover:shadow-[0_4px_15px_rgba(14,165,233,0.3)]"}`}
             >
-              {!loading && <div className="absolute inset-0 -translate-x-full bg-white/20 group-hover:animate-shine skew-x-12"></div>}
-              {loading ? (
+              {loading || loadingHistory ? (
                 <>
                   <svg className="animate-spin h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -777,7 +842,62 @@ export default function Home() {
           </div>
         </header>
 
-        {loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
+        {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
+          <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
+            <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col h-full overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 z-30">
+                <h3 className="font-bold text-slate-800 flex items-center gap-3 text-base">
+                  <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
+                  📋 Danh sách lịch sử giữ slot (Tab: LichSuGiuSlot)
+                </h3>
+                <span className="font-extrabold px-3.5 py-2 bg-orange-50 text-orange-600 rounded-xl border border-orange-100 shadow-sm text-xs">
+                  Tổng số bản ghi: {slotHistoryData.length}
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-auto custom-scrollbar relative bg-white">
+                <table className="w-full text-sm text-left whitespace-nowrap">
+                  <thead className="text-[12px] text-slate-400 uppercase bg-slate-50 font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b border-slate-100">
+                    <tr>
+                      <th className="px-6 py-4">Thời gian</th>
+                      <th className="px-6 py-4">Mã lớp giữ</th>
+                      <th className="px-6 py-4">Môn học</th>
+                      <th className="px-6 py-4">Người giữ</th>
+                      <th className="px-6 py-4">Team</th>
+                      <th className="px-6 py-4">Ngày bắt đầu</th>
+                      <th className="px-6 py-4">Ngày hết hạn</th>
+                      <th className="px-6 py-4">Lưu ý (Note)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {loadingHistory ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Đang tải dữ liệu từ Google Sheet...</td>
+                      </tr>
+                    ) : slotHistoryData.length > 0 ? (
+                      slotHistoryData.map((row, index) => (
+                        <tr key={index} className="hover:bg-orange-50/30 transition-colors">
+                          <td className="px-6 py-4 text-slate-500 text-xs">{row["Thời gian"] || "-"}</td>
+                          <td className="px-6 py-4 font-bold text-sky-600">{row["Mã lớp giữ"] || row["Mã lớp"] || "-"}</td>
+                          <td className="px-6 py-4 font-medium text-slate-700">{row["Môn học"] || "-"}</td>
+                          <td className="px-6 py-4 font-bold text-orange-600">{row["Người giữ"] || "-"}</td>
+                          <td className="px-6 py-4 text-slate-600">{row["Team"] || "-"}</td>
+                          <td className="px-6 py-4 text-slate-600">{row["ngày bắt đầu giữ slot"] || "-"}</td>
+                          <td className="px-6 py-4 text-rose-600 font-semibold">{row["ngày hết hạn giữ slot"] || "-"}</td>
+                          <td className="px-6 py-4 text-slate-700 font-medium">{row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-24 text-center text-slate-400 font-semibold">Chưa có dữ liệu lịch sử giữ slot nào được ghi nhận.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
             <div className="max-w-xl mx-auto bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
@@ -827,7 +947,7 @@ export default function Home() {
 
                 <button 
                   type="submit"
-                  className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-all cursor-pointer active:scale-95 mt-2"
+                  className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-all cursor-pointer active:scale-95"
                 >
                   Thêm Tài Khoản Admin
                 </button>
@@ -959,7 +1079,7 @@ export default function Home() {
 
                           const match = loaiLopStr.match(/1:(\d+)/);
                           const maxStudents = match ? parseInt(match[1]) : 99;
-                          const heldCount = heldSlots[maLop] || 0;
+                          const heldCount = getActiveHeldCount(maLop);
                           const availableSlots = maxStudents - currentStudents - heldCount;
                           const isFull = availableSlots <= 0;
                           const isLoading = isHoldingSlot === maLop;
@@ -1159,12 +1279,7 @@ export default function Home() {
         }
         .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        @keyframes cursorBlink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-        .animate-cursor-blink { animation: cursorBlink 0.8s infinite; }
-      `}} />
+        `}} />
     </div>
   );
 }
