@@ -34,7 +34,6 @@ export default function Home() {
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  // State lưu trạng thái "Đã xếp / Done" cho các dòng lịch sử (Lưu qua localStorage để đồng bộ)
   const [completedSlots, setCompletedSlots] = useState<Record<string, boolean>>({});
 
   const [filterMonHoc, setFilterMonHoc] = useState("Tất cả");
@@ -63,8 +62,7 @@ export default function Home() {
   const itemsPerPage = 50;
 
   const SHEET_CSV_URL = "/api/sheet";
-  // Cập nhật link CSV chuẩn của tab LichSuGiuSlot
-  const HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH99w75D-KMdtC6KIH-bfza_bdHF_vz3grGlz6cXRNgaalR-_wHQRWI4PYESwWmJHxs_rXPVo7TKCv/pub?gid=1190427124&single=true&output=csv";
+  const HISTORY_CSV_URL = "/api/history-sheet"; 
 
   useEffect(() => {
     const savedAdmins = localStorage.getItem("qll_admin_accounts");
@@ -103,7 +101,7 @@ export default function Home() {
         const parsed = JSON.parse(savedUser);
         if (parsed.namecode) {
           setNamecode(parsed.namecode);
-          setTeamLead(parsed.teamLead || "");
+          setTeamLead(parsed.teamLead || "Team Lead A");
           setLoginRole(parsed.role || "QLL");
           setIsLoggedIn(true);
         }
@@ -119,10 +117,8 @@ export default function Home() {
     return holds.filter(item => now - item.timestamp < TWENTY_FOUR_HOURS).length;
   };
 
-  // Hàm tính thời gian đếm ngược 24h dựa trên chuỗi thời gian ghi nhận ở cột "Thời gian"
   const calculateTimeRemaining = (timeString: string) => {
     try {
-      // Định dạng chuỗi gốc từ sheet: "DD/MM/YYYY HH:MM:SS"
       const parts = timeString.split(" ");
       if (parts.length < 2) return "Đang cập nhật";
       const dateParts = parts[0].split("/");
@@ -184,9 +180,10 @@ export default function Home() {
         return;
       }
       setNamecode(matchedAdmin.username);
-      setTeamLead("Quản trị viên");
-      const userData = { namecode: matchedAdmin.username, teamLead: "Quản trị viên", role: "Admin" };
+      // Lưu thông tin riêng cho Admin
+      const userData = { namecode: matchedAdmin.username, teamLead: "Admin hệ thống", role: "Admin" };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
+      setTeamLead("Admin hệ thống");
     }
 
     setIsLoggedIn(true);
@@ -473,7 +470,7 @@ export default function Home() {
           maLop: maLop,
           monHoc: row["Môn học"] || "",
           nguoiGiu: namecode,
-          team: loginRole === "Admin" ? "Quản trị viên" : teamLead,
+          team: loginRole === "Admin" ? "Admin hệ thống" : teamLead,
           ngayBatDau: formatDate(startDate),
           ngayHetHan: formatDate(expiryDate),
           note: `SID/CID: ${cleanVal}`
@@ -608,7 +605,7 @@ export default function Home() {
               onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
               className={`py-2 text-xs font-bold rounded-xl transition-all ${loginRole === "QLL" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              👩‍💻 Quản Lý Lớp (QLL)
+              👩‍‍💻 Quản Lý Lớp (QLL)
             </button>
             <button
               type="button"
@@ -720,14 +717,15 @@ export default function Home() {
         </div>
       )}
 
-      <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+      {/* CỐ ĐỊNH KÍCH THƯỚC SIDEBAR VÀ BỎ HIỆU ỨNG PHÌNH TO */}
+      <aside className="w-64 min-w-[16rem] max-w-[16rem] bg-white border-r border-slate-200/80 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         
         <div className="h-20 flex items-center px-6 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-3 group cursor-pointer">
+          <div className="flex items-center gap-3 cursor-pointer">
             <img 
               src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
               alt="Vuihoc Logo" 
-              className="h-6 w-auto object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
+              className="h-6 w-auto object-contain drop-shadow-sm"
             />
             <div className="border-l-[1.5px] border-slate-200 pl-3">
               <p className="text-[9px] text-sky-500 font-bold uppercase tracking-widest mt-1">Vận Hành</p>
@@ -742,28 +740,28 @@ export default function Home() {
           
           <button
             onClick={() => setActiveNav("Đang học")}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out focus:outline-none relative group ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
               activeNav === "Đang học" 
                 ? "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]" 
                 : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
             }`}
           >
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-sky-500 rounded-r-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(14,165,233,0.4)] ${activeNav === "Đang học" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
-            <span className={`text-xl transition-transform duration-300 ${activeNav === "Đang học" ? "scale-110" : "group-hover:scale-110"}`}>📚</span>
-            <span>Lớp Đang Học</span>
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-200 ${activeNav === "Đang học" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
+            <span className="text-lg">📚</span>
+            <span className="text-xs truncate">Lớp Đang Học</span>
           </button>
 
           <button
             onClick={() => setActiveNav("Khai giảng")}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out focus:outline-none relative group ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
               activeNav === "Khai giảng" 
                 ? "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]" 
                 : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
             }`}
           >
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-sky-500 rounded-r-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(14,165,233,0.4)] ${activeNav === "Khai giảng" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
-            <span className={`text-xl transition-transform duration-300 ${activeNav === "Khai giảng" ? "scale-110" : "group-hover:scale-110"}`}>🚀</span>
-            <span>Chờ Khai Giảng</span>
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-200 ${activeNav === "Khai giảng" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
+            <span className="text-lg">🚀</span>
+            <span className="text-xs truncate">Chờ Khai Giảng</span>
           </button>
 
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-6 px-2">
@@ -772,15 +770,15 @@ export default function Home() {
 
           <button
             onClick={() => setActiveNav("Giữ Slot")}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out focus:outline-none relative group ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
               activeNav === "Giữ Slot" 
                 ? "bg-orange-50 text-orange-600 font-bold shadow-[0_2px_10px_rgba(249,115,22,0.1)]" 
                 : "text-slate-500 hover:bg-orange-50/50 hover:text-orange-500 font-medium"
             }`}
           >
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-orange-500 rounded-r-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(249,115,22,0.4)] ${activeNav === "Giữ Slot" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
-            <span className={`text-xl transition-transform duration-300 ${activeNav === "Giữ Slot" ? "scale-110" : "group-hover:scale-110"}`}>📌</span>
-            <span>Giữ Slot Lớp</span>
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-500 rounded-r-full transition-all duration-200 ${activeNav === "Giữ Slot" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
+            <span className="text-lg">📌</span>
+            <span className="text-xs truncate">Giữ Slot Lớp</span>
           </button>
 
           {loginRole === "Admin" && (
@@ -791,40 +789,41 @@ export default function Home() {
 
               <button
                 onClick={() => { setActiveNav("LichSuSlotAdmin"); loadSlotHistory(); }}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out focus:outline-none relative group ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
                   activeNav === "LichSuSlotAdmin" 
                     ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
                     : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
                 }`}
               >
-                <span className="text-xl">📋</span>
-                <span>Danh Sách Giữ Slot</span>
+                <span className="text-lg">📋</span>
+                <span className="text-xs truncate">DS Giữ Slot</span>
               </button>
 
               <button
                 onClick={() => setActiveNav("QuanTriAdmin")}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out focus:outline-none relative group ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
                   activeNav === "QuanTriAdmin" 
                     ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
                     : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
                 }`}
               >
-                <span className="text-xl">⚙️</span>
-                <span>Quản Trị Admin</span>
+                <span className="text-lg">⚙️</span>
+                <span className="text-xs truncate">Quản Trị Admin</span>
               </button>
             </>
           )}
         </nav>
 
+        {/* THÔNG TIN USER TẠI CHÂN SIDEBAR: ADMIN LUÔN HIỆN "Admin hệ thống", QLL HIỆN TÊN TEAM LEAD */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm ${loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700"}`}>
               {namecode.substring(0, 2).toUpperCase()}
             </div>
-            <div className="text-xs truncate max-w-[110px]">
+            <div className="text-xs truncate max-w-[100px]">
               <p className="font-bold text-slate-700 truncate" title={namecode}>{namecode}</p>
-              <p className="text-[10px] text-slate-400 truncate" title={loginRole === "Admin" ? "Quản trị viên" : teamLead}>
-                {loginRole === "Admin" ? "Quản trị viên" : teamLead}
+              <p className="text-[10px] text-slate-400 truncate" title={loginRole === "Admin" ? "Admin hệ thống" : teamLead}>
+                {loginRole === "Admin" ? "Admin hệ thống" : teamLead}
               </p>
             </div>
           </div>
@@ -890,9 +889,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* ========================================================= */}
-        {/* MÀN HÌNH 1: DANH SÁCH LỊCH SỬ GIỮ SLOT (CÓ TIME CÒN LẠI & DONE) */}
-        {/* ========================================================= */}
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col h-full overflow-hidden">
@@ -940,7 +936,6 @@ export default function Home() {
                             <td className="px-6 py-4 font-bold text-orange-600">{row["Người giữ"] || "-"}</td>
                             <td className="px-6 py-4 text-slate-600">{row["Team"] || "-"}</td>
                             
-                            {/* CỘT TIME CÒN LẠI 24H */}
                             <td className="px-6 py-4">
                               {isDone ? (
                                 <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs">Đã hoàn thành</span>
@@ -953,7 +948,6 @@ export default function Home() {
 
                             <td className="px-6 py-4 text-slate-700 font-medium">{row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-"}</td>
                             
-                            {/* NÚT THAO TÁC ĐÃ XẾP / DONE */}
                             <td className="px-6 py-4 text-right pr-6">
                               {isDone ? (
                                 <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
@@ -982,9 +976,6 @@ export default function Home() {
             </div>
           </div>
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
-          /* ========================================================= */
-          /* MÀN HÌNH 2: QUẢN TRỊ ADMIN (THÊM TÀI KHOẢN)                  */
-          /* ========================================================= */
           <div className="flex-1 p-8 overflow-y-auto">
             <div className="max-w-xl mx-auto bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
@@ -1054,9 +1045,6 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          /* ========================================================= */
-          /* MÀN HÌNH CHÍNH: CÁC TAB BÁO CÁO & GIỮ SLOT (ĐANG HỌC, KHAI GIẢNG) */
-          /* ========================================================= */
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
               <div className="flex items-center gap-4 mb-6">
