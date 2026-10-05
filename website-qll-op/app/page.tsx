@@ -227,20 +227,49 @@ export default function Home() {
     return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredData, currentPage]);
 
-  // Xử lý giữ slot và đẩy data về Sheet
+// Xử lý giữ slot và đẩy data thực tế về Google Sheet
   const handleKeepSlot = async (row: any, availableSlots: number) => {
     const maLop = row["Mã lớp"];
     if (availableSlots <= 0) return;
 
     setIsHoldingSlot(maLop);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800)); // Giả lập kết nối API Google Sheet
+      const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNAdZGf5vLIQoP3TZA_kvyiT6OvZ2iMet91QFONP8rOKDGRZzVNFxx9XyE4TpXOKIi/exec";
+
+      // Tính toán ngày bắt đầu và ngày hết hạn giữ slot (Ví dụ: giữ trong vòng 2 ngày)
+      const startDate = new Date();
+      const expiryDate = new Date();
+      expiryDate.setDate(startDate.getDate() + 2); // Cộng thêm 2 ngày hết hạn
+
+      const formatDate = (date: Date) => date.toLocaleDateString("vi-VN");
+
+      // Gửi dữ liệu bất đồng bộ về Google Sheet
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors", // Tránh lỗi CORS từ trình duyệt sang Google Script
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          maLop: maLop,
+          monHoc: row["Môn học"] || "",
+          nguoiGiu: "Admin VH",
+          team: "Vận Hành VH",
+          ngayBatDau: formatDate(startDate),
+          ngayHetHan: formatDate(expiryDate),
+          note: "Giữ slot tự động từ hệ thống QLL"
+        })
+      });
+
+      // Cập nhật trạng thái đếm số slot đã giữ trên giao diện ngay lập tức
       setHeldSlots(prev => ({
         ...prev,
         [maLop]: (prev[maLop] || 0) + 1
       }));
+
     } catch (error) {
-      alert("Lỗi kết nối khi giữ slot!");
+      console.error("Lỗi khi đẩy dữ liệu về sheet:", error);
+      alert("Lỗi kết nối! Không thể lưu slot lên Google Sheet.");
     } finally {
       setIsHoldingSlot(null);
     }
