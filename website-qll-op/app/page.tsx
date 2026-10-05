@@ -288,6 +288,40 @@ export default function Home() {
     );
   };
 
+  // HÀM HELPER: Render màu sắc cho từng Môn học
+  const getSubjectStyle = (subject: string) => {
+    const s = subject.toLowerCase();
+    if (s.includes("toán") || s.includes("toan")) {
+      return "bg-blue-50 text-blue-600 border-blue-100";
+    }
+    if (s.includes("tiếng anh") || s.includes("tieng anh") || s.includes("moet")) {
+      return "bg-rose-50 text-rose-600 border-rose-100";
+    }
+    if (s.includes("khtn") || s.includes("khoa học")) {
+      return "bg-emerald-50 text-emerald-600 border-emerald-100";
+    }
+    if (s.includes("ngữ văn") || s.includes("văn")) {
+      return "bg-purple-50 text-purple-600 border-purple-100";
+    }
+    return "bg-slate-50 text-slate-600 border-slate-200"; // Mặc định
+  };
+
+  // HÀM HELPER: Tạo màu Avatar ngẫu nhiên từ chữ cái đầu của GV
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      "bg-amber-100 text-amber-700 border-amber-200",
+      "bg-indigo-100 text-indigo-700 border-indigo-200",
+      "bg-pink-100 text-pink-700 border-pink-200",
+      "bg-cyan-100 text-cyan-700 border-cyan-200",
+      "bg-teal-100 text-teal-700 border-teal-200"
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   return (
     <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0"></div>
@@ -302,7 +336,6 @@ export default function Home() {
               className="h-6 w-auto object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
             />
             <div className="border-l-[1.5px] border-slate-200 pl-3">
-              <h1 className="text-[11px] font-black text-slate-800 tracking-tight leading-none uppercase">QLL System</h1>
               <p className="text-[9px] text-sky-500 font-bold uppercase tracking-widest mt-1">Vận Hành</p>
             </div>
           </div>
@@ -416,7 +449,6 @@ export default function Home() {
               alt="Bitu Mascot" 
               className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
             />
-            {/* THAY ĐỔI GIAO DIỆN HIỂN THỊ CHỮ DỰA VÀO EFFECT GÕ CHỮ */}
             <h2 className="text-[30px] font-greeting text-slate-800 tracking-wide flex items-center gap-2 pt-1 h-[45px]">
               <span>Vận hành, </span>
               <div className="flex items-center">
@@ -511,33 +543,59 @@ export default function Home() {
                 </thead>
                 <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`} className="divide-y divide-slate-50 animate-fade-slide-up">
                   {currentTableData.length > 0 ? (
-                    currentTableData.map((row, index) => (
-                      <tr 
-                        key={`${row["Mã lớp"]}-${index}`} 
-                        className="hover:bg-sky-50/40 transition-colors duration-200"
-                      >
-                        <td className="px-6 py-4 font-bold text-sky-600">{row["Mã lớp"]}</td>
-                        <td className="px-6 py-4 font-semibold text-slate-700">{row["Môn học"]}</td>
-                        <td className="px-6 py-4 text-slate-500 text-[13px]">{row["Loại lớp"]}</td>
-                        <td className="px-6 py-4 text-center font-bold text-slate-600">{row["Khối"]}</td>
-                        <td className="px-6 py-4 font-medium text-slate-600">{row["Trình độ"]}</td>
-                        <td className="px-6 py-4 font-bold text-slate-700">{row["Mã GV"]}</td>
-                        <td className="px-6 py-4 text-slate-500 text-[13px] truncate max-w-[120px]">{row["Giáo trình"]}</td>
-                        <td className="px-6 py-4 font-medium text-slate-600">{row["Lịch học"]}</td>
-                        
-                        <td className="px-6 py-4 text-center">
-                          <span className="px-2.5 py-1 bg-sky-50/80 text-sky-600 border border-sky-100 rounded-md font-bold">{row["Đang học"] || 0}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="px-2.5 py-1 bg-orange-50/80 text-orange-600 border border-orange-100 rounded-md font-bold">{row["HS chờ vào lớp"] || 0}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right pr-6">
-                          <button className="px-4 py-1.5 bg-white border border-orange-400 text-orange-500 font-bold rounded-lg shadow-sm hover:bg-orange-500 hover:text-white focus:outline-none transition-all duration-200 active:scale-95">
-                            Giữ Slot
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    currentTableData.map((row, index) => {
+                      // Xử lý dữ liệu hiển thị (UI V3)
+                      const subjectStr = row["Môn học"] || "";
+                      const teacherStr = row["Mã GV"] || "GV";
+                      const teacherInitials = teacherStr.substring(0, 2).toUpperCase();
+
+                      return (
+                        <tr 
+                          key={`${row["Mã lớp"]}-${index}`} 
+                          className="hover:bg-sky-50/40 transition-all duration-200 group/row"
+                        >
+                          <td className="px-6 py-4 font-bold text-sky-600">{row["Mã lớp"]}</td>
+                          
+                          {/* UI MỚI: Môn Học hiển thị dạng Badge (Tag màu) */}
+                          <td className="px-6 py-4">
+                            <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border ${getSubjectStyle(subjectStr)}`}>
+                              {subjectStr}
+                            </span>
+                          </td>
+                          
+                          <td className="px-6 py-4 text-slate-500 text-[13px]">{row["Loại lớp"]}</td>
+                          <td className="px-6 py-4 text-center font-bold text-slate-600">{row["Khối"]}</td>
+                          <td className="px-6 py-4 font-medium text-slate-600">{row["Trình độ"]}</td>
+                          
+                          {/* UI MỚI: Avatar giáo viên kèm Tên */}
+                          <td className="px-6 py-4 font-bold text-slate-700">
+                            <div className="flex items-center gap-2">
+                              <span className={`flex items-center justify-center w-7 h-7 rounded-full text-[10px] border ${getAvatarColor(teacherStr)} shadow-sm`}>
+                                {teacherInitials}
+                              </span>
+                              <span>{teacherStr}</span>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-4 text-slate-500 text-[13px] truncate max-w-[120px]">{row["Giáo trình"]}</td>
+                          <td className="px-6 py-4 font-medium text-slate-600">{row["Lịch học"]}</td>
+                          
+                          <td className="px-6 py-4 text-center">
+                            <span className="px-2.5 py-1 bg-sky-50/80 text-sky-600 border border-sky-100 rounded-md font-bold">{row["Đang học"] || 0}</span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="px-2.5 py-1 bg-orange-50/80 text-orange-600 border border-orange-100 rounded-md font-bold">{row["HS chờ vào lớp"] || 0}</span>
+                          </td>
+                          
+                          {/* UI MỚI: Hiệu ứng Hover Nút thao tác */}
+                          <td className="px-6 py-4 text-right pr-6">
+                            <button className="px-4 py-1.5 bg-white border border-slate-200 text-slate-400 font-bold rounded-lg opacity-60 group-hover/row:opacity-100 group-hover/row:border-orange-400 group-hover/row:text-orange-500 hover:!bg-orange-500 hover:!text-white focus:outline-none transition-all duration-300 active:scale-95 shadow-sm">
+                              Giữ Slot
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={11} className="px-6 py-24 text-center">
@@ -583,7 +641,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* THÊM FONT CHỮ CAVEAT CỰC MƯỢT VÀ HIỆU ỨNG NHẤP NHÁY CON TRỎ */}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap');
         
