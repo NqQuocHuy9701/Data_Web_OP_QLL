@@ -116,7 +116,6 @@ export default function Home() {
   }, [data, activeNav]);
 
   const filteredData = useMemo(() => {
-    // LOGIC MỚI: Tự động lấy "thứ" của ngày hôm nay (VD: "T2", "T3"...)
     const today = new Date().getDay();
     const todayStr = today === 0 ? "CN" : `T${today + 1}`;
 
@@ -431,14 +430,13 @@ export default function Home() {
                 {renderCustomDropdown("Loại lớp", "loai", filterLoaiLop, dropdownOptions.loaiLop, setFilterLoaiLop)}
                 {renderCustomDropdown("Lịch", "lich", filterLichHoc, dropdownOptions.lichHoc, setFilterLichHoc)}
                 
-                {/* HIỂN THỊ NÚT "HÔM NAY" MỚI */}
                 <button
                   type="button"
                   onClick={() => setFilterToday(!filterToday)}
-                  className={`px-3.5 py-2 border rounded-xl font-semibold shadow-sm text-xs flex items-center gap-1.5 transition-all cursor-pointer focus:outline-none ${
+                  className={`px-4 py-2 border rounded-xl font-bold text-xs flex items-center gap-2 focus:outline-none transition-all duration-200 active:scale-95 ${
                     filterToday
-                      ? "bg-sky-500 text-white border-sky-500 shadow-[0_4px_12px_rgba(14,165,233,0.3)] ring-2 ring-sky-500/20"
-                      : "bg-white text-slate-700 border-slate-200 hover:border-sky-300 hover:bg-sky-50/50"
+                      ? "bg-orange-50 border-orange-400 text-orange-600 shadow-sm"
+                      : "bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50/30 hover:text-orange-500"
                   }`}
                 >
                   <span className="text-sm">{filterToday ? "📅" : "🗓️"}</span>
@@ -459,7 +457,7 @@ export default function Home() {
                     <th className="px-6 py-4">Môn học</th>
                     <th className="px-6 py-4">Loại lớp</th>
                     <th className="px-6 py-4 text-center">Khối</th>
-                    <th className="px-6 py-4">Ngày BĐ</th>
+                    <th className="px-6 py-4">Trình độ</th>
                     <th className="px-6 py-4">Mã GV</th>
                     <th className="px-6 py-4">Giáo trình</th>
                     <th className="px-6 py-4">Lịch học</th>
@@ -479,7 +477,7 @@ export default function Home() {
                         <td className="px-6 py-4 font-semibold text-slate-700">{row["Môn học"]}</td>
                         <td className="px-6 py-4 text-slate-500 text-[13px]">{row["Loại lớp"]}</td>
                         <td className="px-6 py-4 text-center font-bold text-slate-600">{row["Khối"]}</td>
-                        <td className="px-6 py-4 font-medium text-slate-600">{row["Ngày bắt đầu"]}</td>
+                        <td className="px-6 py-4 font-medium text-slate-600">{row["Trình độ"]}</td>
                         <td className="px-6 py-4 font-bold text-slate-700">{row["Mã GV"]}</td>
                         <td className="px-6 py-4 text-slate-500 text-[13px] truncate max-w-[120px]">{row["Giáo trình"]}</td>
                         <td className="px-6 py-4 font-medium text-slate-600">{row["Lịch học"]}</td>
