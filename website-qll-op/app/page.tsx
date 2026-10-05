@@ -8,8 +8,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   
-  // State điều hướng
-  const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng">("Khai giảng");
+  // State điều hướng (Thêm màn hình "Giữ Slot")
+  const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot">("Giữ Slot");
   const [searchTerm, setSearchTerm] = useState("");
   
   // State bộ lọc
@@ -31,6 +31,10 @@ export default function Home() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Quản lý giữ slot
+  const [heldSlots, setHeldSlots] = useState<Record<string, number>>({});
+  const [isHoldingSlot, setIsHoldingSlot] = useState<string | null>(null);
 
   // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
@@ -141,6 +145,7 @@ export default function Home() {
   const stats = useMemo(() => {
     const currentTabBase = data.filter(item => {
       const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
+      if (activeNav === "Giữ Slot") return true;
       return activeNav === "Đang học" ? status.includes("đang học") : status.includes("khai giảng");
     });
 
@@ -183,9 +188,11 @@ export default function Home() {
 
       if (!isPassRule) return false;
 
-      const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
-      const matchNav = activeNav === "Đang học" ? status.includes("đang học") : status.includes("khai giảng");
-      if (!matchNav) return false;
+      if (activeNav !== "Giữ Slot") {
+        const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
+        const matchNav = activeNav === "Đang học" ? status.includes("đang học") : status.includes("khai giảng");
+        if (!matchNav) return false;
+      }
 
       if (filterLoaiLop !== "Tất cả" && (item["Loại lớp"] || "").trim() !== filterLoaiLop) return false;
       if (filterKhoi !== "Tất cả" && (item["Khối"] || "").trim() !== filterKhoi) return false;
@@ -219,6 +226,25 @@ export default function Home() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredData, currentPage]);
+
+  // Xử lý giữ slot và đẩy data về Sheet
+  const handleKeepSlot = async (row: any, availableSlots: number) => {
+    const maLop = row["Mã lớp"];
+    if (availableSlots <= 0) return;
+
+    setIsHoldingSlot(maLop);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800)); // Giả lập kết nối API Google Sheet
+      setHeldSlots(prev => ({
+        ...prev,
+        [maLop]: (prev[maLop] || 0) + 1
+      }));
+    } catch (error) {
+      alert("Lỗi kết nối khi giữ slot!");
+    } finally {
+      setIsHoldingSlot(null);
+    }
+  };
 
   const renderCustomDropdown = (
     label: string, 
@@ -288,9 +314,6 @@ export default function Home() {
     );
   };
 
-  // ==========================================
-  // HÀM HELPER V3: Thêm màu cho Môn học và Avatar GV
-  // ==========================================
   const getSubjectStyle = (subject: string) => {
     const s = subject.toLowerCase();
     if (s.includes("toán") || s.includes("toan")) {
@@ -305,7 +328,7 @@ export default function Home() {
     if (s.includes("ngữ văn") || s.includes("văn")) {
       return "bg-purple-50 text-purple-600 border-purple-100";
     }
-    return "bg-slate-50 text-slate-600 border-slate-200"; // Mặc định
+    return "bg-slate-50 text-slate-600 border-slate-200"; 
   };
 
   const getAvatarColor = (name: string) => {
@@ -343,8 +366,8 @@ export default function Home() {
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-2 px-2">
-            Quản lý
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2 px-2">
+            Quản lý báo cáo
           </div>
           
           <button
@@ -371,6 +394,23 @@ export default function Home() {
             <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-sky-500 rounded-r-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(14,165,233,0.4)] ${activeNav === "Khai giảng" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
             <span className={`text-xl transition-transform duration-300 ${activeNav === "Khai giảng" ? "scale-110" : "group-hover:scale-110"}`}>🚀</span>
             <span>Chờ Khai Giảng</span>
+          </button>
+
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-6 px-2">
+            Tác vụ chuyên biệt
+          </div>
+
+          <button
+            onClick={() => setActiveNav("Giữ Slot")}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out focus:outline-none relative group ${
+              activeNav === "Giữ Slot" 
+                ? "bg-orange-50 text-orange-600 font-bold shadow-[0_2px_10px_rgba(249,115,22,0.1)]" 
+                : "text-slate-500 hover:bg-orange-50/50 hover:text-orange-500 font-medium"
+            }`}
+          >
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-orange-500 rounded-r-full transition-all duration-300 ease-out shadow-[0_0_8px_rgba(249,115,22,0.4)] ${activeNav === "Giữ Slot" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
+            <span className={`text-xl transition-transform duration-300 ${activeNav === "Giữ Slot" ? "scale-110" : "group-hover:scale-110"}`}>📌</span>
+            <span>Giữ Slot Lớp</span>
           </button>
         </nav>
 
@@ -497,7 +537,7 @@ export default function Home() {
             <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap gap-3 justify-between items-center bg-white shrink-0 z-30 relative">
               <h3 className="font-bold text-slate-800 flex items-center gap-3 text-base">
                 <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
-                Daily — Dữ liệu vận hành hiện tại
+                {activeNav === "Giữ Slot" ? "📌 Bảng Tác Vụ Giữ Slot Chuyên Biệt" : `Daily — Dữ liệu ${activeNav}`}
               </h3>
 
               <div className="flex flex-wrap items-center gap-2.5">
@@ -538,40 +578,46 @@ export default function Home() {
                     <th className="px-6 py-4">Giáo trình</th>
                     <th className="px-6 py-4">Lịch học</th>
                     <th className="px-6 py-4 text-center">Đang học</th>
-                    <th className="px-6 py-4 text-center">Chờ vào</th>
-                    <th className="px-6 py-4 text-right pr-8">Thao tác</th>
+                    
+                    {/* CỘT THAO TÁC RIÊNG CHO MÀN HÌNH "GIỮ SLOT" */}
+                    {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-center text-orange-600">Số slot còn</th>}
+                    {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-right pr-8 text-orange-600">Thao tác giữ</th>}
                   </tr>
                 </thead>
-                {/* ÁP DỤNG STAGGERED ANIMATION KHI RENDER BẢNG */}
                 <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`} className="divide-y divide-slate-50">
                   {currentTableData.length > 0 ? (
                     currentTableData.map((row, index) => {
-                      // Xử lý dữ liệu hiển thị (UI V3)
+                      const maLop = row["Mã lớp"];
                       const subjectStr = row["Môn học"] || "";
                       const teacherStr = row["Mã GV"] || "GV";
                       const teacherInitials = teacherStr.substring(0, 2).toUpperCase();
+                      const currentStudents = Number(row["Đang học"]) || 0;
+                      const loaiLopStr = row["Loại lớp"] || "";
+
+                      // Tính toán Slot theo Rule Thép
+                      const match = loaiLopStr.match(/1:(\d+)/);
+                      const maxStudents = match ? parseInt(match[1]) : 99;
+                      const heldCount = heldSlots[maLop] || 0;
+                      const availableSlots = maxStudents - currentStudents - heldCount;
+                      const isFull = availableSlots <= 0;
+                      const isLoading = isHoldingSlot === maLop;
 
                       return (
                         <tr 
-                          key={`${row["Mã lớp"]}-${index}`} 
-                          // V3: Lớp animate-fade-slide-up-stagger giúp trượt từng dòng
+                          key={`${maLop}-${index}`} 
                           className="hover:bg-sky-50/40 transition-all duration-200 group/row opacity-0 animate-fade-slide-up-stagger"
-                          style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'forwards' }}
+                          style={{ animationDelay: `${index * 0.03}s`, animationFillMode: 'forwards' }}
                         >
-                          <td className="px-6 py-4 font-bold text-sky-600">{row["Mã lớp"]}</td>
-                          
-                          {/* UI MỚI: Môn Học hiển thị dạng Badge (Tag màu) */}
+                          <td className="px-6 py-4 font-bold text-sky-600">{maLop}</td>
                           <td className="px-6 py-4">
                             <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border ${getSubjectStyle(subjectStr)}`}>
                               {subjectStr}
                             </span>
                           </td>
-                          
-                          <td className="px-6 py-4 text-slate-500 text-[13px]">{row["Loại lớp"]}</td>
+                          <td className="px-6 py-4 text-slate-500 text-[13px]">{loaiLopStr}</td>
                           <td className="px-6 py-4 text-center font-bold text-slate-600">{row["Khối"]}</td>
                           <td className="px-6 py-4 font-medium text-slate-600">{row["Trình độ"]}</td>
                           
-                          {/* UI MỚI: Avatar giáo viên kèm Tên */}
                           <td className="px-6 py-4 font-bold text-slate-700">
                             <div className="flex items-center gap-2">
                               <span className={`flex items-center justify-center w-7 h-7 rounded-full text-[10px] border ${getAvatarColor(teacherStr)} shadow-sm`}>
@@ -585,24 +631,44 @@ export default function Home() {
                           <td className="px-6 py-4 font-medium text-slate-600">{row["Lịch học"]}</td>
                           
                           <td className="px-6 py-4 text-center">
-                            <span className="px-2.5 py-1 bg-sky-50/80 text-sky-600 border border-sky-100 rounded-md font-bold">{row["Đang học"] || 0}</span>
+                            <span className="px-2.5 py-1 bg-sky-50/80 text-sky-600 border border-sky-100 rounded-md font-bold">{currentStudents + heldCount}</span>
                           </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className="px-2.5 py-1 bg-orange-50/80 text-orange-600 border border-orange-100 rounded-md font-bold">{row["HS chờ vào lớp"] || 0}</span>
-                          </td>
-                          
-                          {/* UI MỚI: Hiệu ứng Hover Nút thao tác ẩn/hiện */}
-                          <td className="px-6 py-4 text-right pr-6">
-                            <button className="px-4 py-1.5 bg-white border border-slate-200 text-slate-400 font-bold rounded-lg opacity-40 group-hover/row:opacity-100 group-hover/row:border-orange-400 group-hover/row:text-orange-500 hover:!bg-orange-500 hover:!text-white focus:outline-none transition-all duration-300 active:scale-95 shadow-sm text-xs">
-                              Giữ Slot
-                            </button>
-                          </td>
+
+                          {/* HIỂN THỊ NÚT GIỮ SLOT TẠI TAB GIỮ SLOT */}
+                          {activeNav === "Giữ Slot" && (
+                            <>
+                              <td className="px-6 py-4 text-center">
+                                <span className={`px-2.5 py-1 rounded-md font-bold text-xs border ${availableSlots > 0 ? "bg-orange-50 text-orange-600 border-orange-200" : "bg-slate-100 text-slate-400 border-slate-200"}`}>
+                                  {availableSlots > 0 ? `Còn ${availableSlots} slot` : "Đã hết slot"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right pr-6 min-w-[130px]">
+                                <button 
+                                  onClick={() => handleKeepSlot(row, availableSlots)}
+                                  disabled={isFull || isLoading}
+                                  className={`px-4 py-1.5 border font-bold rounded-lg focus:outline-none transition-all duration-300 text-xs w-full max-w-[110px] text-center shadow-sm
+                                    ${isFull 
+                                      ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed' 
+                                      : 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600 active:scale-95'
+                                    }`}
+                                >
+                                  {isLoading ? (
+                                    <svg className="animate-spin h-3.5 w-3.5 mx-auto text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                  ) : isFull ? (
+                                    "Hết Slot"
+                                  ) : (
+                                    "Giữ Slot"
+                                  )}
+                                </button>
+                              </td>
+                            </>
+                          )}
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={11} className="px-6 py-24 text-center">
+                      <td colSpan={activeNav === "Giữ Slot" ? 11 : 9} className="px-6 py-24 text-center">
                         <div className="flex flex-col items-center justify-center text-slate-400">
                           <div className="w-20 h-20 mb-4 rounded-full bg-slate-50 flex items-center justify-center border-2 border-dashed border-slate-200">
                             <span className="text-3xl opacity-60">📭</span>
@@ -669,13 +735,6 @@ export default function Home() {
         }
         .animate-fade-slide-down { animation: fadeSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(15px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-slide-up { animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        /* === ANIMATION MỚI CHO BẢNG: Trượt mượt mà từng dòng === */
         @keyframes fadeSlideUpStagger {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
