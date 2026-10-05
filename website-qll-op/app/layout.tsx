@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Vuihoc - Quản lý Vận hành",
   description: "Vận hành - Quản lý lớp",
   icons: {
-    icon: "/Icon_vuihoc.svg",
+    icon: "/Icon_vuihoc.png", // Trỏ đúng tên file trong thư mục public
   },
 };
 

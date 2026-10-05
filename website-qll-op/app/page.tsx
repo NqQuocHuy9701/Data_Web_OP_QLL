@@ -244,7 +244,7 @@ export default function Home() {
         {/* Menu */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-2 px-2">
-            Build & Quản lý
+            Quản lý
           </div>
           
           <button
@@ -362,7 +362,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-white via-white to-sky-50/40 border-2 border-sky-100/80 rounded-3xl p-6 shadow-[0_10px_30px_rgba(14,165,233,0.08)] relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(14,165,233,0.15)] transition-all duration-300 hover:-translate-y-1.5">
               <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
-              <p className="text-sky-600 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Tổng Content Lớp</p>
+              <p className="text-sky-600 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Tổng Lớp</p>
               <div className="flex items-baseline gap-2 relative z-10">
                 <span className="text-4xl font-extrabold text-slate-900">{stats.total}</span>
                 <span className="text-slate-500 text-sm font-semibold">hệ thống</span>
@@ -371,7 +371,7 @@ export default function Home() {
             
             <div className="bg-gradient-to-br from-white via-white to-blue-50/40 border-2 border-blue-100/80 rounded-3xl p-6 shadow-[0_10px_30px_rgba(37,99,235,0.08)] relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(37,99,235,0.15)] transition-all duration-300 hover:-translate-y-1.5">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
-              <p className="text-blue-600 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Đã Active (Đang Học)</p>
+              <p className="text-blue-600 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Đang Học</p>
               <div className="flex items-baseline gap-2 relative z-10">
                 <span className="text-4xl font-extrabold text-blue-600">{stats.studying}</span>
                 <span className="text-slate-500 text-sm font-semibold">đang chạy</span>
@@ -380,10 +380,10 @@ export default function Home() {
 
             <div className="bg-gradient-to-br from-white via-white to-orange-50/40 border-2 border-orange-100/80 rounded-3xl p-6 shadow-[0_10px_30px_rgba(249,115,22,0.08)] relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(249,115,22,0.15)] transition-all duration-300 hover:-translate-y-1.5">
               <div className="absolute top-0 right-0 w-32 h-32 bg-orange-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
-              <p className="text-orange-600 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Build Gần Đây (Khai Giảng)</p>
+              <p className="text-orange-600 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Chờ Khai Giảng</p>
               <div className="flex items-baseline gap-2 relative z-10">
                 <span className="text-4xl font-extrabold text-orange-500">{stats.pending}</span>
-                <span className="text-slate-500 text-sm font-semibold">chờ xử lý</span>
+                <span className="text-slate-500 text-sm font-semibold">chờ khai giảng</span>
               </div>
             </div>
           </div>
