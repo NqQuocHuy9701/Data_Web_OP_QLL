@@ -288,7 +288,9 @@ export default function Home() {
     );
   };
 
-  // HÀM HELPER: Render màu sắc cho từng Môn học
+  // ==========================================
+  // HÀM HELPER V3: Thêm màu cho Môn học và Avatar GV
+  // ==========================================
   const getSubjectStyle = (subject: string) => {
     const s = subject.toLowerCase();
     if (s.includes("toán") || s.includes("toan")) {
@@ -306,7 +308,6 @@ export default function Home() {
     return "bg-slate-50 text-slate-600 border-slate-200"; // Mặc định
   };
 
-  // HÀM HELPER: Tạo màu Avatar ngẫu nhiên từ chữ cái đầu của GV
   const getAvatarColor = (name: string) => {
     const colors = [
       "bg-amber-100 text-amber-700 border-amber-200",
@@ -541,7 +542,8 @@ export default function Home() {
                     <th className="px-6 py-4 text-right pr-8">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`} className="divide-y divide-slate-50 animate-fade-slide-up">
+                {/* ÁP DỤNG STAGGERED ANIMATION KHI RENDER BẢNG */}
+                <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`} className="divide-y divide-slate-50">
                   {currentTableData.length > 0 ? (
                     currentTableData.map((row, index) => {
                       // Xử lý dữ liệu hiển thị (UI V3)
@@ -552,7 +554,9 @@ export default function Home() {
                       return (
                         <tr 
                           key={`${row["Mã lớp"]}-${index}`} 
-                          className="hover:bg-sky-50/40 transition-all duration-200 group/row"
+                          // V3: Lớp animate-fade-slide-up-stagger giúp trượt từng dòng
+                          className="hover:bg-sky-50/40 transition-all duration-200 group/row opacity-0 animate-fade-slide-up-stagger"
+                          style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'forwards' }}
                         >
                           <td className="px-6 py-4 font-bold text-sky-600">{row["Mã lớp"]}</td>
                           
@@ -587,9 +591,9 @@ export default function Home() {
                             <span className="px-2.5 py-1 bg-orange-50/80 text-orange-600 border border-orange-100 rounded-md font-bold">{row["HS chờ vào lớp"] || 0}</span>
                           </td>
                           
-                          {/* UI MỚI: Hiệu ứng Hover Nút thao tác */}
+                          {/* UI MỚI: Hiệu ứng Hover Nút thao tác ẩn/hiện */}
                           <td className="px-6 py-4 text-right pr-6">
-                            <button className="px-4 py-1.5 bg-white border border-slate-200 text-slate-400 font-bold rounded-lg opacity-60 group-hover/row:opacity-100 group-hover/row:border-orange-400 group-hover/row:text-orange-500 hover:!bg-orange-500 hover:!text-white focus:outline-none transition-all duration-300 active:scale-95 shadow-sm">
+                            <button className="px-4 py-1.5 bg-white border border-slate-200 text-slate-400 font-bold rounded-lg opacity-40 group-hover/row:opacity-100 group-hover/row:border-orange-400 group-hover/row:text-orange-500 hover:!bg-orange-500 hover:!text-white focus:outline-none transition-all duration-300 active:scale-95 shadow-sm text-xs">
                               Giữ Slot
                             </button>
                           </td>
@@ -670,6 +674,13 @@ export default function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-up { animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* === ANIMATION MỚI CHO BẢNG: Trượt mượt mà từng dòng === */
+        @keyframes fadeSlideUpStagger {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
         @keyframes cursorBlink {
           0%, 100% { opacity: 1; }
