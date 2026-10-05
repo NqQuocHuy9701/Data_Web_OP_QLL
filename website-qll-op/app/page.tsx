@@ -8,7 +8,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   
-  // State điều hướng (Thêm màn hình "Giữ Slot")
+  // State điều hướng
   const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot">("Giữ Slot");
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -17,16 +17,10 @@ export default function Home() {
   const [filterKhoi, setFilterKhoi] = useState("Tất cả");
   const [filterLoaiLop, setFilterLoaiLop] = useState("Tất cả");
   const [filterLichHoc, setFilterLichHoc] = useState("Tất cả");
-
-  // NÚT MỚI: State quản lý nút "Hôm nay"
   const [filterToday, setFilterToday] = useState(false);
-
-  // State quản lý dropdown tùy chỉnh
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  // ==========================================
-  // STATE MỚI: HIỆU ỨNG GÕ CHỮ LIÊN TỤC
-  // ==========================================
+  // Hiệu ứng gõ chữ
   const typingWords = useMemo(() => ["Xin chào", "hello"], []);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
@@ -36,9 +30,7 @@ export default function Home() {
   const [heldSlots, setHeldSlots] = useState<Record<string, number>>({});
   const [isHoldingSlot, setIsHoldingSlot] = useState<string | null>(null);
 
-  // ==========================================
-  // STATE MỚI BỔ SUNG: QUẢN LÝ POPUP & THÔNG BÁO
-  // ==========================================
+  // State popup & thông báo
   const [showModal, setShowModal] = useState(false);
   const [selectedRowForSlot, setSelectedRowForSlot] = useState<any>(null);
   const [slotAvailableCount, setSlotAvailableCount] = useState(0);
@@ -46,7 +38,6 @@ export default function Home() {
   const [inputError, setInputError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
@@ -64,7 +55,6 @@ export default function Home() {
           setData(results.data); 
         }
         setLoading(false);
-        
         const now = new Date();
         const timeStr = now.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const dateStr = now.toLocaleDateString("vi-VN");
@@ -79,11 +69,7 @@ export default function Home() {
 
   useEffect(() => {
     loadData();
-
-    const intervalId = setInterval(() => {
-      loadData();
-    }, 60 * 60 * 1000); 
-
+    const intervalId = setInterval(() => loadData(), 60 * 60 * 1000); 
     return () => clearInterval(intervalId);
   }, []);
 
@@ -91,9 +77,6 @@ export default function Home() {
     setCurrentPage(1);
   }, [searchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
 
-  // ==========================================
-  // EFFECT MỚI: CHẠY ANIMATION GÕ CHỮ
-  // ==========================================
   useEffect(() => {
     const currentWord = typingWords[currentWordIndex];
     let timeout: NodeJS.Timeout;
@@ -102,7 +85,7 @@ export default function Home() {
       if (displayedText.length > 0) {
         timeout = setTimeout(() => {
           setDisplayedText(currentWord.substring(0, displayedText.length - 1));
-        }, 50); // Tốc độ xóa chữ
+        }, 50);
       } else {
         setIsDeleting(false);
         setCurrentWordIndex((prev) => (prev + 1) % typingWords.length);
@@ -111,11 +94,9 @@ export default function Home() {
       if (displayedText.length < currentWord.length) {
         timeout = setTimeout(() => {
           setDisplayedText(currentWord.substring(0, displayedText.length + 1));
-        }, 150); // Tốc độ gõ chữ
+        }, 150);
       } else {
-        timeout = setTimeout(() => {
-          setIsDeleting(true);
-        }, 2500); // Dừng lại 2.5s để đọc trước khi xóa
+        timeout = setTimeout(() => setIsDeleting(true), 2500);
       }
     }
     return () => clearTimeout(timeout);
@@ -172,7 +153,6 @@ export default function Home() {
     const todayStr = today === 0 ? "CN" : `T${today + 1}`;
 
     return data.filter((item) => {
-      
       const monHocRule = (item["Môn học"] || "").toString().toLowerCase().trim();
       const loaiLopRawRule = (item["Loại lớp"] || "").toString().trim();
       const loaiLopRule = loaiLopRawRule.replace(/^Lớp\s+/i, "").trim();
@@ -237,10 +217,6 @@ export default function Home() {
     return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredData, currentPage]);
 
-
-  // ==========================================
-  // HÀM MỚI BỔ SUNG: MỞ POPUP NHẬP SID/CID
-  // ==========================================
   const handleOpenPopup = (row: any, availableSlots: number) => {
     if (availableSlots <= 0) return;
     setSelectedRowForSlot(row);
@@ -250,10 +226,6 @@ export default function Home() {
     setShowModal(true);
   };
 
-
-  // ==========================================
-  // HÀM MỚI BỔ SUNG: XÁC NHẬN VÀ GỬI VỀ SHEET
-  // ==========================================
   const handleConfirmKeepSlot = async () => {
     const cleanVal = inputValue.trim();
     if (!cleanVal) {
@@ -304,9 +276,8 @@ export default function Home() {
         [maLop]: (prev[maLop] || 0) + 1
       }));
 
-      // HIỆN THÔNG BÁO YÊU CẦU THEO ĐÚNG Ý BẠN
       setSuccessMessage("Vận hành đã nhận thông tin và kiểm tra.");
-      setTimeout(() => setSuccessMessage(""), 4000); // Tự tắt sau 4 giây
+      setTimeout(() => setSuccessMessage(""), 4000);
 
     } catch (error) {
       console.error("Lỗi kết nối:", error);
@@ -316,7 +287,6 @@ export default function Home() {
       setSelectedRowForSlot(null);
     }
   };
-
 
   const renderCustomDropdown = (
     label: string, 
@@ -422,7 +392,6 @@ export default function Home() {
     <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0"></div>
 
-      {/* THANH THÔNG BÁO NỔI NẾU CÓ THÀNH CÔNG */}
       {successMessage && (
         <div className="fixed top-6 right-8 bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl z-50 flex items-center gap-2 font-bold text-sm animate-fade-slide-down">
           <span>✅</span> {successMessage}
@@ -656,9 +625,9 @@ export default function Home() {
                     <th className="px-6 py-4">Mã GV</th>
                     <th className="px-6 py-4">Giáo trình</th>
                     <th className="px-6 py-4">Lịch học</th>
-                    <th className="px-6 py-4 text-center">Đang học</th>
                     
-                    {/* CỘT THAO TÁC RIÊNG CHO MÀN HÌNH "GIỮ SLOT" */}
+                    {/* BỎ HOÀN TOÀN CỘT ĐANG HỌC Ở TẤT CẢ CÁC MÀN HÌNH */}
+                    
                     {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-center text-orange-600">Số slot còn</th>}
                     {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-right pr-8 text-orange-600">Thao tác giữ</th>}
                   </tr>
@@ -673,7 +642,6 @@ export default function Home() {
                       const currentStudents = Number(row["Đang học"]) || 0;
                       const loaiLopStr = row["Loại lớp"] || "";
 
-                      // Tính toán Slot theo Rule Thép
                       const match = loaiLopStr.match(/1:(\d+)/);
                       const maxStudents = match ? parseInt(match[1]) : 99;
                       const heldCount = heldSlots[maLop] || 0;
@@ -709,11 +677,8 @@ export default function Home() {
                           <td className="px-6 py-4 text-slate-500 text-[13px] truncate max-w-[120px]">{row["Giáo trình"]}</td>
                           <td className="px-6 py-4 font-medium text-slate-600">{row["Lịch học"]}</td>
                           
-                          <td className="px-6 py-4 text-center">
-                            <span className="px-2.5 py-1 bg-sky-50/80 text-sky-600 border border-sky-100 rounded-md font-bold">{currentStudents + heldCount}</span>
-                          </td>
+                          {/* BỎ HOÀN TOÀN Ô ĐANG HỌC Ở TẤT CẢ CÁC MÀN HÌNH */}
 
-                          {/* HIỂN THỊ NÚT GIỮ SLOT TẠI TAB GIỮ SLOT */}
                           {activeNav === "Giữ Slot" && (
                             <>
                               <td className="px-6 py-4 text-center">
@@ -747,7 +712,7 @@ export default function Home() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={activeNav === "Giữ Slot" ? 11 : 9} className="px-6 py-24 text-center">
+                      <td colSpan={activeNav === "Giữ Slot" ? 10 : 9} className="px-6 py-24 text-center">
                         <div className="flex flex-col items-center justify-center text-slate-400">
                           <div className="w-20 h-20 mb-4 rounded-full bg-slate-50 flex items-center justify-center border-2 border-dashed border-slate-200">
                             <span className="text-3xl opacity-60">📭</span>
