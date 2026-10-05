@@ -62,8 +62,6 @@ export default function Home() {
   const itemsPerPage = 50;
 
   const SHEET_CSV_URL = "/api/sheet";
-  
-  // ĐÃ GẮN TRỰC TIẾP LINK CSV CHUẨN CỦA TAB LICH SUG IU SLOT VÀO ĐÂY CHO BẠN
   const HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH99w75D-KMdtC6KIH-bfza_bdHF_vz3grGlz6cXRNgaalR-_wHQRWI4PYESwWmJHxs_rXPVo7TKCv/pub?gid=1190427124&single=true&output=csv"; 
 
   useEffect(() => {
@@ -111,6 +109,31 @@ export default function Home() {
     }
   }, []);
 
+  // Kiểm tra thời gian 24h tính từ chuỗi thời gian log
+  const checkIsExpired = (timeString: string) => {
+    try {
+      const parts = timeString.split(" ");
+      if (parts.length < 2) return false;
+      const dateParts = parts[0].split("/");
+      const timeParts = parts[1].split(":");
+      
+      const logDate = new Date(
+        parseInt(dateParts[2]), 
+        parseInt(dateParts[1]) - 1, 
+        parseInt(dateParts[0]), 
+        parseInt(timeParts[0]), 
+        parseInt(timeParts[1]), 
+        parseInt(timeParts[2] || "0")
+      );
+
+      const targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
+      return Date.now() >= targetTime;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Chỉ tính các slot chưa quá 24h và CHƯA BẤM DONE và CHƯA QUÁ HẠN vào số slot đang giữ
   const getActiveHeldCount = (maLop: string) => {
     const holds = heldSlots[maLop];
     if (!holds || !Array.isArray(holds)) return 0;
@@ -139,7 +162,7 @@ export default function Home() {
       const now = Date.now();
       const diff = targetTime - now;
 
-      if (diff <= 0) return "⏰ Đã hết hạn (24h)";
+      if (diff <= 0) return "⏰ Quá hạn";
 
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -718,6 +741,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* CỐ ĐỊNH KÍCH THƯỚC SIDEBAR VÀ BỎ HIỆU ỨNG PHÌNH TO */}
       <aside className="w-64 min-w-[16rem] max-w-[16rem] bg-white border-r border-slate-200/80 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         
         <div className="h-20 flex items-center px-6 border-b border-slate-100 shrink-0">
@@ -807,14 +831,14 @@ export default function Home() {
                     : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
                 }`}
               >
-                <span className="text-lg">⚙️</span>
+                <span className="text-lg">⚙️️</span>
                 <span className="text-xs truncate">Quản Trị Admin</span>
               </button>
             </>
           )}
         </nav>
 
-        {/* THÔNG TIN USER Ở CHÂN SIDEBAR: ADMIN LUÔN HIỆN "Admin hệ thống", QLL HIỆN TÊN TEAM LEAD */}
+        {/* THÔNG TIN USER TẠI CHÂN SIDEBAR */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm ${loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700"}`}>
@@ -927,18 +951,22 @@ export default function Home() {
                         const maLop = row["Mã lớp giữ"] || row["Mã lớp"] || "";
                         const rowKey = `${timeStr}-${maLop}-${index}`;
                         const isDone = completedSlots[rowKey];
+                        const isExpired = checkIsExpired(timeStr);
 
                         return (
-                          <tr key={index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : "hover:bg-orange-50/30"}`}>
+                          <tr key={index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-orange-50/30"}`}>
                             <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
                             <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
                             <td className="px-6 py-4 font-medium text-slate-700">{row["Môn học"] || "-"}</td>
                             <td className="px-6 py-4 font-bold text-orange-600">{row["Người giữ"] || "-"}</td>
                             <td className="px-6 py-4 text-slate-600">{row["Team"] || "-"}</td>
                             
+                            {/* CỘT TIME CÒN LẠI 24H */}
                             <td className="px-6 py-4">
                               {isDone ? (
                                 <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs">Đã hoàn thành</span>
+                              ) : isExpired ? (
+                                <span className="px-2.5 py-1 bg-red-100 text-red-700 font-bold rounded-lg text-xs">Quá hạn</span>
                               ) : (
                                 <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-lg text-xs animate-pulse">
                                   {calculateTimeRemaining(timeStr)}
@@ -948,10 +976,15 @@ export default function Home() {
 
                             <td className="px-6 py-4 text-slate-700 font-medium">{row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-"}</td>
                             
+                            {/* NÚT THAO TÁC XẾP: NẾU QUÁ HẠN HOẶC ĐÃ DONE SẼ ẨN NÚT VÀ HIỆN NHÃN PHÙ HỢP */}
                             <td className="px-6 py-4 text-right pr-6">
                               {isDone ? (
                                 <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
                                   <span>✅</span> Đã xếp xong
+                                </span>
+                              ) : isExpired ? (
+                                <span className="text-xs font-bold text-red-600 flex items-center justify-end gap-1">
+                                  <span>❌</span> Quá hạn
                                 </span>
                               ) : (
                                 <button
