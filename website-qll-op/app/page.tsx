@@ -24,6 +24,14 @@ export default function Home() {
   // State quản lý dropdown tùy chỉnh
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
+  // ==========================================
+  // STATE MỚI: HIỆU ỨNG GÕ CHỮ LIÊN TỤC
+  // ==========================================
+  const typingWords = useMemo(() => ["Xin chào", "hello"], []);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [displayedText, setDisplayedText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
@@ -60,15 +68,44 @@ export default function Home() {
 
     const intervalId = setInterval(() => {
       loadData();
-    }, 60 * 60 * 1000); // 1 giờ
+    }, 60 * 60 * 1000); 
 
     return () => clearInterval(intervalId);
   }, []);
 
-  // Cập nhật reset trang khi nút Hôm nay thay đổi
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
+
+  // ==========================================
+  // EFFECT MỚI: CHẠY ANIMATION GÕ CHỮ
+  // ==========================================
+  useEffect(() => {
+    const currentWord = typingWords[currentWordIndex];
+    let timeout: NodeJS.Timeout;
+
+    if (isDeleting) {
+      if (displayedText.length > 0) {
+        timeout = setTimeout(() => {
+          setDisplayedText(currentWord.substring(0, displayedText.length - 1));
+        }, 50); // Tốc độ xóa chữ
+      } else {
+        setIsDeleting(false);
+        setCurrentWordIndex((prev) => (prev + 1) % typingWords.length);
+      }
+    } else {
+      if (displayedText.length < currentWord.length) {
+        timeout = setTimeout(() => {
+          setDisplayedText(currentWord.substring(0, displayedText.length + 1));
+        }, 150); // Tốc độ gõ chữ
+      } else {
+        timeout = setTimeout(() => {
+          setIsDeleting(true);
+        }, 2500); // Dừng lại 2.5s để đọc trước khi xóa
+      }
+    }
+    return () => clearTimeout(timeout);
+  }, [displayedText, isDeleting, currentWordIndex, typingWords]);
 
   const dropdownOptions = useMemo(() => {
     const loaiLopSet = new Set<string>();
@@ -156,7 +193,6 @@ export default function Home() {
       
       const itemLich = (item["Lịch học"] || "").trim();
       
-      // KIỂM TRA LỊCH CỦA DROP DOW VÀ "HÔM NAY"
       if (filterLichHoc !== "Tất cả") {
         if (!itemLich.startsWith(filterLichHoc)) return false;
       }
@@ -380,16 +416,16 @@ export default function Home() {
               alt="Bitu Mascot" 
               className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
             />
-<h2 className="text-[30px] font-greeting text-slate-800 tracking-wide flex items-center gap-2 pt-1">
-  <span>Vận hành, </span>
-  {/* KHỐI CHỮ ANIMATION */}
-  <div className="flex items-center">
-    <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal animate-typing-text leading-none">
-      Hello!
-    </span>
-    <span className="w-[3px] h-[30px] bg-orange-500 ml-1.5 animate-cursor-blink"></span>
-  </div>
-</h2>
+            {/* THAY ĐỔI GIAO DIỆN HIỂN THỊ CHỮ DỰA VÀO EFFECT GÕ CHỮ */}
+            <h2 className="text-[30px] font-greeting text-slate-800 tracking-wide flex items-center gap-2 pt-1 h-[45px]">
+              <span>Vận hành, </span>
+              <div className="flex items-center">
+                <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none -mb-2">
+                  {displayedText}
+                </span>
+                <span className="w-[3px] h-[30px] bg-orange-500 ml-1.5 animate-cursor-blink rounded-full"></span>
+              </div>
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -547,13 +583,13 @@ export default function Home() {
         </div>
       </main>
 
-<style dangerouslySetInnerHTML={{__html: `
+      {/* THÊM FONT CHỮ CAVEAT CỰC MƯỢT VÀ HIỆU ỨNG NHẤP NHÁY CON TRỎ */}
+      <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap');
         
         .font-vietnam { font-family: 'Be Vietnam Pro', sans-serif; }
         .font-greeting { font-family: 'Baloo 2', cursive; }
-        /* Font viết tay mới thêm vào */
-        .font-handwriting { font-family: 'Caveat', cursive; } 
+        .font-handwriting { font-family: 'Caveat', cursive; }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -578,24 +614,11 @@ export default function Home() {
         }
         .animate-fade-slide-up { animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        /* === HIỆU ỨNG CHỮ VIẾT TAY (TYPING) === */
-        @keyframes typing-clip {
-          0% { clip-path: inset(0 100% 0 0); }
-          100% { clip-path: inset(0 0 0 0); }
-        }
-        .animate-typing-text {
-          clip-path: inset(0 100% 0 0);
-          animation: typing-clip 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-          animation-delay: 0.3s; /* Độ trễ trước khi bắt đầu viết */
-        }
-        
         @keyframes cursorBlink {
           0%, 100% { opacity: 1; }
           50% { opacity: 0; }
         }
-        .animate-cursor-blink {
-          animation: cursorBlink 0.8s infinite;
-        }
+        .animate-cursor-blink { animation: cursorBlink 0.8s infinite; }
       `}} />
     </div>
   );
