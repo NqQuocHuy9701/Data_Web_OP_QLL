@@ -62,7 +62,9 @@ export default function Home() {
   const itemsPerPage = 50;
 
   const SHEET_CSV_URL = "/api/sheet";
-  const HISTORY_CSV_URL = "/api/history-sheet"; 
+  
+  // ĐÃ GẮN TRỰC TIẾP LINK CSV CHUẨN CỦA TAB LICH SUG IU SLOT VÀO ĐÂY CHO BẠN
+  const HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH99w75D-KMdtC6KIH-bfza_bdHF_vz3grGlz6cXRNgaalR-_wHQRWI4PYESwWmJHxs_rXPVo7TKCv/pub?gid=1190427124&single=true&output=csv"; 
 
   useEffect(() => {
     const savedAdmins = localStorage.getItem("qll_admin_accounts");
@@ -180,7 +182,6 @@ export default function Home() {
         return;
       }
       setNamecode(matchedAdmin.username);
-      // Lưu thông tin riêng cho Admin
       const userData = { namecode: matchedAdmin.username, teamLead: "Admin hệ thống", role: "Admin" };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
       setTeamLead("Admin hệ thống");
@@ -605,7 +606,7 @@ export default function Home() {
               onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
               className={`py-2 text-xs font-bold rounded-xl transition-all ${loginRole === "QLL" ? "bg-white text-sky-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
             >
-              👩‍‍💻 Quản Lý Lớp (QLL)
+              👩‍💻 Quản Lý Lớp (QLL)
             </button>
             <button
               type="button"
@@ -717,7 +718,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* CỐ ĐỊNH KÍCH THƯỚC SIDEBAR VÀ BỎ HIỆU ỨNG PHÌNH TO */}
       <aside className="w-64 min-w-[16rem] max-w-[16rem] bg-white border-r border-slate-200/80 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         
         <div className="h-20 flex items-center px-6 border-b border-slate-100 shrink-0">
@@ -814,7 +814,7 @@ export default function Home() {
           )}
         </nav>
 
-        {/* THÔNG TIN USER TẠI CHÂN SIDEBAR: ADMIN LUÔN HIỆN "Admin hệ thống", QLL HIỆN TÊN TEAM LEAD */}
+        {/* THÔNG TIN USER Ở CHÂN SIDEBAR: ADMIN LUÔN HIỆN "Admin hệ thống", QLL HIỆN TÊN TEAM LEAD */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm ${loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700"}`}>
