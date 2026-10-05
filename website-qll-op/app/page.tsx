@@ -60,7 +60,8 @@ export default function Home() {
   const itemsPerPage = 50;
 
   const SHEET_CSV_URL = "/api/sheet";
-  const HISTORY_CSV_URL = "/api/history-sheet"; 
+  // Cập nhật link CSV chuẩn của tab LichSuGiuSlot
+  const HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH99w75D-KMdtC6KIH-bfza_bdHF_vz3grGlz6cXRNgaalR-_wHQRWI4PYESwWmJHxs_rXPVo7TKCv/pub?gid=1190427124&single=true&output=csv"; 
 
   useEffect(() => {
     const savedAdmins = localStorage.getItem("qll_admin_accounts");
