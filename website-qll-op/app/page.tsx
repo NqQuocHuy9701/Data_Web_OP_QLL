@@ -18,6 +18,9 @@ export default function Home() {
   const [filterLoaiLop, setFilterLoaiLop] = useState("Tất cả");
   const [filterLichHoc, setFilterLichHoc] = useState("Tất cả");
 
+  // NÚT MỚI: State quản lý nút "Hôm nay"
+  const [filterToday, setFilterToday] = useState(false);
+
   // State quản lý dropdown tùy chỉnh
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
@@ -36,7 +39,6 @@ export default function Home() {
       transformHeader: (h) => h.trim(),
       complete: (results) => {
         if (results.data && results.data.length > 0) {
-          // TRẢ LẠI: Lưu TOÀN BỘ dữ liệu gốc để thẻ Card Thống Kê đếm đúng tổng (5123, 5039...)
           setData(results.data); 
         }
         setLoading(false);
@@ -63,11 +65,11 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, []);
 
+  // Cập nhật reset trang khi nút Hôm nay thay đổi
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc]);
+  }, [searchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
 
-  // Lấy danh sách lựa chọn động từ toàn bộ dữ liệu gốc
   const dropdownOptions = useMemo(() => {
     const loaiLopSet = new Set<string>();
     const khoiSet = new Set<string>();
@@ -99,7 +101,6 @@ export default function Home() {
     };
   }, [data]);
 
-  // Thống kê toàn hệ thống (Vẫn đếm chuẩn trên data gốc)
   const stats = useMemo(() => {
     const currentTabBase = data.filter(item => {
       const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
@@ -114,13 +115,13 @@ export default function Home() {
     };
   }, [data, activeNav]);
 
-  // =====================================================================
-  // BỘ LỌC DỮ LIỆU BẢNG (CHỈ ÁP DỤNG RULE THÉP CHO BẢNG HIỂN THỊ)
-  // =====================================================================
   const filteredData = useMemo(() => {
+    // LOGIC MỚI: Tự động lấy "thứ" của ngày hôm nay (VD: "T2", "T3"...)
+    const today = new Date().getDay();
+    const todayStr = today === 0 ? "CN" : `T${today + 1}`;
+
     return data.filter((item) => {
       
-      // 1. ÁP DỤNG RULE THÉP TRƯỚC
       const monHocRule = (item["Môn học"] || "").toString().toLowerCase().trim();
       const loaiLopRawRule = (item["Loại lớp"] || "").toString().trim();
       const loaiLopRule = loaiLopRawRule.replace(/^Lớp\s+/i, "").trim();
@@ -144,22 +145,24 @@ export default function Home() {
         if (loaiLopRule === "1:4") isPassRule = dangHocRule <= 3;
       }
 
-      // Nếu KHÔNG qua Rule thép -> Giấu khỏi bảng luôn
       if (!isPassRule) return false;
 
-      // 2. NẾU ĐÃ QUA RULE THÉP -> TIẾP TỤC KIỂM TRA BỘ LỌC TÌM KIẾM & DROPDOWN CỦA BẠN
       const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
       const matchNav = activeNav === "Đang học" ? status.includes("đang học") : status.includes("khai giảng");
-      
       if (!matchNav) return false;
 
       if (filterLoaiLop !== "Tất cả" && (item["Loại lớp"] || "").trim() !== filterLoaiLop) return false;
       if (filterKhoi !== "Tất cả" && (item["Khối"] || "").trim() !== filterKhoi) return false;
       if (filterMonHoc !== "Tất cả" && (item["Môn học"] || "").trim() !== filterMonHoc) return false;
       
+      const itemLich = (item["Lịch học"] || "").trim();
+      
+      // KIỂM TRA LỊCH CỦA DROP DOW VÀ "HÔM NAY"
       if (filterLichHoc !== "Tất cả") {
-        const itemLich = (item["Lịch học"] || "").trim();
         if (!itemLich.startsWith(filterLichHoc)) return false;
+      }
+      if (filterToday) {
+        if (!itemLich.includes(todayStr)) return false;
       }
 
       if (searchTerm) {
@@ -171,9 +174,9 @@ export default function Home() {
         if (!matchSearch) return false;
       }
 
-      return true; // Qua hết các ải thì mới cho hiển thị lên bảng
+      return true; 
     });
-  }, [data, activeNav, searchTerm, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc]);
+  }, [data, activeNav, searchTerm, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   
@@ -182,7 +185,6 @@ export default function Home() {
     return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredData, currentPage]);
 
-  // Render Dropdown chuẩn xác
   const renderCustomDropdown = (
     label: string, 
     key: string, 
@@ -255,10 +257,8 @@ export default function Home() {
     <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0"></div>
 
-      {/* 1. SIDEBAR NAVIGATION */}
       <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         
-        {/* LOGO */}
         <div className="h-20 flex items-center px-6 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-3 group cursor-pointer">
             <img 
@@ -273,7 +273,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Menu */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-2 px-2">
             Quản lý
@@ -306,7 +305,6 @@ export default function Home() {
           </button>
         </nav>
 
-        {/* User Profile */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0">
           <div className="flex items-center gap-3 px-2 cursor-pointer group">
             <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-orange-500 font-bold shadow-sm group-hover:border-orange-200 transition-colors">
@@ -323,10 +321,8 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* 2. MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
-        {/* TOPBAR */}
         <header className="h-20 bg-white/90 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between px-8 shrink-0 z-20 shadow-[0_2px_10px_rgba(0,0,0,0.01)]">
           <div className="flex-1 max-w-xl relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -378,7 +374,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* KHU VỰC THỐNG KÊ */}
         <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
           <div className="flex items-center gap-4 mb-6">
             <img 
@@ -421,7 +416,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* KHU VỰC BẢNG DỮ LIỆU */}
         <div className="flex-1 px-8 pb-8 min-h-0 flex flex-col">
           <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col h-full overflow-hidden">
             
@@ -436,6 +430,20 @@ export default function Home() {
                 {renderCustomDropdown("Khối", "khoi", filterKhoi, dropdownOptions.khoi, setFilterKhoi, (val) => `Khối ${val}`)}
                 {renderCustomDropdown("Loại lớp", "loai", filterLoaiLop, dropdownOptions.loaiLop, setFilterLoaiLop)}
                 {renderCustomDropdown("Lịch", "lich", filterLichHoc, dropdownOptions.lichHoc, setFilterLichHoc)}
+                
+                {/* HIỂN THỊ NÚT "HÔM NAY" MỚI */}
+                <button
+                  type="button"
+                  onClick={() => setFilterToday(!filterToday)}
+                  className={`px-3.5 py-2 border rounded-xl font-semibold shadow-sm text-xs flex items-center gap-1.5 transition-all cursor-pointer focus:outline-none ${
+                    filterToday
+                      ? "bg-sky-500 text-white border-sky-500 shadow-[0_4px_12px_rgba(14,165,233,0.3)] ring-2 ring-sky-500/20"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-sky-300 hover:bg-sky-50/50"
+                  }`}
+                >
+                  <span className="text-sm">{filterToday ? "📅" : "🗓️"}</span>
+                  {filterToday ? "Đang chọn: Hôm nay" : "Hôm nay"}
+                </button>
 
                 <span className="font-extrabold px-3.5 py-2 bg-sky-50 text-sky-600 rounded-xl border border-sky-100 shadow-sm text-xs">
                   {filteredData.length} kết quả
@@ -460,7 +468,7 @@ export default function Home() {
                     <th className="px-6 py-4 text-right pr-8">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}`} className="divide-y divide-slate-50 animate-fade-slide-up">
+                <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`} className="divide-y divide-slate-50 animate-fade-slide-up">
                   {currentTableData.length > 0 ? (
                     currentTableData.map((row, index) => (
                       <tr 
@@ -506,7 +514,6 @@ export default function Home() {
               </table>
             </div>
 
-            {/* Phân trang */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-slate-100 shrink-0 z-10">
                 <span className="text-[13px] text-slate-500 font-bold tracking-wide uppercase">
@@ -535,7 +542,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* CSS & FONTS */}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
         
