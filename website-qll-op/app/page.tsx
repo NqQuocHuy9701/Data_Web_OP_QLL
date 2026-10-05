@@ -109,7 +109,6 @@ export default function Home() {
     }
   }, []);
 
-  // Kiểm tra thời gian 24h tính từ chuỗi thời gian log
   const checkIsExpired = (timeString: string) => {
     try {
       const parts = timeString.split(" ");
@@ -133,7 +132,6 @@ export default function Home() {
     }
   };
 
-  // Chỉ tính các slot chưa quá 24h và CHƯA BẤM DONE và CHƯA QUÁ HẠN vào số slot đang giữ
   const getActiveHeldCount = (maLop: string) => {
     const holds = heldSlots[maLop];
     if (!holds || !Array.isArray(holds)) return 0;
@@ -378,6 +376,42 @@ export default function Home() {
       tabTotal: currentTabBase.length
     };
   }, [data, activeNav]);
+
+  // ==========================================
+  // RULE THÉP TÍNH TOÁN SLOT CÒN THEO YÊU CẦU
+  // ==========================================
+  const calculateAvailableSlots = (row: any, heldCount: number) => {
+    const monHoc = (row["Môn học"] || "").toString().toLowerCase().trim();
+    const loaiLopRaw = (row["Loại lớp"] || "").toString().trim();
+    const loaiLop = loaiLopRaw.replace(/^Lớp\s+/i, "").trim();
+    const dangHoc = Number(row["Đang học"]) || 0;
+
+    let maxAllowed = 0;
+
+    if (monHoc.includes("toán") || monHoc.includes("toan")) {
+      if (loaiLop === "1:6") maxAllowed = 6;
+      else if (loaiLop === "1:8") maxAllowed = 10;
+      else if (loaiLop === "1:10") maxAllowed = 10;
+      else if (loaiLop === "1:15") maxAllowed = 20;
+    } 
+    else if (monHoc.includes("tiếng anh") || monHoc.includes("tieng anh") || monHocRule_includes_moet(monHoc)) {
+      if (loaiLop === "1:4") maxAllowed = 3;
+    } 
+    else if (monHoc.includes("khtn")) {
+      if (loaiLop === "1:10") maxAllowed = 10;
+    } 
+    else if (monHoc.includes("ngữ văn") || monHoc.includes("ngu van") || monHoc.includes("văn")) {
+      if (loaiLop === "1:4") maxAllowed = 4;
+    }
+
+    // Công thức: Slot còn = maxAllowed - Số lớp đang học - Số slot đang giữ
+    const remaining = maxAllowed - dangHoc - heldCount;
+    return remaining > 0 ? remaining : 0;
+  };
+
+  function monHocRule_includes_moet(s: string) {
+    return s.includes("moet");
+  }
 
   const filteredData = useMemo(() => {
     const today = new Date().getDay();
@@ -831,7 +865,7 @@ export default function Home() {
                     : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
                 }`}
               >
-                <span className="text-lg">⚙️️</span>
+                <span className="text-lg">⚙️</span>
                 <span className="text-xs truncate">Quản Trị Admin</span>
               </button>
             </>
@@ -961,7 +995,6 @@ export default function Home() {
                             <td className="px-6 py-4 font-bold text-orange-600">{row["Người giữ"] || "-"}</td>
                             <td className="px-6 py-4 text-slate-600">{row["Team"] || "-"}</td>
                             
-                            {/* CỘT TIME CÒN LẠI 24H */}
                             <td className="px-6 py-4">
                               {isDone ? (
                                 <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs">Đã hoàn thành</span>
@@ -976,7 +1009,6 @@ export default function Home() {
 
                             <td className="px-6 py-4 text-slate-700 font-medium">{row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-"}</td>
                             
-                            {/* NÚT THAO TÁC XẾP: NẾU QUÁ HẠN HOẶC ĐÃ DONE SẼ ẨN NÚT VÀ HIỆN NHÃN PHÙ HỢP */}
                             <td className="px-6 py-4 text-right pr-6">
                               {isDone ? (
                                 <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
@@ -1186,12 +1218,11 @@ export default function Home() {
                           const maLop = row["Mã lớp"];
                           const subjectStr = row["Môn học"] || "";
                           const currentStudents = Number(row["Đang học"]) || 0;
-                          const loaiLopStr = row["Loại lớp"] || "";
-
-                          const match = loaiLopStr.match(/1:(\d+)/);
-                          const maxStudents = match ? parseInt(match[1]) : 99;
+                          
                           const heldCount = getActiveHeldCount(maLop);
-                          const availableSlots = maxStudents - currentStudents - heldCount;
+                          
+                          // Áp dụng RULE THÉP tính số slot còn
+                          const availableSlots = calculateAvailableSlots(row, heldCount);
                           const isFull = availableSlots <= 0;
                           const isLoading = isHoldingSlot === maLop;
 
@@ -1207,7 +1238,7 @@ export default function Home() {
                                   {subjectStr}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 text-slate-500 text-[13px]">{loaiLopStr}</td>
+                              <td className="px-6 py-4 text-slate-500 text-[13px]">{row["Loại lớp"]}</td>
                               <td className="px-6 py-4 text-center font-bold text-slate-600">{row["Khối"]}</td>
                               <td className="px-6 py-4 font-medium text-slate-600">{row["Trình độ"]}</td>
                               <td className="px-6 py-4 text-slate-500 text-[13px] truncate max-w-[120px]">{row["Giáo trình"]}</td>
