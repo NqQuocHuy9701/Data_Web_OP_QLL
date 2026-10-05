@@ -380,9 +380,16 @@ export default function Home() {
               alt="Bitu Mascot" 
               className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
             />
-            <h2 className="text-[30px] font-greeting text-slate-800 tracking-wide flex items-center gap-2 pt-1">
-              <span>Vận hành, <span className="text-orange-500 font-bold">Xin chào!</span></span>
-            </h2>
+<h2 className="text-[30px] font-greeting text-slate-800 tracking-wide flex items-center gap-2 pt-1">
+  <span>Vận hành, </span>
+  {/* KHỐI CHỮ ANIMATION */}
+  <div className="flex items-center">
+    <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal animate-typing-text leading-none">
+      Hello!
+    </span>
+    <span className="w-[3px] h-[30px] bg-orange-500 ml-1.5 animate-cursor-blink"></span>
+  </div>
+</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -540,11 +547,13 @@ export default function Home() {
         </div>
       </main>
 
-      <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+<style dangerouslySetInnerHTML={{__html: `
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap');
         
         .font-vietnam { font-family: 'Be Vietnam Pro', sans-serif; }
         .font-greeting { font-family: 'Baloo 2', cursive; }
+        /* Font viết tay mới thêm vào */
+        .font-handwriting { font-family: 'Caveat', cursive; } 
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -568,6 +577,25 @@ export default function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-up { animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* === HIỆU ỨNG CHỮ VIẾT TAY (TYPING) === */
+        @keyframes typing-clip {
+          0% { clip-path: inset(0 100% 0 0); }
+          100% { clip-path: inset(0 0 0 0); }
+        }
+        .animate-typing-text {
+          clip-path: inset(0 100% 0 0);
+          animation: typing-clip 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          animation-delay: 0.3s; /* Độ trễ trước khi bắt đầu viết */
+        }
+        
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        .animate-cursor-blink {
+          animation: cursorBlink 0.8s infinite;
+        }
       `}} />
     </div>
   );
