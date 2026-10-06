@@ -2,6 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Papa from "papaparse";
+import { createClient } from "@supabase/supabase-js";
+
+// Khởi tạo Supabase client dùng biến môi trường
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -517,7 +525,7 @@ export default function Home() {
     setShowModal(true);
   };
 
-  const handleConfirmKeepSlot = async () => {
+const handleConfirmKeepSlot = async () => {
     const cleanVal = inputValue.trim();
     if (!cleanVal) {
       setInputError("Vui lòng nhập SID hoặc CID!");
@@ -539,28 +547,31 @@ export default function Home() {
     setIsHoldingSlot(maLop);
 
     try {
-      const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNAdZGf5vLIQoP3TZA_kvyiT6OvZ2iMet91QFONP8rOKDGRZzVNFxx9XyE4TpXOKIi/exec";
-
       const startDate = new Date();
       const expiryDate = new Date();
       expiryDate.setDate(startDate.getDate() + 1);
 
       const formatDate = (date: Date) => date.toLocaleDateString("vi-VN");
 
-      await fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          maLop: maLop,
-          monHoc: row["Môn học"] || "",
-          nguoiGiu: namecode,
+      // ✅ ĐẨY TRỰC TIẾP XUỐNG SUPABASE (BẢNG slot_holds)
+      const { error } = await supabase.from("slot_holds").insert([
+        {
+          ma_lop: maLop,
+          mon_hoc: row["Môn học"] || "",
+          nguoi_giu: namecode,
           team: loginRole === "Admin" ? "Admin hệ thống" : teamLead,
-          ngayBatDau: formatDate(startDate),
-          ngayHetHan: formatDate(expiryDate),
-          note: `SID/CID: ${cleanVal}`
-        })
-      });
+          ngay_bat_dau: formatDate(startDate),
+          ngay_het_han: formatDate(expiryDate),
+          note: `SID/CID: ${cleanVal}`,
+          timestamp: Date.now()
+        }
+      ]);
+
+      if (error) {
+        console.error("Lỗi Supabase insert:", error);
+        alert("Lỗi khi lưu giữ slot vào Supabase: " + error.message);
+        return;
+      }
 
       setHeldSlots(prev => {
         const currentList = prev[maLop] || [];
@@ -570,7 +581,7 @@ export default function Home() {
         return newHeld;
       });
 
-      setSuccessMessage("Vận hành đã nhận thông tin và kiểm tra.");
+      setSuccessMessage("Đã lưu giữ slot thành công lên Supabase!");
       setTimeout(() => setSuccessMessage(""), 4000);
 
     } catch (error) {
