@@ -775,29 +775,29 @@ if (!isLoggedIn) {
         {/* ẢNH NỀN BACKDROP.JPG TRÀN MÀN HÌNH */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-20"
-          style={{ backgroundImage: `url('/images/backdrop.jpg')` }}
+          style={{ backgroundImage: `url('/backdrop.jpg')` }}
         ></div>
         
         {/* LỚP PHỦ TỐI MỜ */}
         <div className="absolute inset-0 bg-[#0a0828]/55 -z-10"></div>
 
         {/* CONTAINER GIÃN RỘNG 2 BÊN, CÂN ĐỐI HOÀN HẢO */}
-        <div className="w-full max-w-[1300px] px-6 lg:px-12 flex items-center justify-center gap-12 lg:gap-20">
+        <div className="w-full max-w-[1350px] px-6 lg:px-12 flex items-center justify-center gap-12 lg:gap-24">
           
-          {/* HÌNH NHÂN VẬT BITU BÊN TRÁI (TO RÕ, ĐÚNG TÊN FILE) */}
+          {/* HÌNH NHÂN VẬT BITU BÊN TRÁI (KHỚP CHÍNH XÁC TÊN FILE TRONG THƯ MỤC PUBLIC) */}
           <div className="hidden lg:flex flex-col items-center justify-center animate-float-bitu z-20 pointer-events-none select-none">
             <img 
-              src="/Chào_hỏi 2.png" 
+              src="/Chào hỏi_2.png" 
               alt="Nhân vật Bitu Vuihoc" 
-              className="w-[360px] xl:w-[420px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
+              className="w-[380px] xl:w-[450px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
               onError={(e) => {
-                // Fallback nếu trình duyệt không nhận diện được dấu cách trong URL
-                (e.target as HTMLImageElement).src = encodeURI('/Chào_hỏi 2.png');
+                // Fallback tự động mã hóa URL nếu trình duyệt khó tính với dấu cách
+                (e.target as HTMLImageElement).src = '/Ch%C3%A0o%20h%E1%BB%8Fi_2.png';
               }}
             />
           </div>
 
-          {/* KHUNG ĐĂNG NHẬP CHÍNH (ĐƯỢC PHÓNG TO RỘNG THOÁNG ĐÃNG) */}
+          {/* KHUNG ĐĂNG NHẬP CHÍNH */}
           <div className="bg-glass-card rounded-[40px] p-10 lg:p-12 w-full max-w-[540px] relative z-20 transition-all duration-300">
             
             <div className="flex items-center gap-3.5 mb-6">
