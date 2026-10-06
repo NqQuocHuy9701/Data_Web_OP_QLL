@@ -1001,12 +1001,13 @@ if (!isLoggedIn) {
   }
 
 // =======================================================================
-  // CHỈ NÂNG CẤP GIAO DIỆN (UI/UX) - TOÀN BỘ LOGIC ĐƯỢC GIỮ NGUYÊN 100%
+  // CHỈ THAY THẾ KHỐI RETURN NÀY (GIAO DIỆN SAU ĐĂNG NHẬP) ĐẾN HẾT FILE
+  // LƯU Ý: TOÀN BỘ LOGIC ĐÃ ĐƯỢC GIỮ NGUYÊN 100%
   // =======================================================================
   return (
-    <div className="flex h-screen bg-slate-50/80 text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
+    <div className="flex h-screen bg-[#f8fafc] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0">
       
-      {/* Lớp nền không gian có chiều sâu (Mesh Gradient Background) */}
+      {/* 1. Nền Mesh Gradient mờ ảo (Không gian có chiều sâu) */}
       <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-sky-300/20 filter blur-[120px] -z-10 pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-orange-300/15 filter blur-[120px] -z-10 pointer-events-none"></div>
 
@@ -1016,8 +1017,9 @@ if (!isLoggedIn) {
         </div>
       )}   
 
-      {/* SIDEBAR: Thanh tĩnh, menu nút bấm nổi (Pill style) */}
+      {/* 2. SIDEBAR: Menu dạng nút nổi (Pill Menu) */}
       <aside className="w-64 min-w-[16rem] max-w-[16rem] bg-white/80 backdrop-blur-xl border-r border-slate-200/60 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        
         <div className="h-20 flex items-center px-6 border-b border-slate-100/50 shrink-0">
           <div className="flex items-center gap-3 cursor-pointer">
             <img 
@@ -1031,7 +1033,7 @@ if (!isLoggedIn) {
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 mt-2 px-3">
             Quản lý báo cáo
           </div>
@@ -1184,7 +1186,7 @@ if (!isLoggedIn) {
           </div>
         </header>
 
-        {/* NỘI DUNG CHÍNH (QUẢN TRỊ & BẢNG) */}
+        {/* NỘI DUNG CHÍNH */}
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col h-full overflow-hidden">
@@ -1239,7 +1241,7 @@ if (!isLoggedIn) {
                         const isExpired = checkIsExpired(timeStr);
 
                         return (
-                          <tr key={row.id || index} className={`transition-all duration-300 hover:shadow-sm hover:z-10 relative group/row ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-white hover:scale-[1.002] hover:translate-x-1 even:bg-slate-50/30"}`}>
+                          <tr key={row.id || index} className={`transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:z-10 relative group/row ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-white hover:scale-[1.002] hover:translate-x-1 even:bg-slate-50/30"}`}>
                             <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
                             <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
                             <td className="px-6 py-4 font-medium text-slate-700">{monHoc}</td>
@@ -1362,7 +1364,7 @@ if (!isLoggedIn) {
           </div>
         ) : (
           <>
-            {/* PHẦN DASHBOARD CHÍNH CHO QUẢN LÝ LỚP */}
+            {/* 3. PHẦN DASHBOARD CHÍNH CHO QUẢN LÝ LỚP (BÓNG MÀU LƠ LỬNG) */}
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
               <div className="flex items-center gap-4 mb-6">
                 <img 
@@ -1381,7 +1383,6 @@ if (!isLoggedIn) {
                 </h2>
               </div>
 
-              {/* 3 THẺ THỐNG KÊ (ĐỔ BÓNG MÀU PHÁT SÁNG) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white/90 backdrop-blur-xl border border-white/50 rounded-3xl p-6 shadow-[0_15px_40px_rgba(14,165,233,0.12)] relative overflow-hidden group transition-all duration-300 hover:-translate-y-1.5">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
@@ -1413,7 +1414,7 @@ if (!isLoggedIn) {
             </div>
 
             <div className="flex-1 px-8 pb-8 min-h-0 flex flex-col">
-              {/* BẢNG DỮ LIỆU ĐƯỢC BỌC TRONG KHUNG KÍNH */}
+              {/* 4. BẢNG DỮ LIỆU ĐƯỢC BỌC TRONG KHUNG KÍNH */}
               <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col h-full overflow-hidden">
                 
                 <div className="px-6 py-4 border-b border-slate-100/50 flex flex-wrap gap-3 justify-between items-center bg-transparent shrink-0 z-30 relative">
@@ -1656,7 +1657,7 @@ if (!isLoggedIn) {
         </div>
       )}
 
-      {/* STYLE RENDER */}
+      {/* STYLE RENDER (Giữ nguyên các hiệu ứng CSS cũ) */}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap');
         
