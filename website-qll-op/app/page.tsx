@@ -725,38 +725,41 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
 if (!isLoggedIn) {
     return (
-      <div className="flex h-screen w-screen items-center justify-between px-12 lg:px-20 relative overflow-hidden font-vietnam">
+      <div className="flex h-screen w-screen items-center justify-center lg:justify-between px-12 lg:px-28 relative overflow-hidden font-vietnam">
         
         <style dangerouslySetInnerHTML={{__html: `
           @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
           .font-vietnam { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important; }
         `}} />
 
+        {/* ẢNH NỀN BACKDROP.JPG VÀ LỚP PHỦ */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
           style={{ backgroundImage: `url('/backdrop.jpg')` }}
         >
-          <div className="absolute inset-0 bg-[#070B14]/50 backdrop-blur-[1px]"></div>
+          <div className="absolute inset-0 bg-[#070B14]/55 backdrop-blur-[1px]"></div>
         </div>
 
-        <div className="relative z-10 max-w-xl hidden lg:flex flex-col justify-between h-[80vh]">
+        {/* PHẦN BÊN TRÁI: LOGO NỀN CAM & TEXT (CO LẠI GẦN HƠN) */}
+        <div className="relative z-10 max-w-lg hidden lg:flex flex-col justify-between h-[78vh] lg:mr-8">
           <div className="flex items-center gap-3">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-2.5 rounded-2xl shadow-lg">
+            {/* 1. VUIHOC NỀN MÀU CAM */}
+            <div className="bg-orange-500 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-orange-400">
               <img 
                 src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
                 alt="Vuihoc Logo" 
-                className="h-7 w-auto object-contain brightness-0 invert"
+                className="h-6 w-auto object-contain brightness-0 invert"
               />
             </div>
-            <span className="text-white/90 font-bold text-sm tracking-wider uppercase">Vuihoc Operations</span>
+            <span className="text-white/95 font-extrabold text-sm tracking-wider uppercase">Vuihoc Operations</span>
           </div>
 
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wide">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wide">
               <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
               Hệ thống vận hành QLL chuyên nghiệp
             </div>
-            <h1 className="text-5xl font-extrabold text-white tracking-tight leading-[1.15] drop-shadow-lg">
+            <h1 className="text-5xl font-extrabold text-white tracking-tight leading-[1.12] drop-shadow-lg">
               Quản lý lớp học <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-300 to-orange-400">
                 nhanh chóng & hiệu quả.
@@ -772,29 +775,31 @@ if (!isLoggedIn) {
           </div>
         </div>
 
-        <div className="bg-white/[0.08] hover:bg-slate-900/40 backdrop-blur-2xl border border-white/[0.18] rounded-[36px] p-9 lg:p-10 w-full max-w-[450px] shadow-[0_30px_100px_rgba(0,0,0,0.6)] relative z-10 animate-fade-slide-up mx-auto lg:mx-0 transition-all duration-300 group">
+        {/* PHẦN BÊN PHẢI: HỘP ĐĂNG NHẬP TO HƠN, HOVER XÁM MỜ, KÉO LẠI GẦN BÊN TRÁI */}
+        <div className="bg-white/[0.08] hover:bg-slate-900/40 backdrop-blur-2xl border border-white/[0.18] rounded-[38px] p-10 lg:p-11 w-full max-w-[480px] shadow-[0_30px_100px_rgba(0,0,0,0.7)] relative z-10 animate-fade-slide-up mx-auto lg:mx-0 transition-all duration-300 group">
           
-          <div className="mb-6">
+          <div className="mb-7">
             <h2 className="text-2xl font-extrabold text-white tracking-tight">Đăng nhập</h2>
             <p className="text-xs font-medium text-slate-300 mt-1">Chào mừng bạn quay trở lại hệ thống.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 p-1.5 bg-black/30 rounded-2xl mb-6 border border-white/10">
+          {/* TAB CHUYỂN ĐỔI VAI TRÒ */}
+          <div className="grid grid-cols-2 gap-2.5 p-1.5 bg-black/30 rounded-2xl mb-6 border border-white/10">
             <button
               type="button"
               onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
-              className={`py-3 text-xs font-bold rounded-xl transition-all ${
+              className={`py-3.5 text-xs font-bold rounded-xl transition-all ${
                 loginRole === "QLL" 
                   ? "bg-white/25 text-white shadow-md border border-white/20" 
                   : "text-slate-300 hover:text-white"
               }`}
             >
-              👩‍💻 Quản Lý Lớp (QLL)
+              👩‍‍💻 Quản Lý Lớp (QLL)
             </button>
             <button
               type="button"
               onClick={() => { setLoginRole("Admin"); setLoginError(""); }}
-              className={`py-3 text-xs font-bold rounded-xl transition-all ${
+              className={`py-3.5 text-xs font-bold rounded-xl transition-all ${
                 loginRole === "Admin" 
                   ? "bg-white/25 text-white shadow-md border border-white/20" 
                   : "text-slate-300 hover:text-white"
@@ -804,11 +809,11 @@ if (!isLoggedIn) {
             </button>
           </div>
 
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
+          <form onSubmit={handleLoginSubmit} className="space-y-4.5">
             {loginRole === "QLL" ? (
               <>
                 <div>
-                  <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-200 mb-2">
                     Namecode <span className="text-red-400">*</span>
                   </label>
                   <input 
@@ -819,19 +824,19 @@ if (!isLoggedIn) {
                       setNamecode(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-4 py-3.5 bg-black/40 border border-white/15 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 text-white font-semibold text-sm transition-all shadow-inner placeholder-slate-400"
+                    className="w-full px-4.5 py-4 bg-black/40 border border-white/15 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 text-white font-semibold text-sm transition-all shadow-inner placeholder-slate-400"
                     autoFocus
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-200 mb-2">
                     Team Lead <span className="text-red-400">*</span>
                   </label>
                   <select
                     value={teamLead}
                     onChange={(e) => setTeamLead(e.target.value)}
-                    className="w-full px-4 py-3.5 bg-[#111726]/90 border border-white/15 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 text-white font-semibold text-sm transition-all cursor-pointer shadow-inner"
+                    className="w-full px-4.5 py-4 bg-[#111726]/90 border border-white/15 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 text-white font-semibold text-sm transition-all cursor-pointer shadow-inner"
                   >
                     <option value="Team Lead A" className="bg-[#111726] text-white">Team Lead A</option>
                     <option value="Team Lead B" className="bg-[#111726] text-white">Team Lead B</option>
@@ -844,7 +849,7 @@ if (!isLoggedIn) {
             ) : (
               <>
                 <div>
-                  <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-200 mb-2">
                     Tên đăng nhập Admin <span className="text-red-400">*</span>
                   </label>
                   <input 
@@ -855,12 +860,12 @@ if (!isLoggedIn) {
                       setAdminUsername(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-4 py-3.5 bg-black/40 border border-white/15 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 text-white font-semibold text-sm transition-all shadow-inner placeholder-slate-400"
+                    className="w-full px-4.5 py-4 bg-black/40 border border-white/15 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 text-white font-semibold text-sm transition-all shadow-inner placeholder-slate-400"
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-200 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-200 mb-2">
                     Mật khẩu Admin <span className="text-red-400">*</span>
                   </label>
                   <input 
@@ -871,7 +876,7 @@ if (!isLoggedIn) {
                       setAdminPassword(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-4 py-3.5 bg-black/40 border border-white/15 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 text-white font-semibold text-sm transition-all shadow-inner placeholder-slate-400"
+                    className="w-full px-4.5 py-4 bg-black/40 border border-white/15 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 text-white font-semibold text-sm transition-all shadow-inner placeholder-slate-400"
                   />
                 </div>
               </>
