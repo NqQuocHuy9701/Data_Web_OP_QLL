@@ -5,12 +5,10 @@ import Papa from "papaparse";
 import { createClient } from "@supabase/supabase-js";
 
 // Đảm bảo lấy đúng biến hoặc gán trực tiếp để loại trừ lỗi thiếu biến môi trường trên Vercel
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sehvatktrqtsnmvebmm.supabase.co";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sehvatktrqtgsnmvebmm.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -71,7 +69,6 @@ export default function Home() {
   const itemsPerPage = 50;
 
   const SHEET_CSV_URL = "/api/sheet";
-  const HISTORY_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRH99w75D-KMdtC6KIH-bfza_bdHF_vz3grGlz6cXRNgaalR-_wHQRWI4PYESwWmJHxs_rXPVo7TKCv/pub?gid=1190427124&single=true&output=csv"; 
 
   useEffect(() => {
     const savedAdmins = localStorage.getItem("qll_admin_accounts");
@@ -141,12 +138,26 @@ export default function Home() {
     }
   };
 
+  // CÔNG THỨC MỚI: TÍNH TOÁN SLOT DỰA VÀO DATABASE SUPABASE
   const getActiveHeldCount = (maLop: string) => {
-    const holds = heldSlots[maLop];
-    if (!holds || !Array.isArray(holds)) return 0;
+    if (!slotHistoryData || slotHistoryData.length === 0) return 0;
+    
     const now = Date.now();
     const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-    return holds.filter(item => now - item.timestamp < TWENTY_FOUR_HOURS).length;
+    
+    // Chỉ đếm những slot thỏa mãn cả 3 điều kiện:
+    // 1. Đúng mã lớp
+    // 2. Chưa được Admin bấm "Đã xếp" (is_done === false)
+    // 3. Chưa quá hạn 24h
+    const activeHolds = slotHistoryData.filter((item: any) => {
+      const matchMaLop = item.ma_lop === maLop || item["Mã lớp giữ"] === maLop || item["Mã lớp"] === maLop;
+      const notDone = item.is_done === false;
+      const notExpired = (now - Number(item.timestamp)) < TWENTY_FOUR_HOURS;
+      
+      return matchMaLop && notDone && notExpired;
+    });
+
+    return activeHolds.length;
   };
 
   const calculateTimeRemaining = (timeString: string) => {
@@ -181,10 +192,32 @@ export default function Home() {
     }
   };
 
-  const handleMarkAsDone = (rowKey: string) => {
+  // ĐÃ UPDATE LẠI ĐỂ GỌI API PATCH DATABASE
+  const handleMarkAsDone = async (rowKey: string, dbId: string) => {
+    // 1. Lưu UI ngay lập tức
     const updated = { ...completedSlots, [rowKey]: true };
     setCompletedSlots(updated);
     localStorage.setItem("qll_completed_slots", JSON.stringify(updated));
+
+    // 2. Bắn lệnh PATCH lên Supabase cập nhật is_done = true
+    if (dbId) {
+      try {
+        const res = await fetch("/api/slot-hold", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: dbId })
+        });
+        const result = await res.json();
+        if (result.success) {
+          // Tự load lại list để sync đồng bộ
+          loadSlotHistory();
+        } else {
+          console.error("Lỗi update Supabase:", result.error);
+        }
+      } catch (error) {
+        console.error("Lỗi mạng khi update trạng thái:", error);
+      }
+    }
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -280,7 +313,7 @@ export default function Home() {
     });
   };
 
-const loadSlotHistory = async () => {
+  const loadSlotHistory = async () => {
     setLoadingHistory(true);
     try {
       const response = await fetch("/api/slot-hold");
@@ -298,13 +331,18 @@ const loadSlotHistory = async () => {
     }
   };
 
+  // ĐÃ FIX LỖI DUPLICATE CODE Ở ĐÂY
   useEffect(() => {
     if (isLoggedIn) {
       loadData();
-      if (loginRole === "Admin") {
+      // Bỏ điều kiện Admin đi, để QLL cũng được load dữ liệu từ Supabase 
+      // => Giúp QLL thấy được số lượng slot cập nhật real-time
+      loadSlotHistory(); 
+      
+      const intervalId = setInterval(() => {
+        loadData();
         loadSlotHistory();
-      }
-      const intervalId = setInterval(() => loadData(), 60 * 60 * 1000); 
+      }, 5 * 60 * 1000); // 5 phút tự động refresh 1 lần cho cả 2 bảng
       return () => clearInterval(intervalId);
     }
   }, [isLoggedIn, loginRole]);
@@ -384,9 +422,6 @@ const loadSlotHistory = async () => {
     };
   }, [data, activeNav]);
 
-  // ==========================================
-  // RULE THÉP TÍNH TOÁN SLOT CÒN THEO YÊU CẦU CŨ
-  // ==========================================
   const calculateAvailableSlots = (row: any, heldCount: number) => {
     const monHoc = (row["Môn học"] || "").toString().toLowerCase().trim();
     const loaiLopRaw = (row["Loại lớp"] || "").toString().trim();
@@ -415,30 +450,27 @@ const loadSlotHistory = async () => {
     return remaining > 0 ? remaining : 0;
   };
 
-  // ==========================================
-  // RULE THÉP KIỂM TRA CHÉO SI SỐ (MỚI THEO YÊU CẦU)
-  // ==========================================
   const checkAttendanceStatus = (row: any) => {
     const monHoc = (row["Môn học"] || "").toString().toLowerCase().trim();
     const loaiLopRaw = (row["Loại lớp"] || "").toString().trim();
     const loaiLop = loaiLopRaw.replace(/^Lớp\s+/i, "").trim();
     const dangHoc = Number(row["Đang học"]) || 0;
 
-    let threshold = 999; // Mốc sĩ số tối đa để bị cảnh báo "Thiếu sĩ số quá !!"
+    let threshold = 999; 
 
     if (monHoc.includes("toán") || monHoc.includes("toan")) {
-      if (loaiLop === "1:6") threshold = 3;       // Đang học <= 3
-      else if (loaiLop === "1:8") threshold = 7;     // Đang học <= 7
-      else if (loaiLop === "1:10") threshold = 6;    // Đang học <= 6
+      if (loaiLop === "1:6") threshold = 3;       
+      else if (loaiLop === "1:8") threshold = 7;     
+      else if (loaiLop === "1:10") threshold = 6;    
     } 
     else if (monHoc.includes("tiếng anh") || monHoc.includes("tieng anh") || monHoc.includes("moet")) {
-      if (loaiLop === "1:4") threshold = 1;       // Đang học <= 1
+      if (loaiLop === "1:4") threshold = 1;       
     } 
     else if (monHoc.includes("khtn")) {
-      if (loaiLop === "1:10") threshold = 10;    // Đang học <= 10
+      if (loaiLop === "1:10") threshold = 10;    
     } 
     else if (monHoc.includes("ngữ văn") || monHoc.includes("ngu van") || monHoc.includes("văn")) {
-      if (loaiLop === "1:4") threshold = 1;       // Đang học <= 1
+      if (loaiLop === "1:4") threshold = 1;       
     }
 
     if (dangHoc <= threshold) {
@@ -524,7 +556,8 @@ const loadSlotHistory = async () => {
     setShowModal(true);
   };
 
-const handleConfirmKeepSlot = async () => {
+  // ĐÃ KHÔI PHỤC TOÀN BỘ HÀM NÀY MÀ BẠN XÓA NHẦM KHI COPY
+  const handleConfirmKeepSlot = async () => {
     const cleanVal = inputValue.trim();
     if (!cleanVal) {
       setInputError("Vui lòng nhập SID hoặc CID!");
@@ -549,10 +582,8 @@ const handleConfirmKeepSlot = async () => {
       const startDate = new Date();
       const expiryDate = new Date();
       expiryDate.setDate(startDate.getDate() + 1);
-
       const formatDate = (date: Date) => date.toLocaleDateString("vi-VN");
 
-      // 🚀 GỌI QUA API ROUTE CỦA VERCEL THAY VÌ GỌI THẲNG SUPABASE
       const response = await fetch("/api/slot-hold", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -575,13 +606,8 @@ const handleConfirmKeepSlot = async () => {
         return;
       }
 
-      setHeldSlots(prev => {
-        const currentList = prev[maLop] || [];
-        const updatedList = [...currentList, { timestamp: Date.now() }];
-        const newHeld = { ...prev, [maLop]: updatedList };
-        localStorage.setItem("qll_held_slots_data", JSON.stringify(newHeld));
-        return newHeld;
-      });
+      // LOAD LẠI DATA DB NGAY LẬP TỨC ĐỂ TỰ TRỪ SLOT
+      await loadSlotHistory();
 
       setSuccessMessage("Đã lưu giữ slot thành công!");
       setTimeout(() => setSuccessMessage(""), 4000);
@@ -1014,34 +1040,30 @@ const handleConfirmKeepSlot = async () => {
                       <th className="px-6 py-4 text-right pr-6">Thao tác xếp</th>
                     </tr>
                   </thead>
-<tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-slate-50">
                     {loadingHistory ? (
                       <tr>
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Đang tải dữ liệu từ máy chủ Supabase...</td>
                       </tr>
                     ) : slotHistoryData.length > 0 ? (
                       slotHistoryData.map((row, index) => {
-                        // 1. Chuyển đổi timestamp từ Supabase thành định dạng cũ để GIỮ NGUYÊN LOGIC TÍNH GIỜ
                         let timeStr = "";
                         if (row.timestamp) {
                           const d = new Date(Number(row.timestamp));
                           const pad = (n: number) => n.toString().padStart(2, '0');
                           timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
                         } else {
-                          timeStr = row["Thời gian"] || ""; // Fallback an toàn
+                          timeStr = row["Thời gian"] || "";
                         }
 
-                        // 2. Map các biến chuẩn từ Supabase
                         const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
                         const monHoc = row.mon_hoc || row["Môn học"] || "-";
                         const nguoiGiu = row.nguoi_giu || row["Người giữ"] || "-";
                         const team = row.team || row["Team"] || "-";
                         const note = row.note || row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-";
                         
-                        // Khóa (key) cũ để tương thích 100% với local storage
                         const rowKey = `${timeStr}-${maLop}-${index}`;
                         
-                        // 3. Logic check hoàn thành và quá hạn CŨ GIỮ NGUYÊN
                         const isDone = completedSlots[rowKey] || row.is_done;
                         const isExpired = checkIsExpired(timeStr);
 
@@ -1078,7 +1100,7 @@ const handleConfirmKeepSlot = async () => {
                                 </span>
                               ) : (
                                 <button
-                                  onClick={() => handleMarkAsDone(rowKey)}
+                                  onClick={() => handleMarkAsDone(rowKey, row.id)}
                                   className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
                                 >
                                   Đã xếp (Done)
