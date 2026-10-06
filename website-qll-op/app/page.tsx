@@ -280,24 +280,22 @@ export default function Home() {
     });
   };
 
-  const loadSlotHistory = () => {
+const loadSlotHistory = async () => {
     setLoadingHistory(true);
-    Papa.parse(HISTORY_CSV_URL, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (h) => h.trim(),
-      complete: (results) => {
-        if (results.data && results.data.length > 0) {
-          setSlotHistoryData(results.data);
-        }
-        setLoadingHistory(false);
-      },
-      error: (err) => {
-        console.error("Lỗi tải lịch sử giữ slot:", err);
-        setLoadingHistory(false);
+    try {
+      const response = await fetch("/api/slot-hold");
+      const result = await response.json();
+      
+      if (result.success) {
+        setSlotHistoryData(result.data); // Nhận mảng dữ liệu từ Supabase
+      } else {
+        console.error("Lỗi API lấy lịch sử:", result.error);
       }
-    });
+    } catch (err) {
+      console.error("Lỗi fetch lịch sử giữ slot:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
   };
 
   useEffect(() => {
@@ -1016,26 +1014,44 @@ const handleConfirmKeepSlot = async () => {
                       <th className="px-6 py-4 text-right pr-6">Thao tác xếp</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+<tbody className="divide-y divide-slate-50">
                     {loadingHistory ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Đang tải dữ liệu từ Google Sheet...</td>
+                        <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Đang tải dữ liệu từ máy chủ Supabase...</td>
                       </tr>
                     ) : slotHistoryData.length > 0 ? (
                       slotHistoryData.map((row, index) => {
-                        const timeStr = row["Thời gian"] || "";
-                        const maLop = row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                        // 1. Chuyển đổi timestamp từ Supabase thành định dạng cũ để GIỮ NGUYÊN LOGIC TÍNH GIỜ
+                        let timeStr = "";
+                        if (row.timestamp) {
+                          const d = new Date(Number(row.timestamp));
+                          const pad = (n: number) => n.toString().padStart(2, '0');
+                          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                        } else {
+                          timeStr = row["Thời gian"] || ""; // Fallback an toàn
+                        }
+
+                        // 2. Map các biến chuẩn từ Supabase
+                        const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                        const monHoc = row.mon_hoc || row["Môn học"] || "-";
+                        const nguoiGiu = row.nguoi_giu || row["Người giữ"] || "-";
+                        const team = row.team || row["Team"] || "-";
+                        const note = row.note || row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-";
+                        
+                        // Khóa (key) cũ để tương thích 100% với local storage
                         const rowKey = `${timeStr}-${maLop}-${index}`;
-                        const isDone = completedSlots[rowKey];
+                        
+                        // 3. Logic check hoàn thành và quá hạn CŨ GIỮ NGUYÊN
+                        const isDone = completedSlots[rowKey] || row.is_done;
                         const isExpired = checkIsExpired(timeStr);
 
                         return (
                           <tr key={index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-orange-50/30"}`}>
                             <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
                             <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
-                            <td className="px-6 py-4 font-medium text-slate-700">{row["Môn học"] || "-"}</td>
-                            <td className="px-6 py-4 font-bold text-orange-600">{row["Người giữ"] || "-"}</td>
-                            <td className="px-6 py-4 text-slate-600">{row["Team"] || "-"}</td>
+                            <td className="px-6 py-4 font-medium text-slate-700">{monHoc}</td>
+                            <td className="px-6 py-4 font-bold text-orange-600">{nguoiGiu}</td>
+                            <td className="px-6 py-4 text-slate-600">{team}</td>
                             
                             <td className="px-6 py-4">
                               {isDone ? (
@@ -1049,7 +1065,7 @@ const handleConfirmKeepSlot = async () => {
                               )}
                             </td>
 
-                            <td className="px-6 py-4 text-slate-700 font-medium">{row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-"}</td>
+                            <td className="px-6 py-4 text-slate-700 font-medium">{note}</td>
                             
                             <td className="px-6 py-4 text-right pr-6">
                               {isDone ? (
