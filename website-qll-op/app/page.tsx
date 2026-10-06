@@ -761,20 +761,20 @@ if (!isLoggedIn) {
           }
         `}} />
 
-        {/* ẢNH NỀN BACKDROP.JPG DÙNG CSS BACKGROUND */}
+        {/* HIỂN THỊ CHÍNH XÁC ẢNH NỀN BACKDROP.JPG TRÀN MÀN HÌNH */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-20"
           style={{ backgroundImage: `url('/images/backdrop.jpg')` }}
         ></div>
         
-        {/* LỚP PHỦ TỐI NGHỆ THUẬT */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0828]/80 via-[#0a0828]/30 to-[#0a0828]/60 -z-10"></div>
+        {/* LỚP PHỦ MỜ TỐI ĐỂ NỔI BẬT NỘI DUNG */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0828]/60 via-[#0a0828]/20 to-[#0a0828]/40 -z-10"></div>
 
-        {/* CONTAINER CHÍNH CHIA 2 CỘT CÂN ĐỐI */}
-        <div className="w-full max-w-[1240px] px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[1.1fr_450px] gap-8 lg:gap-14 items-center justify-center">
+        {/* CONTAINER GIÃN RỘNG: CHỮ BÊN TRÁI, POPUP ĐĂNG NHẬP DÀI RỘNG BÊN PHẢI */}
+        <div className="w-full max-w-[1440px] px-8 lg:px-16 grid grid-cols-1 lg:grid-cols-[1.2fr_520px] gap-12 lg:gap-24 items-center justify-between">
           
-          {/* BÊN TRÁI: LOGO VUIHOC NỀN CAM & THÔNG ĐIỆP */}
-          <div className="relative z-10 flex flex-col justify-between h-[75vh]">
+          {/* BÊN TRÁI: LOGO VUIHOC NỀN CAM & THÔNG ĐIỆP GIÃN ĐỀU */}
+          <div className="relative z-10 flex flex-col justify-between h-[80vh] max-w-xl">
             <div>
               <a href="#" className="inline-flex items-center gap-3 text-white text-[22px] font-semibold text-decoration-none">
                 <div className="bg-orange-500 p-2.5 rounded-2xl shadow-lg border border-orange-400 flex items-center justify-center">
@@ -789,7 +789,7 @@ if (!isLoggedIn) {
             </div>
 
             <div>
-              <p className="text-[14px] font-medium text-white/80 uppercase tracking-widest mb-3">Hệ thống vận hành QLL chuyên nghiệp</p>
+              <p className="text-[14px] font-medium text-white/90 uppercase tracking-widest mb-3">Hệ thống vận hành QLL chuyên nghiệp</p>
               <h1 className="text-4xl lg:text-6xl font-semibold tracking-tight leading-[1.08] text-white mb-5 drop-shadow-md">
                 Quản lý lớp học nhanh chóng & hiệu quả.
               </h1>
@@ -803,8 +803,8 @@ if (!isLoggedIn) {
             </div>
           </div>
 
-          {/* BÊN PHẢI: HỘP ĐĂNG NHẬP KÍNH MỜ GỌN GÀNG, MƯỢT MÀ */}
-          <div className="bg-white/[0.08] hover:bg-slate-900/50 backdrop-blur-2xl border border-white/[0.18] rounded-[32px] p-8 lg:p-9 w-full shadow-[0_30px_90px_rgba(0,0,0,0.6)] animate-smooth-glass transition-all duration-300">
+          {/* BÊN PHẢI: HỘP ĐĂNG NHẬP KÉO DÀI TO RỘNG & MƯỢT MÀ */}
+          <div className="bg-white/[0.08] hover:bg-slate-900/50 backdrop-blur-2xl border border-white/[0.18] rounded-[36px] p-10 lg:p-12 w-full shadow-[0_30px_90px_rgba(0,0,0,0.6)] animate-smooth-glass transition-all duration-300">
             
             <h2 className="text-3xl font-semibold text-white mb-1">Đăng nhập</h2>
             <p className="text-slate-300 text-sm mb-6">Chào mừng bạn quay trở lại hệ thống.</p>
@@ -850,19 +850,19 @@ if (!isLoggedIn) {
                         setNamecode(e.target.value);
                         setLoginError("");
                       }}
-                      className="w-full min-h-[50px] px-4 py-3 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
+                      className="w-full min-h-[52px] px-4 py-3.5 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
                       autoFocus
                     />
                   </div>
 
-                  <div className="mb-5">
+                  <div className="mb-6">
                     <label className="text-white/90 text-sm font-medium mb-1.5 block">
                       Team Lead <span className="text-red-400">*</span>
                     </label>
                     <select
                       value={teamLead}
                       onChange={(e) => setTeamLead(e.target.value)}
-                      className="w-full min-h-[50px] px-4 py-3 bg-[#1b1440]/90 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all cursor-pointer shadow-inner"
+                      className="w-full min-h-[52px] px-4 py-3.5 bg-[#1b1440]/90 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all cursor-pointer shadow-inner"
                     >
                       <option value="Team Lead A" className="bg-[#1b1440] text-white">Team Lead A</option>
                       <option value="Team Lead B" className="bg-[#1b1440] text-white">Team Lead B</option>
@@ -886,11 +886,11 @@ if (!isLoggedIn) {
                         setAdminUsername(e.target.value);
                         setLoginError("");
                       }}
-                      className="w-full min-h-[50px] px-4 py-3 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
+                      className="w-full min-h-[52px] px-4 py-3.5 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
                       autoFocus
                     />
                   </div>
-                  <div className="mb-5">
+                  <div className="mb-6">
                     <label className="text-white/90 text-sm font-medium mb-1.5 block">
                       Mật khẩu Admin <span className="text-red-400">*</span>
                     </label>
@@ -902,7 +902,7 @@ if (!isLoggedIn) {
                         setAdminPassword(e.target.value);
                         setLoginError("");
                       }}
-                      className="w-full min-h-[50px] px-4 py-3 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
+                      className="w-full min-h-[52px] px-4 py-3.5 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
                     />
                   </div>
                 </>
@@ -914,7 +914,7 @@ if (!isLoggedIn) {
 
               <button 
                 type="submit"
-                className={`w-full min-h-[52px] rounded-xl font-semibold text-base transition-all cursor-pointer active:scale-95 shadow-lg flex items-center justify-center gap-2 ${
+                className={`w-full min-h-[56px] rounded-xl font-semibold text-base transition-all cursor-pointer active:scale-95 shadow-lg flex items-center justify-center gap-2 ${
                   loginRole === "QLL" 
                     ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:opacity-95" 
                     : "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:opacity-95"
