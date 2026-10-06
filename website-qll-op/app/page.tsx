@@ -727,7 +727,7 @@ if (!isLoggedIn) {
     return (
       <div className="relative h-screen w-screen overflow-hidden font-outfit bg-[#1b1440] flex items-center justify-center">
         
-        {/* NẠP FONT OUTFIT VÀ HIỆU ỨNG ANIMATION */}
+        {/* NẠP FONT OUTFIT VÀ HIỆU ỨNG ANIMATION CHỮ GÕ ĐỘNG */}
         <style dangerouslySetInnerHTML={{__html: `
           @font-face {
             font-family: 'Outfit';
@@ -760,6 +760,23 @@ if (!isLoggedIn) {
             animation: floatBitu 4.5s ease-in-out infinite;
           }
 
+          /* HIỆU ỨNG GÕ CHỮ (TYPEWRITER) */
+          @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+          }
+          @keyframes blink {
+            from, to { border-color: transparent; }
+            50% { border-color: #f97316; }
+          }
+          .typing-effect {
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 3px solid #f97316;
+            animation: typing 3s steps(16, end) infinite alternate, blink 0.75s step-end infinite;
+          }
+
           .bg-glass-card {
             background: rgba(255, 255, 255, 0.08) !important;
             backdrop-filter: saturate(200%) blur(25px);
@@ -781,24 +798,34 @@ if (!isLoggedIn) {
         {/* LỚP PHỦ TỐI MỜ */}
         <div className="absolute inset-0 bg-[#0a0828]/55 -z-10"></div>
 
-        {/* CONTAINER GIÃN RỘNG 2 BÊN, CÂN ĐỐI HOÀN HẢO */}
-        <div className="w-full max-w-[1350px] px-6 lg:px-12 flex items-center justify-center gap-12 lg:gap-24">
+        {/* CONTAINER GIÃN RỘNG 2 BÊN: BITU BÊN TRÁI (VÙNG KHUNG ĐỎ), POPUP ĐĂNG NHẬP BÊN PHẢI */}
+        <div className="w-full max-w-[1450px] px-6 lg:px-16 flex items-center justify-between">
           
-          {/* HÌNH NHÂN VẬT BITU BÊN TRÁI (KHỚP CHÍNH XÁC TÊN FILE TRONG THƯ MỤC PUBLIC) */}
-          <div className="hidden lg:flex flex-col items-center justify-center animate-float-bitu z-20 pointer-events-none select-none">
+          {/* BÊN TRÁI: NHÂN VẬT BITU & HỘP THOẠI CHỮ GÕ ĐỘNG */}
+          <div className="hidden lg:flex flex-col items-start relative animate-float-bitu z-20 pointer-events-none select-none pl-6 xl:pl-12">
+            
+            {/* HỘP THOẠI CHÀO HỎI VỚI HIỆU ỨNG GÕ CHỮ */}
+            <div className="mb-4 ml-6 bg-white/10 backdrop-blur-md border border-white/25 px-5 py-3 rounded-2xl shadow-2xl relative">
+              <p className="text-white font-bold text-base tracking-wide">
+                <span className="typing-effect">Xin chào bạn! ✨</span>
+              </p>
+              {/* Mũi tên trỏ xuống của bong bóng chat */}
+              <div className="absolute -bottom-2 left-8 w-4 h-4 bg-white/10 border-r border-b border-white/25 rotate-45 backdrop-blur-md"></div>
+            </div>
+
+            {/* HÌNH ẢNH BITU */}
             <img 
               src="/Chào hỏi_2.png" 
               alt="Nhân vật Bitu Vuihoc" 
-              className="w-[380px] xl:w-[450px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
+              className="w-[360px] xl:w-[420px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
               onError={(e) => {
-                // Fallback tự động mã hóa URL nếu trình duyệt khó tính với dấu cách
                 (e.target as HTMLImageElement).src = '/Ch%C3%A0o%20h%E1%BB%8Fi_2.png';
               }}
             />
           </div>
 
-          {/* KHUNG ĐĂNG NHẬP CHÍNH */}
-          <div className="bg-glass-card rounded-[40px] p-10 lg:p-12 w-full max-w-[540px] relative z-20 transition-all duration-300">
+          {/* BÊN PHẢI: KHUNG ĐĂNG NHẬP CHÍNH */}
+          <div className="bg-glass-card rounded-[40px] p-10 lg:p-12 w-full max-w-[540px] relative z-20 transition-all duration-300 mx-auto lg:mx-0">
             
             <div className="flex items-center gap-3.5 mb-6">
               <div className="bg-orange-500 p-3 rounded-2xl shadow-lg border border-orange-400 flex items-center justify-center">
