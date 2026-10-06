@@ -192,34 +192,38 @@ export default function Home() {
     }
   };
 
-  // ĐÃ UPDATE LẠI ĐỂ GỌI API PATCH DATABASE
+// ĐÃ SỬA: GỌI TRỰC TIẾP SUPABASE BỎ QUA VERCEL API 
   const handleMarkAsDone = async (rowKey: string, dbId: string) => {
-    // 1. Lưu UI ngay lập tức
+    // 1. Lưu UI ngay lập tức để giao diện mượt
     const updated = { ...completedSlots, [rowKey]: true };
     setCompletedSlots(updated);
     localStorage.setItem("qll_completed_slots", JSON.stringify(updated));
 
-    // 2. Bắn lệnh PATCH lên Supabase cập nhật is_done = true
+    // 2. Chọc thẳng vào Supabase để update (Vì đã tắt RLS nên thao tác này rất mượt)
     if (dbId) {
       try {
-        const res = await fetch("/api/slot-hold", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: dbId })
-        });
-        const result = await res.json();
-        if (result.success) {
-          // Tự load lại list để sync đồng bộ
-          loadSlotHistory();
+        const { data, error } = await supabase
+          .from('slot_holds')
+          .update({ is_done: true })
+          .eq('id', dbId)
+          .select(); // Thêm select() để ép nó trả về kết quả
+
+        if (error) {
+          console.error("Lỗi update trực tiếp Supabase:", error);
+          alert("Lỗi Update DB: " + error.message); // Có lỗi sẽ popup báo ngay
         } else {
-          console.error("Lỗi update Supabase:", result.error);
+          console.log("Đã update thành công bản ghi:", dbId);
+          // Load lại bảng data
+          loadSlotHistory();
         }
       } catch (error) {
         console.error("Lỗi mạng khi update trạng thái:", error);
       }
+    } else {
+      console.warn("⚠️ Không có dbId (ID của Supabase) để update!");
+      alert("Lỗi: Không tìm thấy ID bản ghi trong cơ sở dữ liệu!");
     }
   };
-
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
