@@ -4,9 +4,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import Papa from "papaparse";
 import { createClient } from "@supabase/supabase-js";
 
-// Khởi tạo Supabase client dùng biến môi trường
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+// Đảm bảo lấy đúng biến hoặc gán trực tiếp để loại trừ lỗi thiếu biến môi trường trên Vercel
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sehvatktrqtsnmvebmm.supabase.co";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
+
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 
