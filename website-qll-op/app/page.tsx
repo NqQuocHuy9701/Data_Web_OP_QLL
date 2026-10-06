@@ -727,7 +727,7 @@ if (!isLoggedIn) {
     return (
       <div className="relative h-screen w-screen overflow-hidden font-outfit bg-[#1b1440] flex items-center justify-center">
         
-        {/* NẠP FONT OUTFIT VÀ CSS HIỆU ỨNG GLASSHORPHISM / SHAPES */}
+        {/* NẠP FONT OUTFIT VÀ CSS HIỆU ỨNG */}
         <style dangerouslySetInnerHTML={{__html: `
           @font-face {
             font-family: 'Outfit';
@@ -752,29 +752,6 @@ if (!isLoggedIn) {
           }
           .font-outfit { font-family: 'Outfit', sans-serif !important; }
 
-          #radius-shape-1 {
-            height: 250px;
-            width: 250px;
-            top: -40px;
-            right: -100px;
-            background: radial-gradient(#ff7518, #ad1fff);
-            filter: blur(50px);
-            opacity: 0.5;
-            pointer-events: none;
-          }
-
-          #radius-shape-2 {
-            border-radius: 38% 62% 63% 37% / 70% 33% 67% 30%;
-            bottom: -50px;
-            left: -80px;
-            width: 320px;
-            height: 320px;
-            background: radial-gradient(#00c6ff, #0072ff);
-            filter: blur(60px);
-            opacity: 0.4;
-            pointer-events: none;
-          }
-
           .bg-glass-card {
             background: rgba(255, 255, 255, 0.08) !important;
             backdrop-filter: saturate(200%) blur(25px);
@@ -794,15 +771,15 @@ if (!isLoggedIn) {
         ></div>
         
         {/* LỚP PHỦ TỐI MỜ */}
-        <div className="absolute inset-0 bg-[#0a0828]/55 -z-10"></div>
+        <div className="absolute inset-0 bg-[#0a0828]/50 -z-10"></div>
 
-        {/* CONTAINER CHÍNH: POPUP ĐĂNG NHẬP BÊN TRÁI, CHỮ NẰM HẲN BÊN PHẢI */}
-        <div className="w-full max-w-[1400px] px-8 lg:px-16 grid grid-cols-1 lg:grid-cols-[500px_1fr] gap-12 lg:gap-20 items-center justify-between">
+        {/* CONTAINER CHÍNH: CĂN GIỮA TUYỆT ĐỐI THEO CHIỀU DỌC (ITEMS-CENTER) */}
+        <div className="w-full max-w-[1350px] px-8 lg:px-16 grid grid-cols-1 lg:grid-cols-[480px_1fr] gap-12 lg:gap-20 items-center">
           
-          {/* BÊN TRÁI: HỘP ĐĂNG NHẬP TO RỘNG, HIỆU ỨNG GLASSMOPHISM */}
-          <div className="bg-glass-card rounded-[36px] p-9 lg:p-11 w-full relative z-20 transition-all duration-300">
+          {/* BÊN TRÁI: HỘP ĐĂNG NHẬP CÂN ĐỐI */}
+          <div className="bg-glass-card rounded-[36px] p-8 lg:p-10 w-full relative z-20 transition-all duration-300 shadow-2xl">
             
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-5">
               <div className="bg-orange-500 p-2.5 rounded-2xl shadow-lg border border-orange-400 flex items-center justify-center">
                 <img 
                   src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
@@ -857,7 +834,7 @@ if (!isLoggedIn) {
                         setNamecode(e.target.value);
                         setLoginError("");
                       }}
-                      className="w-full min-h-[52px] px-4 py-3.5 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
+                      className="w-full min-h-[50px] px-4 py-3 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
                       autoFocus
                     />
                   </div>
@@ -869,7 +846,7 @@ if (!isLoggedIn) {
                     <select
                       value={teamLead}
                       onChange={(e) => setTeamLead(e.target.value)}
-                      className="w-full min-h-[52px] px-4 py-3.5 bg-[#1b1440]/90 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all cursor-pointer shadow-inner"
+                      className="w-full min-h-[50px] px-4 py-3 bg-[#1b1440]/90 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all cursor-pointer shadow-inner"
                     >
                       <option value="Team Lead A" className="bg-[#1b1440] text-white">Team Lead A</option>
                       <option value="Team Lead B" className="bg-[#1b1440] text-white">Team Lead B</option>
@@ -893,7 +870,7 @@ if (!isLoggedIn) {
                         setAdminUsername(e.target.value);
                         setLoginError("");
                       }}
-                      className="w-full min-h-[52px] px-4 py-3.5 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
+                      className="w-full min-h-[50px] px-4 py-3 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
                       autoFocus
                     />
                   </div>
@@ -909,7 +886,7 @@ if (!isLoggedIn) {
                         setAdminPassword(e.target.value);
                         setLoginError("");
                       }}
-                      className="w-full min-h-[52px] px-4 py-3.5 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
+                      className="w-full min-h-[50px] px-4 py-3 bg-black/40 border border-white/20 rounded-xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
                     />
                   </div>
                 </>
@@ -921,7 +898,7 @@ if (!isLoggedIn) {
 
               <button 
                 type="submit"
-                className={`w-full min-h-[56px] rounded-xl font-semibold text-base transition-all cursor-pointer active:scale-95 shadow-lg flex items-center justify-center gap-2 ${
+                className={`w-full min-h-[54px] rounded-xl font-semibold text-base transition-all cursor-pointer active:scale-95 shadow-lg flex items-center justify-center gap-2 ${
                   loginRole === "QLL" 
                     ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:opacity-95" 
                     : "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:opacity-95"
@@ -932,13 +909,10 @@ if (!isLoggedIn) {
             </form>
           </div>
 
-          {/* BÊN PHẢI: CHỮ NẰM HẲN BÊN PHẢI VỚI CÁC KHỐI SHAPE NGHỆ THUẬT */}
-          <div className="relative z-10 flex flex-col justify-center text-left lg:text-right pl-0 lg:pl-10 position-relative">
-            <div id="radius-shape-1" className="position-absolute rounded-circle shadow-5-strong"></div>
-            <div id="radius-shape-2" className="position-absolute shadow-5-strong"></div>
-
+          {/* BÊN PHẢI: CHỮ NẰM HẲN BÊN PHẢI, CĂN GIỮA GỌN GÀNG THEO CHIỀU DỌC */}
+          <div className="relative z-10 flex flex-col justify-center text-left lg:text-right pl-0 lg:pl-12">
             <div>
-              <span className="inline-block px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wide uppercase mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wide uppercase mb-4 shadow-sm">
                 Hệ thống vận hành QLL chuyên nghiệp
               </span>
               <h1 className="text-4xl lg:text-6xl font-semibold tracking-tight leading-[1.1] text-white mb-6 drop-shadow-md">
@@ -952,7 +926,7 @@ if (!isLoggedIn) {
               </p>
             </div>
 
-            <div className="text-xs text-slate-400 font-medium mt-10">
+            <div className="text-xs text-slate-400 font-medium mt-8">
               © 2026 Vuihoc Education Operations. Secure System.
             </div>
           </div>
