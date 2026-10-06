@@ -70,7 +70,7 @@ export default function Home() {
 
   const SHEET_CSV_URL = "/api/sheet";
 
-  useEffect(() => {
+useEffect(() => {
     const savedAdmins = localStorage.getItem("qll_admin_accounts");
     if (savedAdmins) {
       try { setAdminList(JSON.parse(savedAdmins)); } catch (e) { console.error(e); }
@@ -105,12 +105,16 @@ export default function Home() {
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
-        if (parsed.namecode) {
+        if (parsed.role === "Admin") {
+          setAdminUsername(parsed.namecode || "");
+          setLoginRole("Admin");
+          setTeamLead("Admin hệ thống");
+        } else if (parsed.namecode) {
           setNamecode(parsed.namecode);
-          setTeamLead(parsed.teamLead || (parsed.role === "Admin" ? "Quản trị hệ thống" : "Team Lead A"));
-          setLoginRole(parsed.role || "QLL");
-          setIsLoggedIn(true);
+          setTeamLead(parsed.teamLead || "Team Lead A");
+          setLoginRole("QLL");
         }
+        setIsLoggedIn(true);
       } catch (e) { console.error(e); }
     }
   }, []);
@@ -213,11 +217,12 @@ export default function Home() {
     }
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
     if (loginRole === "QLL") {
+      // --- ĐĂNG NHẬP QLL CHUẨN XÁC ---
       if (!namecode.trim()) {
         setLoginError("Vui lòng nhập Namecode của bạn!");
         return;
@@ -234,6 +239,7 @@ export default function Home() {
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
       
     } else {
+      // --- ĐĂNG NHẬP ADMIN CHUẨN XÁC ---
       const matchedAdmin = adminList.find(
         (acc) => acc.username.trim() === adminUsername.trim() && acc.pass === adminPassword.trim()
       );
@@ -243,8 +249,6 @@ export default function Home() {
         return;
       }
 
-      setNamecode(matchedAdmin.username);
-      
       const userData = { 
         namecode: matchedAdmin.username, 
         teamLead: "Admin hệ thống", 
@@ -723,22 +727,18 @@ if (!isLoggedIn) {
     return (
       <div className="flex h-screen w-screen items-center justify-between px-12 lg:px-20 relative overflow-hidden font-vietnam">
         
-        {/* NẠP FONT CHỮ CAO CẤP MƯỢT MÀ */}
         <style dangerouslySetInnerHTML={{__html: `
           @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
           .font-vietnam { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important; }
         `}} />
 
-        {/* SỬ DỤNG TRỰC TIẾP FILE ẢNH NỀN BACKDROP.JPG VÀ LỚP PHỦ MỜ */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
           style={{ backgroundImage: `url('/backdrop.jpg')` }}
         >
-          {/* Lớp phủ tối màu nghệ thuật giúp nổi bật nội dung */}
           <div className="absolute inset-0 bg-[#070B14]/50 backdrop-blur-[1px]"></div>
         </div>
 
-        {/* PHẦN BÊN TRÁI: LOGO VUIHOC & THÔNG ĐIỆP */}
         <div className="relative z-10 max-w-xl hidden lg:flex flex-col justify-between h-[80vh]">
           <div className="flex items-center gap-3">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-2.5 rounded-2xl shadow-lg">
@@ -772,7 +772,6 @@ if (!isLoggedIn) {
           </div>
         </div>
 
-        {/* PHẦN BÊN PHẢI: KHUNG LOGIN KÍNH MỜ, HOVER HIỆU ỨNG XÁM MỜ ĐỒNG BỘ NỀN */}
         <div className="bg-white/[0.08] hover:bg-slate-900/40 backdrop-blur-2xl border border-white/[0.18] rounded-[36px] p-9 lg:p-10 w-full max-w-[450px] shadow-[0_30px_100px_rgba(0,0,0,0.6)] relative z-10 animate-fade-slide-up mx-auto lg:mx-0 transition-all duration-300 group">
           
           <div className="mb-6">
@@ -780,7 +779,6 @@ if (!isLoggedIn) {
             <p className="text-xs font-medium text-slate-300 mt-1">Chào mừng bạn quay trở lại hệ thống.</p>
           </div>
 
-          {/* Tab chuyển đổi vai trò */}
           <div className="grid grid-cols-2 gap-2 p-1.5 bg-black/30 rounded-2xl mb-6 border border-white/10">
             <button
               type="button"
