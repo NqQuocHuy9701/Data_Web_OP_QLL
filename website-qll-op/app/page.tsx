@@ -194,16 +194,16 @@ export default function Home() {
 
 const handleMarkAsDone = async (dbId: string) => {
     if (!dbId) {
-      alert("Lỗi: Không tìm thấy ID bản ghi!");
+      alert("Lỗi: Không tìm thấy ID bản ghi trong cơ sở dữ liệu!");
       return;
     }
 
-    // 1. Đổi trạng thái giao diện NGAY LẬP TỨC (Cực mượt, không chớp nháy)
-    setSlotHistoryData(prev => 
-      prev.map(row => (row.id === dbId ? { ...row, is_done: true } : row))
+    // 1. Đổi trạng thái giao diện NGAY LẬP TỨC tại dòng đó (Không làm load lại màn hình, cực mượt)
+    setSlotHistoryData(prevData =>
+      prevData.map(item => (item.id === dbId ? { ...item, is_done: true } : item))
     );
 
-    // 2. Gửi lệnh update ngầm lên Supabase ở phía sau
+    // 2. Gửi yêu cầu cập nhật ngầm vào Supabase ở phía sau
     try {
       const { error } = await supabase
         .from('slot_holds')
@@ -213,7 +213,7 @@ const handleMarkAsDone = async (dbId: string) => {
       if (error) {
         console.error("Lỗi update Supabase:", error);
         alert("Lỗi Update DB: " + error.message);
-        // Nếu lỗi mạng thì gọi load ngầm lại để đồng bộ
+        // Nếu lỗi mạng thì tiến hành đồng bộ ngầm lại dữ liệu cũ
         loadSlotHistory(true);
       }
     } catch (error) {
@@ -1061,70 +1061,70 @@ const loadSlotHistory = async (isSilent = false) => {
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Đang tải dữ liệu từ máy chủ Supabase...</td>
                       </tr>
                     ) : slotHistoryData.length > 0 ? (
-                      slotHistoryData.map((row, index) => {
-                        let timeStr = "";
-                        if (row.timestamp) {
-                          const d = new Date(Number(row.timestamp));
-                          const pad = (n: number) => n.toString().padStart(2, '0');
-                          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                        } else {
-                          timeStr = row["Thời gian"] || "";
-                        }
+slotHistoryData.map((row, index) => {
+    let timeStr = "";
+    if (row.timestamp) {
+      const d = new Date(Number(row.timestamp));
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    } else {
+      timeStr = row["Thời gian"] || "";
+    }
 
-                        const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
-                        const monHoc = row.mon_hoc || row["Môn học"] || "-";
-                        const nguoiGiu = row.nguoi_giu || row["Người giữ"] || "-";
-                        const team = row.team || row["Team"] || "-";
-                        const note = row.note || row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-";
-                        
-                        const rowKey = `${timeStr}-${maLop}-${index}`;
-                        
-                        const isDone = completedSlots[rowKey] || row.is_done;
-                        const isExpired = checkIsExpired(timeStr);
+    const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+    const monHoc = row.mon_hoc || row["Môn học"] || "-";
+    const nguoiGiu = row.nguoi_giu || row["Người giữ"] || "-";
+    const team = row.team || row["Team"] || "-";
+    const note = row.note || row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-";
+    
+    const rowKey = `${timeStr}-${maLop}-${index}`;
+    const isDone = completedSlots[rowKey] || row.is_done;
+    const isExpired = checkIsExpired(timeStr);
 
-                        return (
-                          <tr key={index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-orange-50/30"}`}>
-                            <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
-                            <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
-                            <td className="px-6 py-4 font-medium text-slate-700">{monHoc}</td>
-                            <td className="px-6 py-4 font-bold text-orange-600">{nguoiGiu}</td>
-                            <td className="px-6 py-4 text-slate-600">{team}</td>
-                            
-                            <td className="px-6 py-4">
-                              {isDone ? (
-                                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs">Đã hoàn thành</span>
-                              ) : isExpired ? (
-                                <span className="px-2.5 py-1 bg-red-100 text-red-700 font-bold rounded-lg text-xs">Quá hạn</span>
-                              ) : (
-                                <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-lg text-xs animate-pulse">
-                                  {calculateTimeRemaining(timeStr)}
-                                </span>
-                              )}
-                            </td>
+    return (
+      // 👉 SỬA CHỖ NÀY: Dùng key={row.id || index} thay vì chỉ dùng mỗi index
+      <tr key={row.id || index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-orange-50/30"}`}>
+        <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
+        <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
+        <td className="px-6 py-4 font-medium text-slate-700">{monHoc}</td>
+        <td className="px-6 py-4 font-bold text-orange-600">{nguoiGiu}</td>
+        <td className="px-6 py-4 text-slate-600">{team}</td>
+        
+        <td className="px-6 py-4">
+          {isDone ? (
+            <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs">Đã hoàn thành</span>
+          ) : isExpired ? (
+            <span className="px-2.5 py-1 bg-red-100 text-red-700 font-bold rounded-lg text-xs">Quá hạn (Đã nhả slot)</span>
+          ) : (
+            <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-lg text-xs animate-pulse">
+              {calculateTimeRemaining(timeStr)}
+            </span>
+          )}
+        </td>
 
-                            <td className="px-6 py-4 text-slate-700 font-medium">{note}</td>
-                            
-                            <td className="px-6 py-4 text-right pr-6">
-                              {isDone ? (
-                                <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
-                                  <span>✅</span> Đã xếp xong
-                                </span>
-                              ) : isExpired ? (
-                                <span className="text-xs font-bold text-red-600 flex items-center justify-end gap-1">
-                                  <span>❌</span> Quá hạn
-                                </span>
-                              ) : (
-                                <button
-                                  onClick={() => handleMarkAsDone(rowKey, row.id)}
-                                  className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
-                                >
-                                  Đã xếp (Done)
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })
+        <td className="px-6 py-4 text-slate-700 font-medium">{note}</td>
+        
+        <td className="px-6 py-4 text-right pr-6">
+          {isDone ? (
+            <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
+              <span>✅</span> Đã xếp xong
+            </span>
+          ) : isExpired ? (
+            <span className="px-3 py-1.5 bg-red-100 text-red-600 font-bold rounded-xl text-xs inline-flex items-center gap-1 shadow-sm">
+              <span>❌</span> Quá hạn (Đã nhả slot)
+            </span>
+          ) : (
+            <button
+              onClick={() => handleMarkAsDone(row.id)}
+              className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
+            >
+              Đã xếp (Done)
+            </button>
+          )}
+        </td>
+      </tr>
+    );
+})
                     ) : (
                       <tr>
                         <td colSpan={8} className="px-6 py-24 text-center text-slate-400 font-semibold">Chưa có dữ liệu lịch sử giữ slot nào được ghi nhận.</td>
