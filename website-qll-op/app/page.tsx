@@ -725,9 +725,9 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
 if (!isLoggedIn) {
     return (
-      <div className="relative h-screen w-screen overflow-hidden font-sora bg-[#0b0c10] flex items-center justify-center">
+      <div className="relative h-screen w-screen overflow-hidden font-sora bg-[#0f172a] flex items-center justify-center">
         
-        {/* NẠP FONT SORA VÀ CSS VIỀN SÁNG ĐUỔI NHAU (METEOR GLOW) */}
+        {/* NẠP FONT SORA VÀ CSS TOÀN BỘ HIỆU ỨNG */}
         <style dangerouslySetInnerHTML={{__html: `
           @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
           .font-sora { font-family: 'Sora', sans-serif !important; }
@@ -765,14 +765,13 @@ if (!isLoggedIn) {
 
           .animated-border-box {
             position: relative;
-            border-radius: 40px; /* Bo góc hộp ngoài */
-            padding: 4px; /* ĐỘ DÀY ĐƯỜNG VIỀN (To và rõ nét hơn) */
+            border-radius: 40px; 
+            padding: 4px; 
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.05); /* Viền mờ làm nền */
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+            background: rgba(255, 255, 255, 0.05); 
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
           }
 
-          /* Dải tia sáng màu Xanh (Chạy trước) */
           .animated-border-box::before {
             content: '';
             position: absolute;
@@ -789,7 +788,6 @@ if (!isLoggedIn) {
             z-index: 0;
           }
 
-          /* Dải tia sáng màu Cam (Chạy đuổi theo sau) */
           .animated-border-box::after {
             content: '';
             position: absolute;
@@ -807,19 +805,40 @@ if (!isLoggedIn) {
             z-index: 0;
           }
 
-          /* Phần lõi bên trong form */
           .animated-border-inner {
             position: relative;
-            background: #0d111a; /* Nền form tối màu, che lấp tâm gradient */
-            border-radius: 36px; /* Nhỏ hơn hộp ngoài một chút để hở đúng 4px viền */
+            background: #0d111a; 
+            border-radius: 36px; 
             z-index: 1;
             width: 100%;
             height: 100%;
           }
+
+          /* FIX LỖI NỀN TRẮNG KHI TRÌNH DUYỆT TỰ ĐIỀN MẬT KHẨU (AUTOFILL) */
+          input:-webkit-autofill,
+          input:-webkit-autofill:hover, 
+          input:-webkit-autofill:focus, 
+          input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px #151a28 inset !important;
+            -webkit-text-fill-color: white !important;
+            transition: background-color 5000s ease-in-out 0s;
+          }
         `}} />
 
-        {/* NỀN GIAO DIỆN TÍM ĐẬM PHA THAN SANG TRỌNG */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0c0a1a] via-[#110e25] to-[#070b14] -z-20"></div>
+        {/* --- NỀN GIAO DIỆN MỚI (CÓ CHIỀU SÂU VÀ MÀU SẮC SANG TRỌNG) --- */}
+        {/* Lớp 1: Màu nền Xanh Indigo đậm */}
+        <div className="absolute inset-0 bg-[#070b19] -z-40"></div>
+        
+        {/* Lớp 2: Ảnh backdrop mờ nhạt kết hợp hòa trộn */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 mix-blend-screen -z-30"
+          style={{ backgroundImage: `url('/backdrop.jpg')` }}
+        ></div>
+
+        {/* Lớp 3: Hiệu ứng ánh sáng Aurora (Đám mây màu lấp đầy không gian trống) */}
+        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-indigo-700/20 filter blur-[150px] -z-20 pointer-events-none"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-cyan-600/15 filter blur-[150px] -z-20 pointer-events-none"></div>
+        <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] rounded-full bg-purple-600/10 filter blur-[120px] -z-20 pointer-events-none"></div>
 
         {/* BỐ CỤC CHÍNH */}
         <div className="w-full max-w-[1400px] px-6 lg:px-16 flex items-center justify-between">
@@ -837,7 +856,7 @@ if (!isLoggedIn) {
             <img 
               src="/Chào hỏi_2.png" 
               alt="Nhân vật Bitu Vuihoc" 
-              className="w-[360px] xl:w-[420px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
+              className="w-[360px] xl:w-[420px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
               onError={(e) => { (e.target as HTMLImageElement).src = '/Ch%C3%A0o%20h%E1%BB%8Fi_2.png'; }}
             />
           </div>
@@ -980,6 +999,7 @@ if (!isLoggedIn) {
       </div>
     );
   }
+
   return (
     <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0"></div>
