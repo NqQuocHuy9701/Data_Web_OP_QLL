@@ -198,12 +198,12 @@ const handleMarkAsDone = async (dbId: string) => {
       return;
     }
 
-    // 1. CẬP NHẬT STATE NGAY LẬP TỨC (UI đổi màu cực mượt, tuyệt đối KHÔNG load lại trang)
+    // 1. Đổi trạng thái giao diện NGAY LẬP TỨC (Cực mượt, không chớp nháy)
     setSlotHistoryData(prev => 
       prev.map(row => (row.id === dbId ? { ...row, is_done: true } : row))
     );
 
-    // 2. Ngầm gửi lệnh update lên Supabase phía sau
+    // 2. Gửi lệnh update ngầm lên Supabase ở phía sau
     try {
       const { error } = await supabase
         .from('slot_holds')
@@ -213,8 +213,8 @@ const handleMarkAsDone = async (dbId: string) => {
       if (error) {
         console.error("Lỗi update Supabase:", error);
         alert("Lỗi Update DB: " + error.message);
-        // Nếu lỗi thì hoàn tác lại state cũ
-        loadSlotHistory();
+        // Nếu lỗi mạng thì gọi load ngầm lại để đồng bộ
+        loadSlotHistory(true);
       }
     } catch (error) {
       console.error("Lỗi mạng khi update trạng thái:", error);
@@ -312,18 +312,21 @@ const handleMarkAsDone = async (dbId: string) => {
       }
     });
   };
-
-const loadSlotHistory = async () => {
+const loadSlotHistory = async (isSilent = false) => {
+    // Chỉ hiện chữ "Đang tải" khi người dùng bấm nút Update thủ công trên Header
+    if (!isSilent) {
+      setLoadingHistory(true);
+    }
+    
     try {
       const response = await fetch("/api/slot-hold");
       const result = await response.json();
       
       if (result.success && result.data) {
         setSlotHistoryData(prevData => {
-          // Tạo một Set chứa các ID đã được xác nhận là done trên màn hình hiện tại
+          // Giữ lại trạng thái done của các dòng đang có trên giao diện
           const doneIds = new Set(prevData.filter(item => item.is_done).map(item => item.id));
           
-          // Map dữ liệu mới từ server về, nếu trùng ID với danh sách đã done thì ép cứng is_done = true
           const mergedData = result.data.map((newItem: any) => {
             if (doneIds.has(newItem.id)) {
               return { ...newItem, is_done: true };
@@ -336,6 +339,10 @@ const loadSlotHistory = async () => {
       }
     } catch (err) {
       console.error("Lỗi fetch lịch sử giữ slot:", err);
+    } finally {
+      if (!isSilent) {
+        setLoadingHistory(false);
+      }
     }
   };
 
