@@ -100,23 +100,8 @@ export default function Home() {
         console.error("Lỗi đọc held slots", e);
       }
     }
-export default function VuihocQLLApp() {
-  // ... các logic state, useEffect ...
 
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] font-vietnam text-slate-800 antialiased selection:bg-sky-500 selection:text-white">
-      {/* Toàn bộ giao diện Login và Dashboard sẽ tự động dùng chung 1 font Be Vietnam Pro */}
-      {isLoggedIn ? (
-        // Giao diện Dashboard bên trong
-      ) : (
-        // Giao diện Login bên ngoài
-      )}
-    </div>
-  );
-}
-
-
- const savedUser = localStorage.getItem("qll_logged_user");
+    const savedUser = localStorage.getItem("qll_logged_user");
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
@@ -153,17 +138,12 @@ export default function VuihocQLLApp() {
     }
   };
 
-  // CÔNG THỨC MỚI: TÍNH TOÁN SLOT DỰA VÀO DATABASE SUPABASE
   const getActiveHeldCount = (maLop: string) => {
     if (!slotHistoryData || slotHistoryData.length === 0) return 0;
     
     const now = Date.now();
     const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
     
-    // Chỉ đếm những slot thỏa mãn cả 3 điều kiện:
-    // 1. Đúng mã lớp
-    // 2. Chưa được Admin bấm "Đã xếp" (is_done === false)
-    // 3. Chưa quá hạn 24h
     const activeHolds = slotHistoryData.filter((item: any) => {
       const matchMaLop = item.ma_lop === maLop || item["Mã lớp giữ"] === maLop || item["Mã lớp"] === maLop;
       const notDone = item.is_done === false;
@@ -207,18 +187,16 @@ export default function VuihocQLLApp() {
     }
   };
 
-const handleMarkAsDone = async (dbId: string) => {
+  const handleMarkAsDone = async (dbId: string) => {
     if (!dbId) {
       alert("Lỗi: Không tìm thấy ID bản ghi trong cơ sở dữ liệu!");
       return;
     }
 
-    // 1. Đổi trạng thái giao diện NGAY LẬP TỨC tại dòng đó (Không làm load lại màn hình, cực mượt)
     setSlotHistoryData(prevData =>
       prevData.map(item => (item.id === dbId ? { ...item, is_done: true } : item))
     );
 
-    // 2. Gửi yêu cầu cập nhật ngầm vào Supabase ở phía sau
     try {
       const { error } = await supabase
         .from('slot_holds')
@@ -228,19 +206,18 @@ const handleMarkAsDone = async (dbId: string) => {
       if (error) {
         console.error("Lỗi update Supabase:", error);
         alert("Lỗi Update DB: " + error.message);
-        // Nếu lỗi mạng thì tiến hành đồng bộ ngầm lại dữ liệu cũ
         loadSlotHistory(true);
       }
     } catch (error) {
       console.error("Lỗi mạng khi update trạng thái:", error);
     }
   };
- const handleLoginSubmit = (e: React.FormEvent) => {
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
     if (loginRole === "QLL") {
-      // --- XỬ LÝ KHI ĐĂNG NHẬP BẰNG TÀI KHOẢN QLL ---
       if (!namecode.trim()) {
         setLoginError("Vui lòng nhập Namecode của bạn!");
         return;
@@ -251,13 +228,12 @@ const handleMarkAsDone = async (dbId: string) => {
       }
       const userData = { 
         namecode: namecode.trim(), 
-        teamLead: teamLead.trim(), // Lấy chuẩn xác team lead QLL chọn
+        teamLead: teamLead.trim(), 
         role: "QLL" 
       };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
       
     } else {
-      // --- XỬ LÝ KHI ĐĂNG NHẬP BẰNG TÀI KHOẢN ADMIN ---
       const matchedAdmin = adminList.find(
         (acc) => acc.username.trim() === adminUsername.trim() && acc.pass === adminPassword.trim()
       );
@@ -267,16 +243,15 @@ const handleMarkAsDone = async (dbId: string) => {
         return;
       }
 
-      // Gán đúng tên của Admin đăng nhập
       setNamecode(matchedAdmin.username);
       
       const userData = { 
         namecode: matchedAdmin.username, 
-        teamLead: "Quản trị hệ thống", // Hoặc phân biệt rõ đây là tài khoản Admin
+        teamLead: "Admin hệ thống", 
         role: "Admin" 
       };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
-      setTeamLead("Quản trị hệ thống");
+      setTeamLead("Admin hệ thống");
     }
 
     setIsLoggedIn(true);
@@ -341,8 +316,8 @@ const handleMarkAsDone = async (dbId: string) => {
       }
     });
   };
-const loadSlotHistory = async (isSilent = false) => {
-    // Chỉ hiện chữ "Đang tải" khi người dùng bấm nút Update thủ công trên Header
+
+  const loadSlotHistory = async (isSilent = false) => {
     if (!isSilent) {
       setLoadingHistory(true);
     }
@@ -353,7 +328,6 @@ const loadSlotHistory = async (isSilent = false) => {
       
       if (result.success && result.data) {
         setSlotHistoryData(prevData => {
-          // Giữ lại trạng thái done của các dòng đang có trên giao diện
           const doneIds = new Set(prevData.filter(item => item.is_done).map(item => item.id));
           
           const mergedData = result.data.map((newItem: any) => {
@@ -375,18 +349,15 @@ const loadSlotHistory = async (isSilent = false) => {
     }
   };
 
-  // ĐÃ FIX LỖI DUPLICATE CODE Ở ĐÂY
   useEffect(() => {
     if (isLoggedIn) {
       loadData();
-      // Bỏ điều kiện Admin đi, để QLL cũng được load dữ liệu từ Supabase 
-      // => Giúp QLL thấy được số lượng slot cập nhật real-time
       loadSlotHistory(); 
       
       const intervalId = setInterval(() => {
         loadData();
         loadSlotHistory();
-      }, 5 * 60 * 1000); // 5 phút tự động refresh 1 lần cho cả 2 bảng
+      }, 5 * 60 * 1000); 
       return () => clearInterval(intervalId);
     }
   }, [isLoggedIn, loginRole]);
@@ -600,7 +571,6 @@ const loadSlotHistory = async (isSilent = false) => {
     setShowModal(true);
   };
 
-  // ĐÃ KHÔI PHỤC TOÀN BỘ HÀM NÀY MÀ BẠN XÓA NHẦM KHI COPY
   const handleConfirmKeepSlot = async () => {
     const cleanVal = inputValue.trim();
     if (!cleanVal) {
@@ -650,7 +620,6 @@ const loadSlotHistory = async (isSilent = false) => {
         return;
       }
 
-      // LOAD LẠI DATA DB NGAY LẬP TỨC ĐỂ TỰ TRỪ SLOT
       await loadSlotHistory();
 
       setSuccessMessage("Đã lưu giữ slot thành công!");
@@ -750,49 +719,47 @@ const loadSlotHistory = async (isSilent = false) => {
     return "bg-slate-50 text-slate-600 border-slate-200"; 
   };
 
-if (!isLoggedIn) {
+  // MÀN HÌNH LOGIN ĐÃ ĐƯỢC TỐI ƯU GIAO DIỆN & TYPOGRAPHY SANG TRỌNG, KHÔNG ẢNH HƯỞNG LOGIC
+  if (!isLoggedIn) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#F8FAFC] relative overflow-hidden px-4 antialiased">
-        {/* Hiệu ứng nền mờ ảo */}
-        <div className="absolute top-1/3 left-1/4 w-[450px] h-[450px] bg-sky-100/50 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-[450px] h-[450px] bg-orange-100/50 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="flex h-screen w-screen items-center justify-center bg-[#F4F7FE] font-vietnam relative overflow-hidden px-4">
+        <div className="absolute top-1/4 left-1/4 w-[450px] h-[450px] bg-sky-200/40 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-orange-200/40 rounded-full blur-[100px] pointer-events-none"></div>
 
-        {/* Khung Login tinh tế, chuẩn typography */}
-        <div className="bg-white border border-slate-200/70 rounded-3xl p-10 w-full max-w-[460px] shadow-[0_15px_40px_rgba(0,0,0,0.04)] relative z-10">
+        <div className="bg-white/95 backdrop-blur-md border border-slate-100/80 rounded-[32px] p-10 w-full max-w-[480px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] relative z-10 animate-fade-slide-up">
           
           <div className="flex flex-col items-center text-center mb-8">
             <img 
               src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
               alt="Vuihoc Logo" 
-              className="h-8 w-auto object-contain mb-3"
+              className="h-9 w-auto object-contain mb-3 drop-shadow-sm"
             />
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Hệ Thống Vận Hành QLL</h1>
-            <p className="text-xs text-slate-500 font-normal mt-1">Vui lòng chọn vai trò để tiếp tục làm việc</p>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Hệ Thống Vận Hành QLL</h1>
+            <p className="text-xs font-medium text-slate-400 mt-1">Vui lòng chọn vai trò để tiếp tục làm việc</p>
           </div>
 
-          {/* Tab chuyển đổi vai trò */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl mb-6">
+          <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100/80 rounded-2xl mb-6">
             <button
               type="button"
               onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
-              className={`py-3 text-xs font-semibold rounded-xl transition-all ${
+              className={`py-3 text-xs font-bold rounded-xl transition-all ${
                 loginRole === "QLL" 
                   ? "bg-white text-sky-600 shadow-sm" 
-                  : "text-slate-600 hover:text-slate-900"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              Quản Lý Lớp (QLL)
+              👩‍💻 Quản Lý Lớp (QLL)
             </button>
             <button
               type="button"
               onClick={() => { setLoginRole("Admin"); setLoginError(""); }}
-              className={`py-3 text-xs font-semibold rounded-xl transition-all ${
+              className={`py-3 text-xs font-bold rounded-xl transition-all ${
                 loginRole === "Admin" 
                   ? "bg-white text-orange-600 shadow-sm" 
-                  : "text-slate-600 hover:text-slate-900"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              Quản Trị (Admin)
+              🔐 Quản Trị (Admin)
             </button>
           </div>
 
@@ -800,7 +767,7 @@ if (!isLoggedIn) {
             {loginRole === "QLL" ? (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Namecode <span className="text-red-500">*</span>
                   </label>
                   <input 
@@ -811,19 +778,19 @@ if (!isLoggedIn) {
                       setNamecode(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-900 font-normal text-sm transition-all"
+                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-800 font-semibold text-sm transition-all shadow-sm"
                     autoFocus
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Team Lead <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={teamLead}
                     onChange={(e) => setTeamLead(e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-900 font-normal text-sm transition-all cursor-pointer"
+                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-800 font-semibold text-sm transition-all cursor-pointer shadow-sm"
                   >
                     <option value="Team Lead A">Team Lead A</option>
                     <option value="Team Lead B">Team Lead B</option>
@@ -836,7 +803,7 @@ if (!isLoggedIn) {
             ) : (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Tên đăng nhập Admin <span className="text-red-500">*</span>
                   </label>
                   <input 
@@ -847,12 +814,12 @@ if (!isLoggedIn) {
                       setAdminUsername(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 font-normal text-sm transition-all"
+                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-800 font-semibold text-sm transition-all shadow-sm"
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Mật khẩu Admin <span className="text-red-500">*</span>
                   </label>
                   <input 
@@ -863,22 +830,22 @@ if (!isLoggedIn) {
                       setAdminPassword(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 font-normal text-sm transition-all"
+                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-800 font-semibold text-sm transition-all shadow-sm"
                   />
                 </div>
               </>
             )}
 
             {loginError && (
-              <p className="text-xs font-medium text-red-500 text-center">{loginError}</p>
+              <p className="text-xs font-bold text-red-500 text-center">{loginError}</p>
             )}
 
             <button 
               type="submit"
-              className={`w-full py-3.5 text-white rounded-2xl font-semibold text-sm shadow-sm transition-all cursor-pointer active:scale-95 mt-2 ${
+              className={`w-full py-3.5 text-white rounded-2xl font-bold text-sm shadow-md transition-all cursor-pointer active:scale-95 mt-2 ${
                 loginRole === "QLL" 
-                  ? "bg-sky-500 hover:bg-sky-600" 
-                  : "bg-orange-500 hover:bg-orange-600"
+                  ? "bg-sky-500 hover:bg-sky-600 shadow-sky-500/25" 
+                  : "bg-orange-500 hover:bg-orange-600 shadow-orange-500/25"
               }`}
             >
               {loginRole === "QLL" ? "Vào hệ thống QLL" : "Đăng nhập Admin"}
@@ -899,7 +866,6 @@ if (!isLoggedIn) {
         </div>
       )}
 
-      {/* CỐ ĐỊNH KÍCH THƯỚC SIDEBAR VÀ BỎ HIỆU ỨNG PHÌNH TO */}
       <aside className="w-64 min-w-[16rem] max-w-[16rem] bg-white border-r border-slate-200/80 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         
         <div className="h-20 flex items-center px-6 border-b border-slate-100 shrink-0">
@@ -996,7 +962,6 @@ if (!isLoggedIn) {
           )}
         </nav>
 
-        {/* THÔNG TIN USER TẠI CHÂN SIDEBAR */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm ${loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700"}`}>
@@ -1104,70 +1069,69 @@ if (!isLoggedIn) {
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Đang tải dữ liệu từ máy chủ Supabase...</td>
                       </tr>
                     ) : slotHistoryData.length > 0 ? (
-slotHistoryData.map((row, index) => {
-    let timeStr = "";
-    if (row.timestamp) {
-      const d = new Date(Number(row.timestamp));
-      const pad = (n: number) => n.toString().padStart(2, '0');
-      timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    } else {
-      timeStr = row["Thời gian"] || "";
-    }
+                      slotHistoryData.map((row, index) => {
+                        let timeStr = "";
+                        if (row.timestamp) {
+                          const d = new Date(Number(row.timestamp));
+                          const pad = (n: number) => n.toString().padStart(2, '0');
+                          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                        } else {
+                          timeStr = row["Thời gian"] || "";
+                        }
 
-    const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
-    const monHoc = row.mon_hoc || row["Môn học"] || "-";
-    const nguoiGiu = row.nguoi_giu || row["Người giữ"] || "-";
-    const team = row.team || row["Team"] || "-";
-    const note = row.note || row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-";
-    
-    const rowKey = `${timeStr}-${maLop}-${index}`;
-    const isDone = completedSlots[rowKey] || row.is_done;
-    const isExpired = checkIsExpired(timeStr);
+                        const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                        const monHoc = row.mon_hoc || row["Môn học"] || "-";
+                        const nguoiGiu = row.nguoi_giu || row["Người giữ"] || "-";
+                        const team = row.team || row["Team"] || "-";
+                        const note = row.note || row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-";
+                        
+                        const rowKey = `${timeStr}-${maLop}-${index}`;
+                        const isDone = completedSlots[rowKey] || row.is_done;
+                        const isExpired = checkIsExpired(timeStr);
 
-    return (
-      // 👉 SỬA CHỖ NÀY: Dùng key={row.id || index} thay vì chỉ dùng mỗi index
-      <tr key={row.id || index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-orange-50/30"}`}>
-        <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
-        <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
-        <td className="px-6 py-4 font-medium text-slate-700">{monHoc}</td>
-        <td className="px-6 py-4 font-bold text-orange-600">{nguoiGiu}</td>
-        <td className="px-6 py-4 text-slate-600">{team}</td>
-        
-        <td className="px-6 py-4">
-          {isDone ? (
-            <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs">Đã hoàn thành</span>
-          ) : isExpired ? (
-            <span className="px-2.5 py-1 bg-red-100 text-red-700 font-bold rounded-lg text-xs">Quá hạn (Đã nhả slot)</span>
-          ) : (
-            <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-lg text-xs animate-pulse">
-              {calculateTimeRemaining(timeStr)}
-            </span>
-          )}
-        </td>
+                        return (
+                          <tr key={row.id || index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-orange-50/30"}`}>
+                            <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
+                            <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
+                            <td className="px-6 py-4 font-medium text-slate-700">{monHoc}</td>
+                            <td className="px-6 py-4 font-bold text-orange-600">{nguoiGiu}</td>
+                            <td className="px-6 py-4 text-slate-600">{team}</td>
+                            
+                            <td className="px-6 py-4">
+                              {isDone ? (
+                                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs">Đã hoàn thành</span>
+                              ) : isExpired ? (
+                                <span className="px-2.5 py-1 bg-red-100 text-red-700 font-bold rounded-lg text-xs">Quá hạn (Đã nhả slot)</span>
+                              ) : (
+                                <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-lg text-xs animate-pulse">
+                                  {calculateTimeRemaining(timeStr)}
+                                </span>
+                              )}
+                            </td>
 
-        <td className="px-6 py-4 text-slate-700 font-medium">{note}</td>
-        
-        <td className="px-6 py-4 text-right pr-6">
-          {isDone ? (
-            <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
-              <span>✅</span> Đã xếp xong
-            </span>
-          ) : isExpired ? (
-            <span className="px-3 py-1.5 bg-red-100 text-red-600 font-bold rounded-xl text-xs inline-flex items-center gap-1 shadow-sm">
-              <span>❌</span> Quá hạn (Đã nhả slot)
-            </span>
-          ) : (
-            <button
-              onClick={() => handleMarkAsDone(row.id)}
-              className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
-            >
-              Đã xếp (Done)
-            </button>
-          )}
-        </td>
-      </tr>
-    );
-})
+                            <td className="px-6 py-4 text-slate-700 font-medium">{note}</td>
+                            
+                            <td className="px-6 py-4 text-right pr-6">
+                              {isDone ? (
+                                <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
+                                  <span>✅</span> Đã xếp xong
+                                </span>
+                              ) : isExpired ? (
+                                <span className="px-3 py-1.5 bg-red-100 text-red-600 font-bold rounded-xl text-xs inline-flex items-center gap-1 shadow-sm">
+                                  <span>❌</span> Quá hạn (Đã nhả slot)
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => handleMarkAsDone(row.id)}
+                                  className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
+                                >
+                                  Đã xếp (Done)
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
                         <td colSpan={8} className="px-6 py-24 text-center text-slate-400 font-semibold">Chưa có dữ liệu lịch sử giữ slot nào được ghi nhận.</td>
@@ -1198,7 +1162,7 @@ slotHistoryData.map((row, index) => {
                   </label>
                   <input 
                     type="text"
-                    placeholder="VD: op_phuong..."
+                    placeholder=""
                     value={newAdminUser}
                     onChange={(e) => {
                       setNewAdminUser(e.target.value);
@@ -1214,7 +1178,7 @@ slotHistoryData.map((row, index) => {
                   </label>
                   <input 
                     type="password"
-                    placeholder="Nhập mật khẩu..."
+                    placeholder=""
                     value={newAdminPass}
                     onChange={(e) => {
                       setNewAdminPass(e.target.value);
@@ -1347,10 +1311,7 @@ slotHistoryData.map((row, index) => {
                         <th className="px-6 py-4">Lịch học</th>
                         
                         {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-center text-orange-600">Số slot còn</th>}
-                        
-                        {/* BỔ SUNG CỘT CẢNH BÁO TRẠNG THÁI SĨ SỐ KHI Ở TAB GIỮ SLOT */}
                         {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-center text-rose-600">Trạng thái sĩ số</th>}
-
                         {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-right pr-8 text-orange-600">Thao tác giữ</th>}
                       </tr>
                     </thead>
@@ -1359,8 +1320,6 @@ slotHistoryData.map((row, index) => {
                         currentTableData.map((row, index) => {
                           const maLop = row["Mã lớp"];
                           const subjectStr = row["Môn học"] || "";
-                          const currentStudents = Number(row["Đang học"]) || 0;
-                          
                           const heldCount = getActiveHeldCount(maLop);
                           const availableSlots = calculateAvailableSlots(row, heldCount);
                           const attendanceCheck = checkAttendanceStatus(row);
@@ -1400,7 +1359,6 @@ slotHistoryData.map((row, index) => {
                                     </span>
                                   </td>
 
-                                  {/* HIỂN THỊ CỘT CẢNH BÁO SĨ SỐ THEO RULE THÉP MỚI */}
                                   <td className="px-6 py-4 text-center">
                                     {attendanceCheck.isLow ? (
                                       <span className="px-2.5 py-1 rounded-md font-bold text-xs bg-red-50 text-red-600 border border-red-200 animate-pulse">
@@ -1484,7 +1442,6 @@ slotHistoryData.map((row, index) => {
         )}
       </main>
 
-      {/* POPUP NHẬP SID HOẶC CID (TỐI ĐA 8 SỐ) */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-slide-up">
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100 relative">
@@ -1506,7 +1463,7 @@ slotHistoryData.map((row, index) => {
                 <input 
                   type="text"
                   maxLength={8}
-                  placeholder="Nhập tối đa form 8 số"
+                  placeholder=""
                   value={inputValue}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -1518,10 +1475,8 @@ slotHistoryData.map((row, index) => {
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 text-slate-800 font-bold text-sm transition-all"
                   autoFocus
                 />
-                {inputError ? (
+                {inputError && (
                   <p className="text-[11px] font-bold text-red-500 mt-1.5">{inputError}</p>
-                ) : (
-                  <p className="text-[11px] font-medium text-slate-400 mt-1.5">Gợi ý: Tối đa form 8 số</p>
                 )}
               </div>
             </div>
@@ -1549,14 +1504,9 @@ slotHistoryData.map((row, index) => {
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap');
         
-        .font-vietnam { font-family: 'Be Vietnam Pro', sans-serif; }
+        .font-vietnam { font-family: 'Be Vietnam Pro', sans-serif !important; }
         .font-greeting { font-family: 'Baloo 2', cursive; }
         .font-handwriting { font-family: 'Caveat', cursive; }
-        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
-
-.font-vietnam {
-  font-family: 'Be Vietnam Pro', sans-serif !important;
-}
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
