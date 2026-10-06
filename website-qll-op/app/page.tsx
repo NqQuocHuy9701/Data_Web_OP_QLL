@@ -790,7 +790,7 @@ if (!isLoggedIn) {
                   </label>
                   <input 
                     type="text"
-                    placeholder="VD: huynq, lananh..."
+                    placeholder=""
                     value={namecode}
                     onChange={(e) => {
                       setNamecode(e.target.value);
@@ -826,7 +826,7 @@ if (!isLoggedIn) {
                   </label>
                   <input 
                     type="text"
-                    placeholder="VD: op_vanhanh"
+                    placeholder=""
                     value={adminUsername}
                     onChange={(e) => {
                       setAdminUsername(e.target.value);
@@ -842,7 +842,7 @@ if (!isLoggedIn) {
                   </label>
                   <input 
                     type="password"
-                    placeholder="VD: vanhanhvuihoc"
+                    placeholder=""
                     value={adminPassword}
                     onChange={(e) => {
                       setAdminPassword(e.target.value);
@@ -1013,7 +1013,7 @@ if (!isLoggedIn) {
             </div>
             <input 
               type="text" 
-              placeholder="Tìm kiếm nhanh Mã lớp, Môn học..." 
+              placeholder="" 
               className="w-full pl-12 pr-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 text-slate-700 placeholder-slate-400 transition-all duration-300 text-sm font-medium hover:bg-white focus:bg-white focus:shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
