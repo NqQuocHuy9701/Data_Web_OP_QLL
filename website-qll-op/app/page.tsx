@@ -554,9 +554,11 @@ const handleConfirmKeepSlot = async () => {
 
       const formatDate = (date: Date) => date.toLocaleDateString("vi-VN");
 
-      // ✅ ĐẨY TRỰC TIẾP XUỐNG SUPABASE (BẢNG slot_holds)
-      const { error } = await supabase.from("slot_holds").insert([
-        {
+      // 🚀 GỌI QUA API ROUTE CỦA VERCEL THAY VÌ GỌI THẲNG SUPABASE
+      const response = await fetch("/api/slot-hold", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           ma_lop: maLop,
           mon_hoc: row["Môn học"] || "",
           nguoi_giu: namecode,
@@ -565,12 +567,13 @@ const handleConfirmKeepSlot = async () => {
           ngay_het_han: formatDate(expiryDate),
           note: `SID/CID: ${cleanVal}`,
           timestamp: Date.now()
-        }
-      ]);
+        })
+      });
 
-      if (error) {
-        console.error("Lỗi Supabase insert:", error);
-        alert("Lỗi khi lưu giữ slot vào Supabase: " + error.message);
+      const result = await response.json();
+
+      if (!result.success) {
+        alert("Lỗi khi lưu giữ slot: " + result.error);
         return;
       }
 
@@ -582,7 +585,7 @@ const handleConfirmKeepSlot = async () => {
         return newHeld;
       });
 
-      setSuccessMessage("Đã lưu giữ slot thành công lên Supabase!");
+      setSuccessMessage("Đã lưu giữ slot thành công!");
       setTimeout(() => setSuccessMessage(""), 4000);
 
     } catch (error) {
