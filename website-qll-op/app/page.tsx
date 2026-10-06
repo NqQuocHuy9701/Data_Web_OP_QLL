@@ -192,36 +192,32 @@ export default function Home() {
     }
   };
 
-// ĐÃ SỬA: GỌI TRỰC TIẾP SUPABASE BỎ QUA VERCEL API 
-  const handleMarkAsDone = async (rowKey: string, dbId: string) => {
-    // 1. Lưu UI ngay lập tức để giao diện mượt
-    const updated = { ...completedSlots, [rowKey]: true };
-    setCompletedSlots(updated);
-    localStorage.setItem("qll_completed_slots", JSON.stringify(updated));
+const handleMarkAsDone = async (dbId: string) => {
+    if (!dbId) {
+      alert("Lỗi: Không tìm thấy ID bản ghi!");
+      return;
+    }
 
-    // 2. Chọc thẳng vào Supabase để update (Vì đã tắt RLS nên thao tác này rất mượt)
-    if (dbId) {
-      try {
-        const { data, error } = await supabase
-          .from('slot_holds')
-          .update({ is_done: true })
-          .eq('id', dbId)
-          .select(); // Thêm select() để ép nó trả về kết quả
+    // 1. CẬP NHẬT STATE NGAY LẬP TỨC (UI đổi màu cực mượt, tuyệt đối KHÔNG load lại trang)
+    setSlotHistoryData(prev => 
+      prev.map(row => (row.id === dbId ? { ...row, is_done: true } : row))
+    );
 
-        if (error) {
-          console.error("Lỗi update trực tiếp Supabase:", error);
-          alert("Lỗi Update DB: " + error.message); // Có lỗi sẽ popup báo ngay
-        } else {
-          console.log("Đã update thành công bản ghi:", dbId);
-          // Load lại bảng data
-          loadSlotHistory();
-        }
-      } catch (error) {
-        console.error("Lỗi mạng khi update trạng thái:", error);
+    // 2. Ngầm gửi lệnh update lên Supabase phía sau
+    try {
+      const { error } = await supabase
+        .from('slot_holds')
+        .update({ is_done: true })
+        .eq('id', dbId);
+
+      if (error) {
+        console.error("Lỗi update Supabase:", error);
+        alert("Lỗi Update DB: " + error.message);
+        // Nếu lỗi thì hoàn tác lại state cũ
+        loadSlotHistory();
       }
-    } else {
-      console.warn("⚠️ Không có dbId (ID của Supabase) để update!");
-      alert("Lỗi: Không tìm thấy ID bản ghi trong cơ sở dữ liệu!");
+    } catch (error) {
+      console.error("Lỗi mạng khi update trạng thái:", error);
     }
   };
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -317,21 +313,29 @@ export default function Home() {
     });
   };
 
-  const loadSlotHistory = async () => {
-    setLoadingHistory(true);
+const loadSlotHistory = async () => {
     try {
       const response = await fetch("/api/slot-hold");
       const result = await response.json();
       
-      if (result.success) {
-        setSlotHistoryData(result.data); // Nhận mảng dữ liệu từ Supabase
-      } else {
-        console.error("Lỗi API lấy lịch sử:", result.error);
+      if (result.success && result.data) {
+        setSlotHistoryData(prevData => {
+          // Tạo một Set chứa các ID đã được xác nhận là done trên màn hình hiện tại
+          const doneIds = new Set(prevData.filter(item => item.is_done).map(item => item.id));
+          
+          // Map dữ liệu mới từ server về, nếu trùng ID với danh sách đã done thì ép cứng is_done = true
+          const mergedData = result.data.map((newItem: any) => {
+            if (doneIds.has(newItem.id)) {
+              return { ...newItem, is_done: true };
+            }
+            return newItem;
+          });
+
+          return mergedData;
+        });
       }
     } catch (err) {
       console.error("Lỗi fetch lịch sử giữ slot:", err);
-    } finally {
-      setLoadingHistory(false);
     }
   };
 
