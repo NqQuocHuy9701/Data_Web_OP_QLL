@@ -727,20 +727,20 @@ if (!isLoggedIn) {
     return (
       <div className="relative h-screen w-screen overflow-hidden font-sora bg-[#0b0c10] flex items-center justify-center">
         
-        {/* NẠP FONT SORA VÀ CSS HIỆU ỨNG VIỀN SÁNG (FLUID GLOW) MỚI */}
+        {/* NẠP FONT SORA VÀ CSS VIỀN SÁNG ĐUỔI NHAU (METEOR GLOW) */}
         <style dangerouslySetInnerHTML={{__html: `
           @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
           .font-sora { font-family: 'Sora', sans-serif !important; }
 
           @keyframes floatBitu {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-15px) rotate(2deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
           }
           .animate-float-bitu {
-            animation: floatBitu 4.5s ease-in-out infinite;
+            animation: floatBitu 4s ease-in-out infinite;
           }
 
-          /* HIỆU ỨNG GÕ CHỮ (TYPEWRITER) */
+          /* HIỆU ỨNG GÕ CHỮ */
           @keyframes typing {
             from { width: 0; }
             to { width: 100%; }
@@ -757,99 +757,94 @@ if (!isLoggedIn) {
             animation: typing 3s steps(16, end) infinite alternate, blink 0.75s step-end infinite;
           }
 
-          /* HIỆU ỨNG NƯỚC & VIỀN SÁNG CHẠY ĐỘNG (FLUID BORDER GLOW) */
-          @keyframes fluidRotate {
+          /* --- CSS ĐƯỜNG VIỀN ÁNH SÁNG CHẠY (CHUẨN HIỆN ĐẠI) --- */
+          @keyframes spin-glow {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
 
-          .glow-card-wrapper {
+          .animated-border-box {
             position: relative;
-            border-radius: 44px;
-            padding: 5px; /* Độ dày của viền sáng to hơn */
+            border-radius: 40px; /* Bo góc hộp ngoài */
+            padding: 4px; /* ĐỘ DÀY ĐƯỜNG VIỀN (To và rõ nét hơn) */
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05); /* Viền mờ làm nền */
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+          }
+
+          /* Dải tia sáng màu Xanh (Chạy trước) */
+          .animated-border-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+              transparent 70%, 
+              #00f2fe 85%, 
+              #4facfe 100%
+            );
+            animation: spin-glow 4s linear infinite;
+            z-index: 0;
+          }
+
+          /* Dải tia sáng màu Cam (Chạy đuổi theo sau) */
+          .animated-border-box::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+              transparent 70%, 
+              #f97316 85%, 
+              #f59e0b 100%
+            );
+            animation: spin-glow 4s linear infinite;
+            animation-delay: -2s;
+            z-index: 0;
+          }
+
+          /* Phần lõi bên trong form */
+          .animated-border-inner {
+            position: relative;
+            background: #0d111a; /* Nền form tối màu, che lấp tâm gradient */
+            border-radius: 36px; /* Nhỏ hơn hộp ngoài một chút để hở đúng 4px viền */
             z-index: 1;
-            transition: all 0.4s ease;
-          }
-
-          /* Lớp 1: Viền sáng sắc nét bo sát form */
-          .glow-card-wrapper::before {
-            content: '';
-            position: absolute;
-            inset: -50%;
-            background: conic-gradient(from 0deg at 50% 50%, #00f2fe 0%, #4facfe 25%, #a855f7 50%, #f97316 75%, #00f2fe 100%);
-            animation: fluidRotate 4s linear infinite;
-            z-index: -1;
-            transition: filter 0.4s ease;
-          }
-
-          /* Lớp 2: Lớp tỏa sáng (Glow/Water effect) phía sau */
-          .glow-card-wrapper::after {
-            content: '';
-            position: absolute;
-            inset: -50%;
-            background: conic-gradient(from 0deg at 50% 50%, #00f2fe 0%, #4facfe 25%, #a855f7 50%, #f97316 75%, #00f2fe 100%);
-            animation: fluidRotate 4s linear infinite;
-            z-index: -2;
-            filter: blur(15px);
-            opacity: 0.6;
-            transition: filter 0.5s ease, opacity 0.5s ease;
-          }
-
-          /* Khi Hover: Tăng độ nhòe và sáng tạo cảm giác chuyển động của nước */
-          .glow-card-wrapper:hover::after {
-            opacity: 1;
-            filter: blur(35px);
-          }
-          .glow-card-wrapper:hover::before {
-            filter: blur(2px); /* Viền chính mềm ra một chút để hòa quyện */
-          }
-
-          /* Lõi Form hiển thị nội dung */
-          .glow-card-content {
-            position: relative;
-            background: #0d111a; /* Màu nền form tối sẫm, tương phản mạnh */
-            border-radius: 40px;
-            z-index: 2;
-            height: 100%;
             width: 100%;
+            height: 100%;
           }
         `}} />
 
-        {/* NỀN GIAO DIỆN MỚI: TÍM ĐẬM PHA THAN SANG TRỌNG */}
+        {/* NỀN GIAO DIỆN TÍM ĐẬM PHA THAN SANG TRỌNG */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0c0a1a] via-[#110e25] to-[#070b14] -z-20"></div>
-        
-        {/* ĐIỂM SÁNG RADIAL TRANG TRÍ MỜ Ở GÓC */}
-        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-600/10 filter blur-[120px] -z-10 pointer-events-none"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-cyan-600/10 filter blur-[120px] -z-10 pointer-events-none"></div>
 
-        {/* CONTAINER CHÍNH */}
-        <div className="w-full max-w-[1450px] px-6 lg:px-16 flex items-center justify-between">
+        {/* BỐ CỤC CHÍNH */}
+        <div className="w-full max-w-[1400px] px-6 lg:px-16 flex items-center justify-between">
           
-          {/* BÊN TRÁI: NHÂN VẬT BITU & HỘP THOẠI CHỮ GÕ ĐỘNG */}
+          {/* BÊN TRÁI: NHÂN VẬT BITU & CHỮ GÕ ĐỘNG */}
           <div className="hidden lg:flex flex-col items-start relative animate-float-bitu z-20 pointer-events-none select-none pl-6 xl:pl-12">
             
-            {/* HỘP THOẠI CHÀO HỎI VỚI HIỆU ỨNG GÕ CHỮ */}
-            <div className="mb-4 ml-6 bg-[#1a1f33]/80 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl shadow-2xl relative">
+            <div className="mb-4 ml-6 bg-[#1a1f33]/90 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl shadow-2xl relative">
               <p className="text-white font-medium text-base tracking-wide">
                 <span className="typing-effect">Xin chào bạn! ✨</span>
               </p>
-              <div className="absolute -bottom-2 left-8 w-4 h-4 bg-[#1a1f33]/80 border-r border-b border-white/10 rotate-45 backdrop-blur-md"></div>
+              <div className="absolute -bottom-2 left-8 w-4 h-4 bg-[#1a1f33]/90 border-r border-b border-white/10 rotate-45 backdrop-blur-md"></div>
             </div>
 
-            {/* HÌNH ẢNH BITU */}
             <img 
               src="/Chào hỏi_2.png" 
               alt="Nhân vật Bitu Vuihoc" 
               className="w-[360px] xl:w-[420px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/Ch%C3%A0o%20h%E1%BB%8Fi_2.png';
-              }}
+              onError={(e) => { (e.target as HTMLImageElement).src = '/Ch%C3%A0o%20h%E1%BB%8Fi_2.png'; }}
             />
           </div>
 
-          {/* BÊN PHẢI: KHUNG ĐĂNG NHẬP VỚI HIỆU ỨNG NƯỚC & VIỀN SÁNG */}
-          <div className="glow-card-wrapper w-full max-w-[540px] mx-auto lg:mx-0">
-            <div className="glow-card-content p-10 lg:p-12">
+          {/* BÊN PHẢI: KHUNG ĐĂNG NHẬP VỚI VIỀN TIA SÁNG CHẠY */}
+          <div className="animated-border-box w-full max-w-[540px] mx-auto lg:mx-0">
+            <div className="animated-border-inner p-10 lg:p-12">
               
               <div className="flex items-center gap-3.5 mb-6">
                 <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-3 rounded-2xl shadow-lg flex items-center justify-center">
@@ -876,7 +871,7 @@ if (!isLoggedIn) {
                   className={`py-3.5 text-xs font-medium rounded-xl transition-all ${
                     loginRole === "QLL" 
                       ? "bg-white/10 text-white shadow-md border border-white/10" 
-                      : "text-slate-400 hover:text-white"
+                      : "text-slate-500 hover:text-white"
                   }`}
                 >
                   👩‍💻 Quản Lý Lớp (QLL)
@@ -887,7 +882,7 @@ if (!isLoggedIn) {
                   className={`py-3.5 text-xs font-medium rounded-xl transition-all ${
                     loginRole === "Admin" 
                       ? "bg-white/10 text-white shadow-md border border-white/10" 
-                      : "text-slate-400 hover:text-white"
+                      : "text-slate-500 hover:text-white"
                   }`}
                 >
                   🔐 Quản Trị (Admin)
@@ -985,7 +980,6 @@ if (!isLoggedIn) {
       </div>
     );
   }
-
   return (
     <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0"></div>
