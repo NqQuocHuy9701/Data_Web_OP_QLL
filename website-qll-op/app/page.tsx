@@ -101,13 +101,13 @@ export default function Home() {
       }
     }
 
-    const savedUser = localStorage.getItem("qll_logged_user");
+const savedUser = localStorage.getItem("qll_logged_user");
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
         if (parsed.namecode) {
           setNamecode(parsed.namecode);
-          setTeamLead(parsed.teamLead || "Team Lead A");
+          setTeamLead(parsed.teamLead || (parsed.role === "Admin" ? "Quản trị hệ thống" : "Team Lead A"));
           setLoginRole(parsed.role || "QLL");
           setIsLoggedIn(true);
         }
@@ -220,11 +220,12 @@ const handleMarkAsDone = async (dbId: string) => {
       console.error("Lỗi mạng khi update trạng thái:", error);
     }
   };
-  const handleLoginSubmit = (e: React.FormEvent) => {
+ const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
     if (loginRole === "QLL") {
+      // --- XỬ LÝ KHI ĐĂNG NHẬP BẰNG TÀI KHOẢN QLL ---
       if (!namecode.trim()) {
         setLoginError("Vui lòng nhập Namecode của bạn!");
         return;
@@ -233,9 +234,15 @@ const handleMarkAsDone = async (dbId: string) => {
         setLoginError("Vui lòng chọn hoặc nhập Team Lead!");
         return;
       }
-      const userData = { namecode: namecode.trim(), teamLead: teamLead.trim(), role: "QLL" };
+      const userData = { 
+        namecode: namecode.trim(), 
+        teamLead: teamLead.trim(), // Lấy chuẩn xác team lead QLL chọn
+        role: "QLL" 
+      };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
+      
     } else {
+      // --- XỬ LÝ KHI ĐĂNG NHẬP BẰNG TÀI KHOẢN ADMIN ---
       const matchedAdmin = adminList.find(
         (acc) => acc.username.trim() === adminUsername.trim() && acc.pass === adminPassword.trim()
       );
@@ -244,10 +251,17 @@ const handleMarkAsDone = async (dbId: string) => {
         setLoginError("Tên đăng nhập hoặc mật khẩu Admin không chính xác!");
         return;
       }
+
+      // Gán đúng tên của Admin đăng nhập
       setNamecode(matchedAdmin.username);
-      const userData = { namecode: matchedAdmin.username, teamLead: "Admin hệ thống", role: "Admin" };
+      
+      const userData = { 
+        namecode: matchedAdmin.username, 
+        teamLead: "Quản trị hệ thống", // Hoặc phân biệt rõ đây là tài khoản Admin
+        role: "Admin" 
+      };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
-      setTeamLead("Admin hệ thống");
+      setTeamLead("Quản trị hệ thống");
     }
 
     setIsLoggedIn(true);
