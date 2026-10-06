@@ -725,32 +725,12 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
 if (!isLoggedIn) {
     return (
-      <div className="relative h-screen w-screen overflow-hidden font-outfit bg-[#1b1440] flex items-center justify-center">
+      <div className="relative h-screen w-screen overflow-hidden font-sora bg-[#0b0f19] flex items-center justify-center">
         
-        {/* NẠP FONT OUTFIT VÀ HIỆU ỨNG ANIMATION CHỮ GÕ ĐỘNG */}
+        {/* NẠP FONT SORA TỪ GOOGLE FONTS VÀ CSS HIỆU ỨNG VIỀN SÁNG CHẠY ĐỘNG */}
         <style dangerouslySetInnerHTML={{__html: `
-          @font-face {
-            font-family: 'Outfit';
-            font-style: normal;
-            font-weight: 400;
-            font-display: swap;
-            src: url('/fonts/outfit-400-latin.woff2') format('woff2');
-          }
-          @font-face {
-            font-family: 'Outfit';
-            font-style: normal;
-            font-weight: 500;
-            font-display: swap;
-            src: url('/fonts/outfit-500-latin.woff2') format('woff2');
-          }
-          @font-face {
-            font-family: 'Outfit';
-            font-style: normal;
-            font-weight: 600;
-            font-display: swap;
-            src: url('/fonts/outfit-600-latin.woff2') format('woff2');
-          }
-          .font-outfit { font-family: 'Outfit', sans-serif !important; }
+          @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+          .font-sora { font-family: 'Sora', sans-serif !important; }
 
           @keyframes floatBitu {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -777,28 +757,46 @@ if (!isLoggedIn) {
             animation: typing 3s steps(16, end) infinite alternate, blink 0.75s step-end infinite;
           }
 
-          .bg-glass-card {
-            background: rgba(255, 255, 255, 0.08) !important;
-            backdrop-filter: saturate(200%) blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+          /* HIỆU ỨNG VIỀN SÁNG CHẠY ĐỘNG (BORDER GLOW ANIMATION) */
+          @keyframes borderRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
           }
-          .bg-glass-card:hover {
-            background: rgba(15, 23, 42, 0.75) !important;
-            border-color: rgba(255, 255, 255, 0.35);
+
+          .glow-card-wrapper {
+            position: relative;
+            border-radius: 42px;
+            overflow: hidden;
+            padding: 2px; /* Độ dày của viền sáng */
+            box-shadow: 0 30px 100px rgba(0, 0, 0, 0.8);
+          }
+
+          .glow-card-wrapper::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background: conic-gradient(from 0deg at 50% 50%, #38bdf8 0deg, #a855f7 120deg, #f97316 240deg, #38bdf8 360deg);
+            animation: borderRotate 6s linear infinite;
+          }
+
+          .glow-card-content {
+            position: relative;
+            background: #111827;
+            border-radius: 40px;
+            z-index: 1;
           }
         `}} />
 
         {/* ẢNH NỀN BACKDROP.JPG TRÀN MÀN HÌNH */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-20"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-20 opacity-80"
           style={{ backgroundImage: `url('/backdrop.jpg')` }}
         ></div>
         
         {/* LỚP PHỦ TỐI MỜ */}
-        <div className="absolute inset-0 bg-[#0a0828]/55 -z-10"></div>
+        <div className="absolute inset-0 bg-[#070a14]/65 -z-10"></div>
 
-        {/* CONTAINER GIÃN RỘNG 2 BÊN: BITU BÊN TRÁI (VÙNG KHUNG ĐỎ), POPUP ĐĂNG NHẬP BÊN PHẢI */}
+        {/* CONTAINER CHÍNH */}
         <div className="w-full max-w-[1450px] px-6 lg:px-16 flex items-center justify-between">
           
           {/* BÊN TRÁI: NHÂN VẬT BITU & HỘP THOẠI CHỮ GÕ ĐỘNG */}
@@ -806,10 +804,9 @@ if (!isLoggedIn) {
             
             {/* HỘP THOẠI CHÀO HỎI VỚI HIỆU ỨNG GÕ CHỮ */}
             <div className="mb-4 ml-6 bg-white/10 backdrop-blur-md border border-white/25 px-5 py-3 rounded-2xl shadow-2xl relative">
-              <p className="text-white font-bold text-base tracking-wide">
+              <p className="text-white font-medium text-base tracking-wide">
                 <span className="typing-effect">Xin chào bạn! ✨</span>
               </p>
-              {/* Mũi tên trỏ xuống của bong bóng chat */}
               <div className="absolute -bottom-2 left-8 w-4 h-4 bg-white/10 border-r border-b border-white/25 rotate-45 backdrop-blur-md"></div>
             </div>
 
@@ -824,147 +821,148 @@ if (!isLoggedIn) {
             />
           </div>
 
-          {/* BÊN PHẢI: KHUNG ĐĂNG NHẬP CHÍNH */}
-          <div className="bg-glass-card rounded-[40px] p-10 lg:p-12 w-full max-w-[540px] relative z-20 transition-all duration-300 mx-auto lg:mx-0">
-            
-            <div className="flex items-center gap-3.5 mb-6">
-              <div className="bg-orange-500 p-3 rounded-2xl shadow-lg border border-orange-400 flex items-center justify-center">
-                <img 
-                  src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
-                  alt="Vuihoc Logo" 
-                  className="h-6 w-auto object-contain brightness-0 invert"
-                />
+          {/* BÊN PHẢI: KHUNG ĐĂNG NHẬP VỚI HIỆU ỨNG VIỀN SÁNG CHẠY ĐỘNG */}
+          <div className="glow-card-wrapper w-full max-w-[540px] mx-auto lg:mx-0">
+            <div className="glow-card-content p-10 lg:p-12">
+              
+              <div className="flex items-center gap-3.5 mb-6">
+                <div className="bg-orange-500 p-3 rounded-2xl shadow-lg border border-orange-400 flex items-center justify-center">
+                  <img 
+                    src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
+                    alt="Vuihoc Logo" 
+                    className="h-6 w-auto object-contain brightness-0 invert"
+                  />
+                </div>
+                <div>
+                  <span className="text-white font-semibold tracking-wider uppercase text-sm block">Vuihoc Operations</span>
+                  <span className="text-slate-400 text-xs font-normal">Hệ thống quản lý vận hành QLL</span>
+                </div>
               </div>
-              <div>
-                <span className="text-white font-extrabold tracking-wider uppercase text-sm block">Vuihoc Operations</span>
-                <span className="text-slate-400 text-xs font-medium">Hệ thống quản lý vận hành QLL</span>
+
+              <h2 className="text-3xl lg:text-4xl font-semibold text-white mb-1.5">Đăng nhập</h2>
+              <p className="text-slate-300 text-sm mb-7">Chào mừng bạn quay trở lại làm việc.</p>
+
+              {/* TAB CHUYỂN ĐỔI VAI TRÒ */}
+              <div className="grid grid-cols-2 gap-2.5 p-1.5 bg-black/35 rounded-2xl mb-7 border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
+                  className={`py-3.5 text-xs font-medium rounded-xl transition-all ${
+                    loginRole === "QLL" 
+                      ? "bg-white/20 text-white shadow-md border border-white/20" 
+                      : "text-slate-300 hover:text-white"
+                  }`}
+                >
+                  👩‍💻 Quản Lý Lớp (QLL)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLoginRole("Admin"); setLoginError(""); }}
+                  className={`py-3.5 text-xs font-medium rounded-xl transition-all ${
+                    loginRole === "Admin" 
+                      ? "bg-white/20 text-white shadow-md border border-white/20" 
+                      : "text-slate-300 hover:text-white"
+                  }`}
+                >
+                  🔐 Quản Trị (Admin)
+                </button>
               </div>
+
+              <form onSubmit={handleLoginSubmit}>
+                {loginRole === "QLL" ? (
+                  <>
+                    <div className="mb-5">
+                      <label className="text-white/90 text-sm font-medium mb-2 block">
+                        Namecode <span className="text-red-400">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder=""
+                        value={namecode}
+                        onChange={(e) => {
+                          setNamecode(e.target.value);
+                          setLoginError("");
+                        }}
+                        className="w-full min-h-[54px] px-4.5 py-3.5 bg-black/45 border border-white/15 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-white transition-all shadow-inner"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="mb-7">
+                      <label className="text-white/90 text-sm font-medium mb-2 block">
+                        Team Lead <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        value={teamLead}
+                        onChange={(e) => setTeamLead(e.target.value)}
+                        className="w-full min-h-[54px] px-4.5 py-3.5 bg-[#111827] border border-white/15 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-white transition-all cursor-pointer shadow-inner"
+                      >
+                        <option value="Team Lead A" className="bg-[#111827] text-white">Team Lead A</option>
+                        <option value="Team Lead B" className="bg-[#111827] text-white">Team Lead B</option>
+                        <option value="Team Lead C" className="bg-[#111827] text-white">Team Lead C</option>
+                        <option value="Team Lead D" className="bg-[#111827] text-white">Team Lead D</option>
+                        <option value="Khác" className="bg-[#111827] text-white">Khác / Vận hành chung</option>
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-5">
+                      <label className="text-white/90 text-sm font-medium mb-2 block">
+                        Tên đăng nhập Admin <span className="text-red-400">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder=""
+                        value={adminUsername}
+                        onChange={(e) => {
+                          setAdminUsername(e.target.value);
+                          setLoginError("");
+                        }}
+                        className="w-full min-h-[54px] px-4.5 py-3.5 bg-black/45 border border-white/15 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-white transition-all shadow-inner"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="mb-7">
+                      <label className="text-white/90 text-sm font-medium mb-2 block">
+                        Mật khẩu Admin <span className="text-red-400">*</span>
+                      </label>
+                      <input 
+                        type="password"
+                        placeholder=""
+                        value={adminPassword}
+                        onChange={(e) => {
+                          setAdminPassword(e.target.value);
+                          setLoginError("");
+                        }}
+                        className="w-full min-h-[54px] px-4.5 py-3.5 bg-black/45 border border-white/15 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-white transition-all shadow-inner"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {loginError && (
+                  <p className="text-red-400 text-xs font-medium mb-4 text-center">{loginError}</p>
+                )}
+
+                <button 
+                  type="submit"
+                  className={`w-full min-h-[58px] rounded-2xl font-medium text-base transition-all cursor-pointer active:scale-95 shadow-xl flex items-center justify-center gap-2 ${
+                    loginRole === "QLL" 
+                      ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:opacity-95 shadow-sky-500/30" 
+                      : "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:opacity-95 shadow-orange-500/30"
+                  }`}
+                >
+                  {loginRole === "QLL" ? "Vào hệ thống QLL →" : "Đăng nhập Admin →"}
+                </button>
+              </form>
             </div>
-
-            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-1.5">Đăng nhập</h2>
-            <p className="text-slate-300 text-sm mb-7">Chào mừng bạn quay trở lại làm việc.</p>
-
-            {/* TAB CHUYỂN ĐỔI VAI TRÒ */}
-            <div className="grid grid-cols-2 gap-2.5 p-1.5 bg-black/35 rounded-2xl mb-7 border border-white/10">
-              <button
-                type="button"
-                onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
-                className={`py-3.5 text-xs font-bold rounded-xl transition-all ${
-                  loginRole === "QLL" 
-                    ? "bg-white/25 text-white shadow-md border border-white/20" 
-                    : "text-slate-300 hover:text-white"
-                }`}
-              >
-                👩‍💻 Quản Lý Lớp (QLL)
-              </button>
-              <button
-                type="button"
-                onClick={() => { setLoginRole("Admin"); setLoginError(""); }}
-                className={`py-3.5 text-xs font-bold rounded-xl transition-all ${
-                  loginRole === "Admin" 
-                    ? "bg-white/25 text-white shadow-md border border-white/20" 
-                    : "text-slate-300 hover:text-white"
-                }`}
-              >
-                🔐 Quản Trị (Admin)
-              </button>
-            </div>
-
-            <form onSubmit={handleLoginSubmit}>
-              {loginRole === "QLL" ? (
-                <>
-                  <div className="mb-5">
-                    <label className="text-white/90 text-sm font-semibold mb-2 block">
-                      Namecode <span className="text-red-400">*</span>
-                    </label>
-                    <input 
-                      type="text"
-                      placeholder=""
-                      value={namecode}
-                      onChange={(e) => {
-                        setNamecode(e.target.value);
-                        setLoginError("");
-                      }}
-                      className="w-full min-h-[54px] px-4.5 py-3.5 bg-black/45 border border-white/20 rounded-2xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="mb-7">
-                    <label className="text-white/90 text-sm font-semibold mb-2 block">
-                      Team Lead <span className="text-red-400">*</span>
-                    </label>
-                    <select
-                      value={teamLead}
-                      onChange={(e) => setTeamLead(e.target.value)}
-                      className="w-full min-h-[54px] px-4.5 py-3.5 bg-[#1b1440]/90 border border-white/20 rounded-2xl text-white font-medium text-base focus:outline-none focus:border-white transition-all cursor-pointer shadow-inner"
-                    >
-                      <option value="Team Lead A" className="bg-[#1b1440] text-white">Team Lead A</option>
-                      <option value="Team Lead B" className="bg-[#1b1440] text-white">Team Lead B</option>
-                      <option value="Team Lead C" className="bg-[#1b1440] text-white">Team Lead C</option>
-                      <option value="Team Lead D" className="bg-[#1b1440] text-white">Team Lead D</option>
-                      <option value="Khác" className="bg-[#1b1440] text-white">Khác / Vận hành chung</option>
-                    </select>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mb-5">
-                    <label className="text-white/90 text-sm font-semibold mb-2 block">
-                      Tên đăng nhập Admin <span className="text-red-400">*</span>
-                    </label>
-                    <input 
-                      type="text"
-                      placeholder=""
-                      value={adminUsername}
-                      onChange={(e) => {
-                        setAdminUsername(e.target.value);
-                        setLoginError("");
-                      }}
-                      className="w-full min-h-[54px] px-4.5 py-3.5 bg-black/45 border border-white/20 rounded-2xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="mb-7">
-                    <label className="text-white/90 text-sm font-semibold mb-2 block">
-                      Mật khẩu Admin <span className="text-red-400">*</span>
-                    </label>
-                    <input 
-                      type="password"
-                      placeholder=""
-                      value={adminPassword}
-                      onChange={(e) => {
-                        setAdminPassword(e.target.value);
-                        setLoginError("");
-                      }}
-                      className="w-full min-h-[54px] px-4.5 py-3.5 bg-black/45 border border-white/20 rounded-2xl text-white font-medium text-base focus:outline-none focus:border-white transition-all shadow-inner"
-                    />
-                  </div>
-                </>
-              )}
-
-              {loginError && (
-                <p className="text-red-400 text-xs font-semibold mb-4 text-center">{loginError}</p>
-              )}
-
-              <button 
-                type="submit"
-                className={`w-full min-h-[58px] rounded-2xl font-bold text-base transition-all cursor-pointer active:scale-95 shadow-xl flex items-center justify-center gap-2 ${
-                  loginRole === "QLL" 
-                    ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:opacity-95 shadow-sky-500/30" 
-                    : "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:opacity-95 shadow-orange-500/30"
-                }`}
-              >
-                {loginRole === "QLL" ? "Vào hệ thống QLL →" : "Đăng nhập Admin →"}
-              </button>
-            </form>
           </div>
 
         </div>
       </div>
     );
   }
-
 
   return (
     <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
