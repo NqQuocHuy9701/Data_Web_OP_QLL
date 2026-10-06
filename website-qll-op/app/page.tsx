@@ -752,13 +752,13 @@ const loadSlotHistory = async (isSilent = false) => {
 
 if (!isLoggedIn) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#F8FAFC] relative overflow-hidden px-4">
-        {/* Hiệu ứng nền mờ ảo nhẹ nhàng */}
-        <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-sky-100/60 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-orange-100/60 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="flex h-screen w-screen items-center justify-center bg-[#F8FAFC] relative overflow-hidden px-4 antialiased">
+        {/* Hiệu ứng nền mờ ảo */}
+        <div className="absolute top-1/3 left-1/4 w-[450px] h-[450px] bg-sky-100/50 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-[450px] h-[450px] bg-orange-100/50 rounded-full blur-[100px] pointer-events-none"></div>
 
-        {/* Khung Login chuẩn font hệ thống y hệt bên trong dashboard */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-10 w-full max-w-[480px] shadow-[0_10px_30px_rgba(0,0,0,0.05)] relative z-10">
+        {/* Khung Login tinh tế, chuẩn typography */}
+        <div className="bg-white border border-slate-200/70 rounded-3xl p-10 w-full max-w-[460px] shadow-[0_15px_40px_rgba(0,0,0,0.04)] relative z-10">
           
           <div className="flex flex-col items-center text-center mb-8">
             <img 
@@ -766,16 +766,16 @@ if (!isLoggedIn) {
               alt="Vuihoc Logo" 
               className="h-8 w-auto object-contain mb-3"
             />
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Hệ Thống Vận Hành QLL</h1>
-            <p className="text-xs text-slate-500 mt-1">Vui lòng chọn vai trò để tiếp tục làm việc</p>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Hệ Thống Vận Hành QLL</h1>
+            <p className="text-xs text-slate-500 font-normal mt-1">Vui lòng chọn vai trò để tiếp tục làm việc</p>
           </div>
 
           {/* Tab chuyển đổi vai trò */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-6">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl mb-6">
             <button
               type="button"
               onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
-              className={`py-2.5 text-xs font-semibold rounded-lg transition-all ${
+              className={`py-3 text-xs font-semibold rounded-xl transition-all ${
                 loginRole === "QLL" 
                   ? "bg-white text-sky-600 shadow-sm" 
                   : "text-slate-600 hover:text-slate-900"
@@ -786,7 +786,7 @@ if (!isLoggedIn) {
             <button
               type="button"
               onClick={() => { setLoginRole("Admin"); setLoginError(""); }}
-              className={`py-2.5 text-xs font-semibold rounded-lg transition-all ${
+              className={`py-3 text-xs font-semibold rounded-xl transition-all ${
                 loginRole === "Admin" 
                   ? "bg-white text-orange-600 shadow-sm" 
                   : "text-slate-600 hover:text-slate-900"
@@ -800,7 +800,7 @@ if (!isLoggedIn) {
             {loginRole === "QLL" ? (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
                     Namecode <span className="text-red-500">*</span>
                   </label>
                   <input 
@@ -811,19 +811,19 @@ if (!isLoggedIn) {
                       setNamecode(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-800 text-sm transition-all"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-900 font-normal text-sm transition-all"
                     autoFocus
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
                     Team Lead <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={teamLead}
                     onChange={(e) => setTeamLead(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-800 text-sm transition-all cursor-pointer"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-900 font-normal text-sm transition-all cursor-pointer"
                   >
                     <option value="Team Lead A">Team Lead A</option>
                     <option value="Team Lead B">Team Lead B</option>
@@ -836,7 +836,7 @@ if (!isLoggedIn) {
             ) : (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
                     Tên đăng nhập Admin <span className="text-red-500">*</span>
                   </label>
                   <input 
@@ -847,12 +847,12 @@ if (!isLoggedIn) {
                       setAdminUsername(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-800 text-sm transition-all"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 font-normal text-sm transition-all"
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
                     Mật khẩu Admin <span className="text-red-500">*</span>
                   </label>
                   <input 
@@ -863,7 +863,7 @@ if (!isLoggedIn) {
                       setAdminPassword(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-800 text-sm transition-all"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-900 font-normal text-sm transition-all"
                   />
                 </div>
               </>
@@ -875,7 +875,7 @@ if (!isLoggedIn) {
 
             <button 
               type="submit"
-              className={`w-full py-3 text-white rounded-xl font-semibold text-sm shadow-sm transition-all cursor-pointer active:scale-95 mt-2 ${
+              className={`w-full py-3.5 text-white rounded-2xl font-semibold text-sm shadow-sm transition-all cursor-pointer active:scale-95 mt-2 ${
                 loginRole === "QLL" 
                   ? "bg-sky-500 hover:bg-sky-600" 
                   : "bg-orange-500 hover:bg-orange-600"
