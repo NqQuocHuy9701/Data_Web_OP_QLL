@@ -727,7 +727,7 @@ if (!isLoggedIn) {
     return (
       <div className="relative h-screen w-screen overflow-hidden font-outfit bg-[#1b1440] flex items-center justify-center">
         
-        {/* NẠP FONT OUTFIT CHUẨN */}
+        {/* NẠP FONT OUTFIT VÀ CSS HIỆU ỨNG GLASSHORPHISM / SHAPES */}
         <style dangerouslySetInnerHTML={{__html: `
           @font-face {
             font-family: 'Outfit';
@@ -752,60 +752,67 @@ if (!isLoggedIn) {
           }
           .font-outfit { font-family: 'Outfit', sans-serif !important; }
 
-          @keyframes smoothScaleIn {
-            0% { opacity: 0; transform: translateY(20px) scale(0.97); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+          #radius-shape-1 {
+            height: 250px;
+            width: 250px;
+            top: -40px;
+            right: -100px;
+            background: radial-gradient(#ff7518, #ad1fff);
+            filter: blur(50px);
+            opacity: 0.5;
+            pointer-events: none;
           }
-          .animate-smooth-glass {
-            animation: smoothScaleIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+          #radius-shape-2 {
+            border-radius: 38% 62% 63% 37% / 70% 33% 67% 30%;
+            bottom: -50px;
+            left: -80px;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(#00c6ff, #0072ff);
+            filter: blur(60px);
+            opacity: 0.4;
+            pointer-events: none;
+          }
+
+          .bg-glass-card {
+            background: rgba(255, 255, 255, 0.08) !important;
+            backdrop-filter: saturate(200%) blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+          }
+          .bg-glass-card:hover {
+            background: rgba(15, 23, 42, 0.65) !important;
+            border-color: rgba(255, 255, 255, 0.35);
           }
         `}} />
 
-        {/* HIỂN THỊ CHÍNH XÁC ẢNH NỀN BACKDROP.JPG TRÀN MÀN HÌNH */}
+        {/* ẢNH NỀN BACKDROP.JPG TRÀN MÀN HÌNH */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-20"
           style={{ backgroundImage: `url('/images/backdrop.jpg')` }}
         ></div>
         
-        {/* LỚP PHỦ MỜ TỐI ĐỂ NỔI BẬT NỘI DUNG */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0828]/60 via-[#0a0828]/20 to-[#0a0828]/40 -z-10"></div>
+        {/* LỚP PHỦ TỐI MỜ */}
+        <div className="absolute inset-0 bg-[#0a0828]/55 -z-10"></div>
 
-        {/* CONTAINER GIÃN RỘNG: CHỮ BÊN TRÁI, POPUP ĐĂNG NHẬP DÀI RỘNG BÊN PHẢI */}
-        <div className="w-full max-w-[1440px] px-8 lg:px-16 grid grid-cols-1 lg:grid-cols-[1.2fr_520px] gap-12 lg:gap-24 items-center justify-between">
+        {/* CONTAINER CHÍNH: POPUP ĐĂNG NHẬP BÊN TRÁI, CHỮ NẰM HẲN BÊN PHẢI */}
+        <div className="w-full max-w-[1400px] px-8 lg:px-16 grid grid-cols-1 lg:grid-cols-[500px_1fr] gap-12 lg:gap-20 items-center justify-between">
           
-          {/* BÊN TRÁI: LOGO VUIHOC NỀN CAM & THÔNG ĐIỆP GIÃN ĐỀU */}
-          <div className="relative z-10 flex flex-col justify-between h-[80vh] max-w-xl">
-            <div>
-              <a href="#" className="inline-flex items-center gap-3 text-white text-[22px] font-semibold text-decoration-none">
-                <div className="bg-orange-500 p-2.5 rounded-2xl shadow-lg border border-orange-400 flex items-center justify-center">
-                  <img 
-                    src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
-                    alt="Vuihoc Logo" 
-                    className="h-6 w-auto object-contain brightness-0 invert"
-                  />
-                </div>
-                <span className="text-white font-bold tracking-wider uppercase text-sm">Vuihoc Operations</span>
-              </a>
-            </div>
-
-            <div>
-              <p className="text-[14px] font-medium text-white/90 uppercase tracking-widest mb-3">Hệ thống vận hành QLL chuyên nghiệp</p>
-              <h1 className="text-4xl lg:text-6xl font-semibold tracking-tight leading-[1.08] text-white mb-5 drop-shadow-md">
-                Quản lý lớp học nhanh chóng & hiệu quả.
-              </h1>
-              <p className="text-slate-200 text-sm font-normal leading-relaxed max-w-md">
-                Hệ thống hỗ trợ giữ slot, quản lý lịch khai giảng, theo dõi chuyên cần và vận hành toàn bộ luồng công việc của QLL theo thời gian thực.
-              </p>
-            </div>
-
-            <div className="text-xs text-slate-300 font-medium">
-              © 2026 Vuihoc Education Operations. Secure System.
-            </div>
-          </div>
-
-          {/* BÊN PHẢI: HỘP ĐĂNG NHẬP KÉO DÀI TO RỘNG & MƯỢT MÀ */}
-          <div className="bg-white/[0.08] hover:bg-slate-900/50 backdrop-blur-2xl border border-white/[0.18] rounded-[36px] p-10 lg:p-12 w-full shadow-[0_30px_90px_rgba(0,0,0,0.6)] animate-smooth-glass transition-all duration-300">
+          {/* BÊN TRÁI: HỘP ĐĂNG NHẬP TO RỘNG, HIỆU ỨNG GLASSMOPHISM */}
+          <div className="bg-glass-card rounded-[36px] p-9 lg:p-11 w-full relative z-20 transition-all duration-300">
             
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-orange-500 p-2.5 rounded-2xl shadow-lg border border-orange-400 flex items-center justify-center">
+                <img 
+                  src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
+                  alt="Vuihoc Logo" 
+                  className="h-5 w-auto object-contain brightness-0 invert"
+                />
+              </div>
+              <span className="text-white font-bold tracking-wider uppercase text-xs">Vuihoc Operations</span>
+            </div>
+
             <h2 className="text-3xl font-semibold text-white mb-1">Đăng nhập</h2>
             <p className="text-slate-300 text-sm mb-6">Chào mừng bạn quay trở lại hệ thống.</p>
 
@@ -924,6 +931,32 @@ if (!isLoggedIn) {
               </button>
             </form>
           </div>
+
+          {/* BÊN PHẢI: CHỮ NẰM HẲN BÊN PHẢI VỚI CÁC KHỐI SHAPE NGHỆ THUẬT */}
+          <div className="relative z-10 flex flex-col justify-center text-left lg:text-right pl-0 lg:pl-10 position-relative">
+            <div id="radius-shape-1" className="position-absolute rounded-circle shadow-5-strong"></div>
+            <div id="radius-shape-2" className="position-absolute shadow-5-strong"></div>
+
+            <div>
+              <span className="inline-block px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wide uppercase mb-4">
+                Hệ thống vận hành QLL chuyên nghiệp
+              </span>
+              <h1 className="text-4xl lg:text-6xl font-semibold tracking-tight leading-[1.1] text-white mb-6 drop-shadow-md">
+                Quản lý lớp học <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-300 to-orange-400">
+                  nhanh chóng & hiệu quả.
+                </span>
+              </h1>
+              <p className="text-slate-200 text-base font-normal leading-relaxed max-w-lg ml-0 lg:ml-auto">
+                Hệ thống hỗ trợ giữ slot, quản lý lịch khai giảng, theo dõi chuyên cần và vận hành toàn bộ luồng công việc của QLL theo thời gian thực một cách liền mạch nhất.
+              </p>
+            </div>
+
+            <div className="text-xs text-slate-400 font-medium mt-10">
+              © 2026 Vuihoc Education Operations. Secure System.
+            </div>
+          </div>
+
         </div>
       </div>
     );
