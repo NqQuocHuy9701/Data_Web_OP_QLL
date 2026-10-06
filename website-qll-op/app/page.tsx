@@ -719,14 +719,15 @@ export default function Home() {
     return "bg-slate-50 text-slate-600 border-slate-200"; 
   };
 
-  // MÀN HÌNH LOGIN ĐÃ ĐƯỢC TỐI ƯU GIAO DIỆN & TYPOGRAPHY SANG TRỌNG, KHÔNG ẢNH HƯỞNG LOGIC
-  if (!isLoggedIn) {
+if (!isLoggedIn) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#F4F7FE] font-vietnam relative overflow-hidden px-4">
-        <div className="absolute top-1/4 left-1/4 w-[450px] h-[450px] bg-sky-200/40 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-orange-200/40 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="flex h-screen w-screen items-center justify-center relative overflow-hidden px-4 font-vietnam">
+        {/* HIỆU ỨNG MỀM MẠI MÀU SẮC PHA TRỘN MƯỢT MÀ */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-sky-400 via-indigo-500 to-pink-500 opacity-90"></div>
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-sky-300/45 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-orange-300/45 rounded-full blur-[120px] pointer-events-none"></div>
 
-        <div className="bg-white/95 backdrop-blur-md border border-slate-100/80 rounded-[32px] p-10 w-full max-w-[480px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] relative z-10 animate-fade-slide-up">
+        <div className="bg-white/90 backdrop-blur-2xl border border-white/65 rounded-[32px] p-10 w-full max-w-[480px] shadow-[0_25px_60px_rgba(0,0,0,0.15)] relative z-10 animate-fade-slide-up">
           
           <div className="flex flex-col items-center text-center mb-8">
             <img 
@@ -735,17 +736,17 @@ export default function Home() {
               className="h-9 w-auto object-contain mb-3 drop-shadow-sm"
             />
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">Hệ Thống Vận Hành QLL</h1>
-            <p className="text-xs font-medium text-slate-400 mt-1">Vui lòng chọn vai trò để tiếp tục làm việc</p>
+            <p className="text-xs font-medium text-slate-500 mt-1">Vui lòng chọn vai trò để tiếp tục làm việc</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100/80 rounded-2xl mb-6">
+          <div className="grid grid-cols-2 gap-2 p-1.5 bg-black/5 rounded-2xl mb-6">
             <button
               type="button"
               onClick={() => { setLoginRole("QLL"); setLoginError(""); }}
               className={`py-3 text-xs font-bold rounded-xl transition-all ${
                 loginRole === "QLL" 
-                  ? "bg-white text-sky-600 shadow-sm" 
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white text-sky-600 shadow-md" 
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               👩‍💻 Quản Lý Lớp (QLL)
@@ -755,8 +756,8 @@ export default function Home() {
               onClick={() => { setLoginRole("Admin"); setLoginError(""); }}
               className={`py-3 text-xs font-bold rounded-xl transition-all ${
                 loginRole === "Admin" 
-                  ? "bg-white text-orange-600 shadow-sm" 
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-white text-orange-600 shadow-md" 
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               🔐 Quản Trị (Admin)
@@ -778,7 +779,7 @@ export default function Home() {
                       setNamecode(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-800 font-semibold text-sm transition-all shadow-sm"
+                    className="w-full px-4 py-3 bg-white/70 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 text-slate-800 font-semibold text-sm transition-all shadow-sm"
                     autoFocus
                   />
                 </div>
@@ -790,7 +791,7 @@ export default function Home() {
                   <select
                     value={teamLead}
                     onChange={(e) => setTeamLead(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-800 font-semibold text-sm transition-all cursor-pointer shadow-sm"
+                    className="w-full px-4 py-3 bg-white/70 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 text-slate-800 font-semibold text-sm transition-all cursor-pointer shadow-sm"
                   >
                     <option value="Team Lead A">Team Lead A</option>
                     <option value="Team Lead B">Team Lead B</option>
@@ -814,7 +815,7 @@ export default function Home() {
                       setAdminUsername(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-800 font-semibold text-sm transition-all shadow-sm"
+                    className="w-full px-4 py-3 bg-white/70 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 text-slate-800 font-semibold text-sm transition-all shadow-sm"
                     autoFocus
                   />
                 </div>
@@ -830,7 +831,7 @@ export default function Home() {
                       setAdminPassword(e.target.value);
                       setLoginError("");
                     }}
-                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-800 font-semibold text-sm transition-all shadow-sm"
+                    className="w-full px-4 py-3 bg-white/70 border border-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 text-slate-800 font-semibold text-sm transition-all shadow-sm"
                   />
                 </div>
               </>
@@ -1066,7 +1067,7 @@ export default function Home() {
                   <tbody className="divide-y divide-slate-50">
                     {loadingHistory ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Đang tải dữ liệu từ máy chủ Supabase...</td>
+                        <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Vui lòng chờ dữ liệu từ Database !!</td>
                       </tr>
                     ) : slotHistoryData.length > 0 ? (
                       slotHistoryData.map((row, index) => {
