@@ -754,20 +754,20 @@ if (!isLoggedIn) {
 
           @keyframes floatBitu {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-12px) rotate(2deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
           }
           .animate-float-bitu {
-            animation: floatBitu 4s ease-in-out infinite;
+            animation: floatBitu 4.5s ease-in-out infinite;
           }
 
           .bg-glass-card {
             background: rgba(255, 255, 255, 0.08) !important;
             backdrop-filter: saturate(200%) blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 35px 100px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
           }
           .bg-glass-card:hover {
-            background: rgba(15, 23, 42, 0.7) !important;
+            background: rgba(15, 23, 42, 0.75) !important;
             border-color: rgba(255, 255, 255, 0.35);
           }
         `}} />
@@ -781,20 +781,24 @@ if (!isLoggedIn) {
         {/* LỚP PHỦ TỐI MỜ */}
         <div className="absolute inset-0 bg-[#0a0828]/55 -z-10"></div>
 
-        {/* CONTAINER CHỨA NHÂN VẬT BITU BÊN TRÁI & POPUP ĐĂNG NHẬP Ở GIỮA */}
-        <div className="relative flex items-center justify-center gap-6 lg:gap-10 mx-4">
+        {/* CONTAINER GIÃN RỘNG 2 BÊN, CÂN ĐỐI HOÀN HẢO */}
+        <div className="w-full max-w-[1300px] px-6 lg:px-12 flex items-center justify-center gap-12 lg:gap-20">
           
-          {/* HÌNH ẢNH NHÂN VẬT BITU (CHÀO HỎI 2.PNG) NẰM BÊN TRÁI, TO BẰNG POPUP */}
-          <div className="hidden md:flex flex-col items-center justify-center animate-float-bitu z-20 pointer-events-none select-none">
+          {/* HÌNH NHÂN VẬT BITU BÊN TRÁI (TO RÕ, ĐÚNG TÊN FILE) */}
+          <div className="hidden lg:flex flex-col items-center justify-center animate-float-bitu z-20 pointer-events-none select-none">
             <img 
               src="/Chào_hỏi 2.png" 
               alt="Nhân vật Bitu Vuihoc" 
-              className="w-[280px] lg:w-[380px] h-auto object-contain filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+              className="w-[360px] xl:w-[420px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
+              onError={(e) => {
+                // Fallback nếu trình duyệt không nhận diện được dấu cách trong URL
+                (e.target as HTMLImageElement).src = encodeURI('/Chào_hỏi 2.png');
+              }}
             />
           </div>
 
-          {/* KHUNG ĐĂNG NHẬP CHÍNH */}
-          <div className="bg-glass-card rounded-[40px] p-10 lg:p-12 w-full max-w-[520px] relative z-20 transition-all duration-300">
+          {/* KHUNG ĐĂNG NHẬP CHÍNH (ĐƯỢC PHÓNG TO RỘNG THOÁNG ĐÃNG) */}
+          <div className="bg-glass-card rounded-[40px] p-10 lg:p-12 w-full max-w-[540px] relative z-20 transition-all duration-300">
             
             <div className="flex items-center gap-3.5 mb-6">
               <div className="bg-orange-500 p-3 rounded-2xl shadow-lg border border-orange-400 flex items-center justify-center">
