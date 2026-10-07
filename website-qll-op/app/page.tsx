@@ -1678,6 +1678,23 @@ return (
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+       /* HIỆU ỨNG VIÊT TAY MƯỢT MÀ NHƯ MỰC CHẢY (KHÔNG DÙNG JS ĐỂ CHỐNG LAG) */
+        @keyframes smoothSignature {
+          0%, 10% { clip-path: inset(0 100% 0 0); }
+          45%, 60% { clip-path: inset(0 -5% 0 0); }
+          90%, 100% { clip-path: inset(0 100% 0 0); }
+        }
+        .animate-smooth-signature {
+          display: inline-block;
+          white-space: nowrap;
+          /* Dùng cubic-bezier để tạo cảm giác tay đưa nhanh ở giữa và chậm lại ở đuôi chữ */
+          animation: smoothSignature 4.5s cubic-bezier(0.3, 0.1, 0.3, 1) infinite;
+        }
+
+
+
+
+
       `}} />
     </div>
   );
