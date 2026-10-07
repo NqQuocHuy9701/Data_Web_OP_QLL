@@ -57,7 +57,6 @@ function CountdownTimer({ timeString }: { timeString: string }) {
   return <>{remaining}</>;
 }
 
-
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginRole, setLoginRole] = useState<"QLL" | "Admin">("QLL");
