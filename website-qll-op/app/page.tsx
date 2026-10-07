@@ -23,11 +23,10 @@ export default function Home() {
   const [adminPassword, setAdminPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   
-  // --- THÊM STATE QUẢN LÝ DARK MODE ---
+  // --- QUẢN LÝ DARK MODE ---
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    // Khôi phục giao diện từ lần đăng nhập trước
     const savedTheme = localStorage.getItem("qll_theme") as "light" | "dark";
     if (savedTheme) setTheme(savedTheme);
   }, []);
@@ -37,7 +36,6 @@ export default function Home() {
     setTheme(newTheme);
     localStorage.setItem("qll_theme", newTheme);
   };
-  // -------------------------------------
 
   const [adminList, setAdminList] = useState<{username: string, pass: string}[]>([
     { username: "op_vanhanh", pass: "vanhanhvuihoc" }
@@ -234,7 +232,7 @@ export default function Home() {
     }
   };
 
-  // --- BẮT ĐẦU BLOCK THỐNG KÊ & REAL-TIME ---
+  // --- SUPABASE PRESENCE (THEO DÕI ONLINE REAL-TIME) ---
   useEffect(() => {
     if (isLoggedIn) {
       const channel = supabase.channel('qll-room', {
@@ -294,14 +292,12 @@ export default function Home() {
 
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [slotHistoryData, completedSlots]);
-  // --- KẾT THÚC BLOCK THỐNG KÊ & REAL-TIME ---
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
     if (loginRole === "QLL") {
-      // --- ĐĂNG NHẬP QLL CHUẨN XÁC ---
       if (!namecode.trim()) {
         setLoginError("Vui lòng nhập Namecode của bạn!");
         return;
@@ -318,7 +314,6 @@ export default function Home() {
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
       
     } else {
-      // --- ĐĂNG NHẬP ADMIN CHUẨN XÁC ---
       const matchedAdmin = adminList.find(
         (acc) => acc.username.trim() === adminUsername.trim() && acc.pass === adminPassword.trim()
       );
@@ -805,7 +800,6 @@ export default function Home() {
   if (!isLoggedIn) {
     return (
       <div className="relative h-screen w-screen overflow-hidden font-sora bg-[#0f172a] flex items-center justify-center">
-        
         <style dangerouslySetInnerHTML={{__html: `
           @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
           .font-sora { font-family: 'Sora', sans-serif !important; }
@@ -1082,6 +1076,7 @@ export default function Home() {
         </div>
       )}   
 
+      {/* SIDEBAR */}
       <aside className={`w-64 min-w-[16rem] max-w-[16rem] flex flex-col z-20 shrink-0 transition-colors duration-0 ${
         theme === 'dark' 
           ? 'bg-[#0e1320] border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.5)]' 
@@ -1410,7 +1405,7 @@ export default function Home() {
             </div>
           </div>
 
-        {/* --- 2. MÀN HÌNH THỐNG KÊ ADMIN --- */}
+        {/* --- 2. MÀN HÌNH THỐNG KÊ ADMIN (REAL-TIME ONLINE) --- */}
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
