@@ -1000,10 +1000,7 @@ if (!isLoggedIn) {
     );
   }
 
-// =======================================================================
-  // KHÔI PHỤC GIAO DIỆN GỐC (MƯỢT MÀ, KHÔNG LAG) - LOGIC GIỮ NGUYÊN
-  // =======================================================================
-  return (
+return (
     <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0"></div>
 
@@ -1237,7 +1234,8 @@ if (!isLoggedIn) {
                         const isExpired = checkIsExpired(timeStr);
 
                         return (
-                          <tr key={row.id || index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-orange-50/30"}`}>
+                          /* SỬA CHỖ GÂY LAG: even:bg-slate-50/60 và transition-colors */
+                          <tr key={row.id || index} className={`transition-colors even:bg-slate-50/60 ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-orange-50/40"}`}>
                             <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
                             <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
                             <td className="px-6 py-4 font-medium text-slate-700">{monHoc}</td>
@@ -1474,9 +1472,10 @@ if (!isLoggedIn) {
                           const isLoading = isHoldingSlot === maLop;
 
                           return (
+                            /* SỬA CHỖ GÂY LAG: transition-colors và even:bg-slate-50/60 */
                             <tr 
                               key={`${maLop}-${index}`} 
-                              className="hover:bg-sky-50/40 transition-all duration-200 group/row opacity-0 animate-fade-slide-up-stagger"
+                              className="hover:bg-sky-50/60 even:bg-slate-50/60 transition-colors duration-200 group/row opacity-0 animate-fade-slide-up-stagger"
                               style={{ animationDelay: `${index * 0.03}s`, animationFillMode: 'forwards' }}
                             >
                               <td className="px-6 py-4 font-bold text-sky-600">{maLop}</td>
