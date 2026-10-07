@@ -22,6 +22,7 @@ export default function Home() {
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  
   // --- THÊM STATE QUẢN LÝ DARK MODE ---
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
@@ -66,7 +67,6 @@ export default function Home() {
   const [filterToday, setFilterToday] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  // Tìm dòng này và sửa lại mảng bên trong:
   const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
@@ -87,7 +87,7 @@ export default function Home() {
 
   const SHEET_CSV_URL = "/api/sheet";
 
-useEffect(() => {
+  useEffect(() => {
     const savedAdmins = localStorage.getItem("qll_admin_accounts");
     if (savedAdmins) {
       try { setAdminList(JSON.parse(savedAdmins)); } catch (e) { console.error(e); }
@@ -234,7 +234,7 @@ useEffect(() => {
     }
   };
 
-// --- BẮT ĐẦU BLOCK THỐNG KÊ & REAL-TIME ---
+  // --- BẮT ĐẦU BLOCK THỐNG KÊ & REAL-TIME ---
   // 1. Luồng giám sát Online bằng Supabase Presence
   useEffect(() => {
     if (isLoggedIn) {
@@ -297,7 +297,8 @@ useEffect(() => {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [slotHistoryData, completedSlots]);
   // --- KẾT THÚC BLOCK THỐNG KÊ & REAL-TIME ---
-const handleLoginSubmit = (e: React.FormEvent) => {
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
@@ -509,7 +510,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
   const stats = useMemo(() => {
     const currentTabBase = data.filter(item => {
       const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
-      if (activeNav === "Giữ Slot" || activeNav === "QuanTriAdmin" || activeNav === "LichSuSlotAdmin") return true;
+      if (activeNav === "Giữ Slot" || activeNav === "QuanTriAdmin" || activeNav === "LichSuSlotAdmin" || activeNav === "ThongKeAdmin") return true;
       return activeNav === "Đang học" ? status.includes("đang học") : status.includes("khai giảng");
     });
 
@@ -608,7 +609,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
       if (!isPassRule) return false;
 
-      if (activeNav !== "Giữ Slot" && activeNav !== "QuanTriAdmin" && activeNav !== "LichSuSlotAdmin") {
+      if (activeNav !== "Giữ Slot" && activeNav !== "QuanTriAdmin" && activeNav !== "LichSuSlotAdmin" && activeNav !== "ThongKeAdmin") {
         const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
         const matchNav = activeNav === "Đang học" ? status.includes("đang học") : status.includes("khai giảng");
         if (!matchNav) return false;
@@ -807,7 +808,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
     return (
       <div className="relative h-screen w-screen overflow-hidden font-sora bg-[#0f172a] flex items-center justify-center">
         
-        {/* NẠP FONT SORA VÀ CSS TOÀN BỘ HIỆU ỨNG */}
         <style dangerouslySetInnerHTML={{__html: `
           @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
           .font-sora { font-family: 'Sora', sans-serif !important; }
@@ -820,7 +820,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
             animation: floatBitu 4s ease-in-out infinite;
           }
 
-          /* HIỆU ỨNG GÕ CHỮ */
           @keyframes typing {
             from { width: 0; }
             to { width: 100%; }
@@ -837,7 +836,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
             animation: typing 3s steps(16, end) infinite alternate, blink 0.75s step-end infinite;
           }
 
-          /* --- CSS ĐƯỜNG VIỀN ÁNH SÁNG CHẠY (CHUẨN HIỆN ĐẠI) --- */
           @keyframes spin-glow {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -894,7 +892,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
             height: 100%;
           }
 
-          /* FIX LỖI NỀN TRẮNG KHI TRÌNH DUYỆT TỰ ĐIỀN MẬT KHẨU (AUTOFILL) */
           input:-webkit-autofill,
           input:-webkit-autofill:hover, 
           input:-webkit-autofill:focus, 
@@ -905,27 +902,19 @@ const handleLoginSubmit = (e: React.FormEvent) => {
           }
         `}} />
 
-        {/* --- NỀN GIAO DIỆN MỚI (CÓ CHIỀU SÂU VÀ MÀU SẮC SANG TRỌNG) --- */}
-        {/* Lớp 1: Màu nền Xanh Indigo đậm */}
         <div className="absolute inset-0 bg-[#070b19] -z-40"></div>
-        
-        {/* Lớp 2: Ảnh backdrop mờ nhạt kết hợp hòa trộn */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 mix-blend-screen -z-30"
           style={{ backgroundImage: `url('/backdrop.jpg')` }}
         ></div>
 
-        {/* Lớp 3: Hiệu ứng ánh sáng Aurora (Đám mây màu lấp đầy không gian trống) */}
         <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-indigo-700/20 filter blur-[150px] -z-20 pointer-events-none"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-cyan-600/15 filter blur-[150px] -z-20 pointer-events-none"></div>
         <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] rounded-full bg-purple-600/10 filter blur-[120px] -z-20 pointer-events-none"></div>
 
-        {/* BỐ CỤC CHÍNH */}
         <div className="w-full max-w-[1400px] px-6 lg:px-16 flex items-center justify-between">
           
-          {/* BÊN TRÁI: NHÂN VẬT BITU & CHỮ GÕ ĐỘNG */}
           <div className="hidden lg:flex flex-col items-start relative animate-float-bitu z-20 pointer-events-none select-none pl-6 xl:pl-12">
-            
             <div className="mb-4 ml-6 bg-[#1a1f33]/90 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl shadow-2xl relative">
               <p className="text-white font-medium text-base tracking-wide">
                 <span className="typing-effect">Xin chào bạn! ✨</span>
@@ -941,7 +930,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
             />
           </div>
 
-          {/* BÊN PHẢI: KHUNG ĐĂNG NHẬP VỚI VIỀN TIA SÁNG CHẠY */}
           <div className="animated-border-box w-full max-w-[540px] mx-auto lg:mx-0">
             <div className="animated-border-inner p-10 lg:p-12">
               
@@ -962,7 +950,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
               <h2 className="text-3xl lg:text-4xl font-semibold text-white mb-1.5">Đăng nhập</h2>
               <p className="text-slate-400 text-sm mb-7">Chào mừng bạn quay trở lại làm việc.</p>
 
-              {/* TAB CHUYỂN ĐỔI VAI TRÒ */}
               <div className="grid grid-cols-2 gap-2.5 p-1.5 bg-[#070a14] rounded-2xl mb-7 border border-white/5 shadow-inner">
                 <button
                   type="button"
@@ -1080,14 +1067,9 @@ const handleLoginSubmit = (e: React.FormEvent) => {
     );
   }
 
-// =======================================================================
-  // KHỐI RETURN GIAO DIỆN SAU ĐĂNG NHẬP (CÓ TÍNH NĂNG CHUYỂN SÁNG/TỐI)
-  // ÉP XUNG TỐC ĐỘ: DURATION-150 (0.15s) + EASE-OUT ĐỂ NHANH NHƯ CHỚP
-  // =======================================================================
   return (
     <div className={`flex h-screen font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0 transition-colors duration-0 ${theme === 'dark' ? 'bg-[#070b14] text-slate-300' : 'bg-[#F4F7FE] text-slate-700'}`}>
       
-      {/* LỚP NỀN (BACKGROUND EFFECTS) - CHUYỂN OPACITY CỰC NHANH 150ms */}
       <div className={`absolute inset-0 pointer-events-none -z-10 transition-opacity duration-0 ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}>
         <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-indigo-900/30 filter blur-[150px]"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-orange-900/10 filter blur-[150px]"></div>
@@ -1102,7 +1084,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
         </div>
       )}   
 
-      {/* SIDEBAR */}
       <aside className={`w-64 min-w-[16rem] max-w-[16rem] flex flex-col z-20 shrink-0 transition-colors duration-0 ${
         theme === 'dark' 
           ? 'bg-[#0e1320] border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.5)]' 
@@ -1170,7 +1151,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
             <span className="text-xs truncate">Giữ Slot Lớp</span>
           </button>
 
-
           {loginRole === "Admin" && (
             <>
               <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
@@ -1200,8 +1180,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                 <span className="text-lg">📊</span>
                 <span className="text-xs truncate">Thống Kê QLL</span>
               </button>
-
-              
 
               <button
                 onClick={() => setActiveNav("QuanTriAdmin")}
@@ -1268,7 +1246,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* NÚT TOGGLE THEME CỰC NHẠY */}
             <button
               onClick={toggleTheme}
               className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all duration-0 border flex items-center gap-2 active:scale-95 ${
@@ -1315,6 +1292,9 @@ const handleLoginSubmit = (e: React.FormEvent) => {
           </div>
         </header>
 
+        {/* --- CẤU TRÚC 4 MÀN HÌNH ĐÃ ĐƯỢC PHÂN RẼ RÕ RÀNG VÀ CHÍNH XÁC TẠI ĐÂY --- */}
+        
+        {/* 1. MÀN HÌNH LỊCH SỬ SLOT ADMIN */}
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
@@ -1433,10 +1413,10 @@ const handleLoginSubmit = (e: React.FormEvent) => {
               </div>
             </div>
           </div>
-: loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
+        
+        {/* 2. MÀN HÌNH THỐNG KÊ ADMIN */}
+        ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
-            
-            {/* THẺ BÁO CÁO TỔNG QUAN (CÓ REAL-TIME ONLINE) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
               <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
                 <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-sky-400' : 'text-sky-500'}`}>Tổng Requests</p>
@@ -1464,7 +1444,6 @@ const handleLoginSubmit = (e: React.FormEvent) => {
               </div>
             </div>
 
-            {/* BẢNG XẾP HẠNG QLL */}
             <div className={`flex-1 rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
               theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
@@ -1531,7 +1510,84 @@ const handleLoginSubmit = (e: React.FormEvent) => {
               </div>
             </div>
           </div>
+
+        {/* 3. MÀN HÌNH QUẢN TRỊ ADMIN (FORM THÊM TÀI KHOẢN) */}
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
+          <div className="flex-1 p-8 overflow-y-auto">
+            <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
+              <div className="flex items-center gap-3 mb-6">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors duration-0 ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
+                  ⚙️
+                </div>
+                <div>
+                  <h2 className={`text-xl font-bold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Quản trị Tài khoản Admin</h2>
+                  <p className="text-xs text-slate-500">Thêm tài khoản quản trị viên mới vào hệ thống</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleAddAdminSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Tên đăng nhập Admin mới <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text"
+                    value={newAdminUser}
+                    onChange={(e) => {
+                      setNewAdminUser(e.target.value);
+                      setAdminAddError("");
+                    }}
+                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-colors duration-0 mb-3 ${
+                      theme === 'dark' ? 'bg-[#0a0f1c] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Mật khẩu Admin mới <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="password"
+                    value={newAdminPass}
+                    onChange={(e) => {
+                      setNewAdminPass(e.target.value);
+                      setAdminAddError("");
+                    }}
+                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-colors duration-0 ${
+                      theme === 'dark' ? 'bg-[#0a0f1c] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                    }`}
+                  />
+                  {adminAddError && <p className="text-xs font-bold text-red-500 mt-1.5">{adminAddError}</p>}
+                  {adminAddSuccess && <p className="text-xs font-bold text-emerald-500 mt-1.5">{adminAddSuccess}</p>}
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-colors cursor-pointer active:scale-95"
+                >
+                  Thêm Tài Khoản Admin
+                </button>
+              </form>
+
+              <div className={`mt-8 pt-6 border-t transition-colors duration-0 ${theme === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Danh sách tài khoản Admin ({adminList.length})</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                  {adminList.map((acc, idx) => (
+                    <div key={idx} className={`flex items-center justify-between px-4 py-2.5 border rounded-xl text-xs font-bold transition-colors duration-0 ${
+                      theme === 'dark' ? 'bg-[#0a0f1c] border-white/5 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-700'
+                    }`}>
+                      <span>👤 {acc.username}</span>
+                      <span className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${theme === 'dark' ? 'text-emerald-400 bg-emerald-500/10' : 'text-emerald-600 bg-emerald-50'}`}>Đang hoạt động</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        {/* 4. MÀN HÌNH CHUNG DÀNH CHO CẢ ADMIN VÀ QLL (TỔNG LỚP, BẢNG DỮ LIỆU CHÍNH) */}
+        ) : (
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
               <div className="flex items-center gap-4 mb-6">
