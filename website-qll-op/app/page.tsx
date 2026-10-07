@@ -10,20 +10,9 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOi
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ==========================================
-// TỐI ƯU HÓA CỰC ĐẠI: PUB-SUB TIMER
-// 1. Chỉ dùng 1 setInterval cho toàn bộ trang
-// ==========================================
-const timerSubscribers = new Set<() => void>();
-if (typeof window !== "undefined") {
-  setInterval(() => {
-    timerSubscribers.forEach((cb) => cb());
-  }, 1000);
-}
 
 // 2. Component được bọc React.memo để chặn render thừa
 // ==========================================
-// TỐI ƯU HÓA CỰC ĐẠI: DOM THUẦN (BYPASS REACT)
-// 1. Chỉ dùng 1 setInterval cho toàn bộ trang
 // ==========================================
 const timerSubscribers = new Set<() => void>();
 if (typeof window !== "undefined") {
