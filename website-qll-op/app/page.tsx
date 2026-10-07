@@ -8,6 +8,55 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sehvatktrqt
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function CountdownTimer({ timeString }: { timeString: string }) {
+  const [remaining, setRemaining] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      try {
+        const parts = timeString.split(" ");
+        if (parts.length < 2) {
+          setRemaining("Đang cập nhật");
+          return;
+        }
+        const dateParts = parts[0].split("/");
+        const timeParts = parts[1].split(":");
+        
+        const logDate = new Date(
+          parseInt(dateParts[2]), 
+          parseInt(dateParts[1]) - 1, 
+          parseInt(dateParts[0]), 
+          parseInt(timeParts[0]), 
+          parseInt(timeParts[1]), 
+          parseInt(timeParts[2] || "0")
+        );
+
+        const targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
+        const diff = targetTime - Date.now();
+
+        if (diff <= 0) {
+          setRemaining("⏰ Quá hạn");
+          return;
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setRemaining(`${hours}h ${minutes}m ${seconds}s còn lại`);
+      } catch (e) {
+        setRemaining("24h");
+      }
+    };
+
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [timeString]);
+
+  return <>{remaining}</>;
+}
+
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -1386,7 +1435,7 @@ export default function Home() {
                                 <span className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-red-500/10 text-red-400' : 'bg-red-100 text-red-700'}`}>Quá hạn (Đã nhả slot)</span>
                               ) : (
                                 <span className={`px-2.5 py-1 border font-bold rounded-lg text-xs animate-pulse ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                                  {calculateTimeRemaining(timeStr)}
+                                  <CountdownTimer timeString={timeStr} />
                                 </span>
                               )}
                             </td>
