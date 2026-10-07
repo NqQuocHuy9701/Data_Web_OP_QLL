@@ -50,7 +50,8 @@ export default function Home() {
   const [filterToday, setFilterToday] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  const typingWords = useMemo(() => ["Mọi thứ đã sẵn sàng !"], []);
+  // Tìm dòng này và sửa lại mảng bên trong:
+  const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -1359,19 +1360,22 @@ return (
         ) : (
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
-<div className="flex items-center gap-4 mb-6">
+             <div className="flex items-center gap-4 mb-6">
                 <img 
                   src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
                   alt="Bitu Mascot" 
                   className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
                 />
-                <h2 className="text-[30px] font-greeting text-slate-800 tracking-wide flex items-center gap-2 pt-1 h-[45px]">
-                  <span>Vận hành xin chào, </span>
+                <h2 className="text-[30px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[45px]">
+                  {/* Chữ Vận hành tĩnh, bôi đậm, đổi màu Xanh nổi bật */}
+                  <span className="font-extrabold text-sky-600 tracking-tight">Vận hành,</span>
                   <div className="flex items-center">
-                    {/* Bỏ {displayedText} và con trỏ nhấp nháy, thay bằng chữ tĩnh chạy CSS Clip-path */}
-                    <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none -mb-2 animate-smooth-signature">
-                      Mọi thứ đã sẵn sàng !
+                    {/* Phần chữ động trả lại biến {displayedText} cùng font Dancing Script */}
+                    <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1">
+                      {displayedText}
                     </span>
+                    {/* Con trỏ gõ chữ nhấp nháy */}
+                    <span className="w-[3px] h-[32px] bg-orange-500 ml-2 animate-cursor-blink rounded-full"></span>
                   </div>
                 </h2>
               </div>
@@ -1649,12 +1653,19 @@ return (
       )}
 
       {/* STYLE RENDER */}
+{/* STYLE RENDER */}
       <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
         
         .font-vietnam { font-family: 'Be Vietnam Pro', sans-serif !important; }
         .font-greeting { font-family: 'Baloo 2', cursive; }
-        .font-handwriting { font-family: 'Caveat', cursive; }
+        .font-handwriting { font-family: 'Dancing Script', cursive; padding-right: 2px; }
+
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        .animate-cursor-blink { animation: cursorBlink 0.8s infinite; }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -1678,23 +1689,6 @@ return (
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-       /* HIỆU ỨNG VIÊT TAY MƯỢT MÀ NHƯ MỰC CHẢY (KHÔNG DÙNG JS ĐỂ CHỐNG LAG) */
-        @keyframes smoothSignature {
-          0%, 10% { clip-path: inset(0 100% 0 0); }
-          45%, 60% { clip-path: inset(0 -5% 0 0); }
-          90%, 100% { clip-path: inset(0 100% 0 0); }
-        }
-        .animate-smooth-signature {
-          display: inline-block;
-          white-space: nowrap;
-          /* Dùng cubic-bezier để tạo cảm giác tay đưa nhanh ở giữa và chậm lại ở đuôi chữ */
-          animation: smoothSignature 4.5s cubic-bezier(0.3, 0.1, 0.3, 1) infinite;
-        }
-
-
-
-
-
       `}} />
     </div>
   );
