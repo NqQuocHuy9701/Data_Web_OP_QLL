@@ -1018,23 +1018,24 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
 // =======================================================================
   // KHỐI RETURN GIAO DIỆN SAU ĐĂNG NHẬP (CÓ TÍNH NĂNG CHUYỂN SÁNG/TỐI)
-  // LOGIC ĐƯỢC GIỮ NGUYÊN 100%
+  // FIX CHUYỂN ĐỔI SIÊU MƯỢT (CROSS-FADE ANIMATION)
   // =======================================================================
   return (
-    <div className={`flex h-screen font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0 transition-colors duration-500 ease-in-out ${theme === 'dark' ? 'bg-[#070b14] text-slate-300' : 'bg-[#F4F7FE] text-slate-700'}`}>
+    <div className={`flex h-screen font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0 transition-colors duration-700 ease-in-out ${theme === 'dark' ? 'bg-[#070b14] text-slate-300' : 'bg-[#F4F7FE] text-slate-700'}`}>
       
-      {/* LỚP NỀN (BACKGROUND EFFECTS) */}
-      {theme === 'dark' ? (
-        <>
-          {/* Nền Dark Mode Ảo Diệu (Mesh Gradient) như ảnh mẫu */}
-          <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-indigo-900/30 filter blur-[150px] -z-10 pointer-events-none transition-opacity duration-1000"></div>
-          <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-orange-900/10 filter blur-[150px] -z-10 pointer-events-none transition-opacity duration-1000"></div>
-          <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] rounded-full bg-sky-900/15 filter blur-[120px] -z-10 pointer-events-none transition-opacity duration-1000"></div>
-        </>
-      ) : (
-        /* Nền Light Mode Cũ */
-        <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0 transition-opacity duration-1000"></div>
-      )}
+      {/* LỚP NỀN (BACKGROUND EFFECTS) - GIỮ CẢ 2 NỀN ĐỂ FADE OPACITY MƯỢT MÀ */}
+      
+      {/* Nền Dark Mode Ảo Diệu (Mesh Gradient) */}
+      <div className={`absolute inset-0 pointer-events-none -z-10 transition-opacity duration-700 ease-in-out ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-indigo-900/30 filter blur-[150px]"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-orange-900/10 filter blur-[150px]"></div>
+        <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] rounded-full bg-sky-900/15 filter blur-[120px]"></div>
+      </div>
+
+      {/* Nền Light Mode Cũ */}
+      <div className={`absolute inset-0 pointer-events-none -z-10 transition-opacity duration-700 ease-in-out ${theme === 'light' ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent"></div>
+      </div>
 
       {successMessage && (
         <div className="fixed top-6 right-8 bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl z-50 flex items-center gap-2 font-bold text-sm animate-fade-slide-down">
@@ -1043,20 +1044,20 @@ const handleLoginSubmit = (e: React.FormEvent) => {
       )}   
 
       {/* SIDEBAR */}
-      <aside className={`w-64 min-w-[16rem] max-w-[16rem] flex flex-col z-20 shrink-0 transition-colors duration-500 ${
+      <aside className={`w-64 min-w-[16rem] max-w-[16rem] flex flex-col z-20 shrink-0 transition-colors duration-700 ease-in-out ${
         theme === 'dark' 
           ? 'bg-[#0e1320] border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.5)]' 
           : 'bg-white border-r border-slate-200/80 shadow-[4px_0_24px_rgba(0,0,0,0.02)]'
       }`}>
         
-        <div className={`h-20 flex items-center px-6 border-b shrink-0 transition-colors duration-500 ${theme === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
+        <div className={`h-20 flex items-center px-6 border-b shrink-0 transition-colors duration-700 ${theme === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
           <div className="flex items-center gap-3 cursor-pointer">
             <img 
               src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
               alt="Vuihoc Logo" 
-              className={`h-6 w-auto object-contain transition-all ${theme === 'dark' ? 'brightness-0 invert opacity-90' : 'drop-shadow-sm'}`}
+              className={`h-6 w-auto object-contain transition-all duration-700 ${theme === 'dark' ? 'brightness-0 invert opacity-90' : 'drop-shadow-sm'}`}
             />
-            <div className={`border-l-[1.5px] pl-3 transition-colors ${theme === 'dark' ? 'border-white/10' : 'border-slate-200'}`}>
+            <div className={`border-l-[1.5px] pl-3 transition-colors duration-700 ${theme === 'dark' ? 'border-white/10' : 'border-slate-200'}`}>
               <p className="text-[9px] text-sky-500 font-bold uppercase tracking-widest mt-1">Vận Hành</p>
             </div>
           </div>
@@ -1069,26 +1070,26 @@ const handleLoginSubmit = (e: React.FormEvent) => {
           
           <button
             onClick={() => setActiveNav("Đang học")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-500 focus:outline-none relative group ${
               activeNav === "Đang học" 
                 ? (theme === 'dark' ? "bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20" : "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]") 
                 : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-sky-400 font-medium" : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium")
             }`}
           >
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-200 ${activeNav === "Đang học" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-300 ${activeNav === "Đang học" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
             <span className="text-lg">📚</span>
             <span className="text-xs truncate">Lớp Đang Học</span>
           </button>
 
           <button
             onClick={() => setActiveNav("Khai giảng")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-500 focus:outline-none relative group ${
               activeNav === "Khai giảng" 
                 ? (theme === 'dark' ? "bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20" : "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]") 
                 : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-sky-400 font-medium" : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium")
             }`}
           >
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-200 ${activeNav === "Khai giảng" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-300 ${activeNav === "Khai giảng" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
             <span className="text-lg">🚀</span>
             <span className="text-xs truncate">Chờ Khai Giảng</span>
           </button>
@@ -1099,13 +1100,13 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
           <button
             onClick={() => setActiveNav("Giữ Slot")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-500 focus:outline-none relative group ${
               activeNav === "Giữ Slot" 
                 ? (theme === 'dark' ? "bg-orange-500/10 text-orange-400 font-bold border border-orange-500/20" : "bg-orange-50 text-orange-600 font-bold shadow-[0_2px_10px_rgba(249,115,22,0.1)]") 
                 : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium" : "text-slate-500 hover:bg-orange-50/50 hover:text-orange-500 font-medium")
             }`}
           >
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-500 rounded-r-full transition-all duration-200 ${activeNav === "Giữ Slot" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-500 rounded-r-full transition-all duration-300 ${activeNav === "Giữ Slot" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
             <span className="text-lg">📌</span>
             <span className="text-xs truncate">Giữ Slot Lớp</span>
           </button>
@@ -1118,7 +1119,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
               <button
                 onClick={() => { setActiveNav("LichSuSlotAdmin"); loadSlotHistory(); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-500 focus:outline-none relative group ${
                   activeNav === "LichSuSlotAdmin" 
                     ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
                     : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium" : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium")
@@ -1130,7 +1131,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
               <button
                 onClick={() => setActiveNav("QuanTriAdmin")}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-500 focus:outline-none relative group ${
                   activeNav === "QuanTriAdmin" 
                     ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
                     : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium" : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium")
@@ -1143,9 +1144,9 @@ const handleLoginSubmit = (e: React.FormEvent) => {
           )}
         </nav>
 
-        <div className={`p-4 border-t shrink-0 flex items-center justify-between transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0a0f1c]/50 border-white/5' : 'bg-slate-50/30 border-slate-100'}`}>
+        <div className={`p-4 border-t shrink-0 flex items-center justify-between transition-colors duration-700 ${theme === 'dark' ? 'bg-[#0a0f1c]/50 border-white/5' : 'bg-slate-50/30 border-slate-100'}`}>
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
-            <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm ${
+            <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm transition-colors duration-700 ${
               theme === 'dark' 
                 ? (loginRole === "Admin" ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-sky-500/20 border-sky-500/30 text-sky-400")
                 : (loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700")
@@ -1153,7 +1154,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
               {namecode.substring(0, 2).toUpperCase()}
             </div>
             <div className="text-xs truncate max-w-[100px]">
-              <p className={`font-bold truncate transition-colors ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`} title={namecode}>{namecode}</p>
+              <p className={`font-bold truncate transition-colors duration-700 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`} title={namecode}>{namecode}</p>
               <p className="text-[10px] text-slate-400 truncate" title={loginRole === "Admin" ? "Admin hệ thống" : teamLead}>
                 {loginRole === "Admin" ? "Admin hệ thống" : teamLead}
               </p>
@@ -1162,7 +1163,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
           <button 
             onClick={handleLogout}
             title="Đăng xuất"
-            className={`p-2 rounded-xl transition-colors cursor-pointer ${theme === 'dark' ? 'text-slate-500 hover:text-red-400 hover:bg-red-500/10' : 'text-slate-400 hover:text-red-500 hover:bg-red-50'}`}
+            className={`p-2 rounded-xl transition-colors duration-500 cursor-pointer ${theme === 'dark' ? 'text-slate-500 hover:text-red-400 hover:bg-red-500/10' : 'text-slate-400 hover:text-red-500 hover:bg-red-50'}`}
           >
             🚪
           </button>
@@ -1172,7 +1173,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
         {/* HEADER */}
-        <header className={`h-20 border-b flex items-center justify-between px-8 shrink-0 z-20 transition-colors duration-500 ${
+        <header className={`h-20 border-b flex items-center justify-between px-8 shrink-0 z-20 transition-colors duration-700 ${
           theme === 'dark' ? 'bg-[#0e1320]/80 backdrop-blur-xl border-white/5 shadow-md' : 'bg-white/90 backdrop-blur-md border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.01)]'
         }`}>
           <div className="flex-1 max-w-xl relative group">
@@ -1182,7 +1183,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
             <input 
               type="text" 
               placeholder="" 
-              className={`w-full pl-12 pr-4 py-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all duration-300 text-sm font-medium ${
+              className={`w-full pl-12 pr-4 py-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all duration-500 text-sm font-medium ${
                 theme === 'dark' 
                   ? 'bg-[#151b2b] border border-white/10 text-white placeholder-slate-500 focus:bg-[#1a2235]' 
                   : 'bg-slate-50/80 border border-slate-200 text-slate-700 placeholder-slate-400 hover:bg-white focus:bg-white focus:shadow-sm'
@@ -1193,13 +1194,13 @@ const handleLoginSubmit = (e: React.FormEvent) => {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* --- NÚT TOGGLE THEME (SÁNG / TỐI) --- */}
+            {/* NÚT TOGGLE THEME (SÁNG / TỐI) */}
             <button
               onClick={toggleTheme}
-              className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all border flex items-center gap-2 active:scale-95 ${
+              className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all duration-500 border flex items-center gap-2 active:scale-95 ${
                 theme === 'dark' 
-                  ? 'bg-[#151b2b] border-white/10 text-amber-400 hover:bg-white/5' 
-                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  ? 'bg-[#151b2b] border-white/10 text-amber-400 hover:bg-white/5 shadow-inner' 
+                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 shadow-sm'
               }`}
             >
               {theme === 'dark' ? '☀️ Giao diện Sáng' : '🌙 Giao diện Tối'}
@@ -1207,14 +1208,14 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
             {lastUpdated && (
               <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline-block">
-                Cập nhật lúc: <strong className={theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}>{lastUpdated}</strong>
+                Cập nhật lúc: <strong className={`transition-colors duration-500 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{lastUpdated}</strong>
               </span>
             )}
             
             <button 
               onClick={() => { loadData(); if(loginRole === "Admin") loadSlotHistory(); }}
               disabled={loading || loadingHistory}
-              className={`px-6 py-2.5 text-sm font-bold rounded-full shadow-sm transition-all duration-300 flex items-center gap-2.5 focus:outline-none active:scale-95
+              className={`px-6 py-2.5 text-sm font-bold rounded-full shadow-sm transition-all duration-500 flex items-center gap-2.5 focus:outline-none active:scale-95
                 ${(loading || loadingHistory) 
                   ? (theme === 'dark' ? "bg-white/5 text-slate-500 cursor-not-allowed border border-white/5" : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200") 
                   : "bg-sky-500 text-white hover:bg-sky-600 border border-sky-500 hover:shadow-[0_4px_15px_rgba(14,165,233,0.3)]"}`}
@@ -1242,15 +1243,15 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
-            <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-500 ${
+            <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-700 ${
               theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
-              <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
-                <h3 className={`font-bold flex items-center gap-3 text-base transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+              <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-700 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
+                <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-700 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                   <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
                   📋 Danh sách lịch sử giữ slot (Tab: LichSuGiuSlot)
                 </h3>
-                <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs ${
+                <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-500 ${
                   theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-100'
                 }`}>
                   Tổng số bản ghi: {slotHistoryData.length}
@@ -1259,7 +1260,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
               <div className="flex-1 overflow-auto custom-scrollbar relative">
                 <table className="w-full text-sm text-left whitespace-nowrap">
-                  <thead className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors ${
+                  <thead className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors duration-700 ${
                     theme === 'dark' ? 'bg-[#1a2235] text-slate-400 border-white/5' : 'bg-slate-50 text-slate-400 border-slate-100'
                   }`}>
                     <tr>
@@ -1273,7 +1274,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                       <th className="px-6 py-4 text-right pr-6">Thao tác xếp</th>
                     </tr>
                   </thead>
-                  <tbody className={`divide-y transition-colors ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-50'}`}>
+                  <tbody className={`divide-y transition-colors duration-700 ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-50'}`}>
                     {loadingHistory ? (
                       <tr>
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Vui lòng chờ dữ liệu từ Database !!</td>
@@ -1360,13 +1361,13 @@ const handleLoginSubmit = (e: React.FormEvent) => {
           </div>
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
-            <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-500 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
+            <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-700 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center gap-3 mb-6">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors duration-500 ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
                   ⚙️
                 </div>
                 <div>
-                  <h2 className={`text-xl font-bold transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Quản trị Tài khoản Admin</h2>
+                  <h2 className={`text-xl font-bold transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Quản trị Tài khoản Admin</h2>
                   <p className="text-xs text-slate-500">Thêm tài khoản quản trị viên mới vào hệ thống</p>
                 </div>
               </div>
@@ -1384,7 +1385,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                       setNewAdminUser(e.target.value);
                       setAdminAddError("");
                     }}
-                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-all mb-3 ${
+                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-all duration-500 mb-3 ${
                       theme === 'dark' ? 'bg-[#0a0f1c] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
                     }`}
                   />
@@ -1402,7 +1403,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                       setNewAdminPass(e.target.value);
                       setAdminAddError("");
                     }}
-                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-all ${
+                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-all duration-500 ${
                       theme === 'dark' ? 'bg-[#0a0f1c] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
                     }`}
                   />
@@ -1418,15 +1419,15 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                 </button>
               </form>
 
-              <div className={`mt-8 pt-6 border-t transition-colors ${theme === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
+              <div className={`mt-8 pt-6 border-t transition-colors duration-700 ${theme === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Danh sách tài khoản Admin ({adminList.length})</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
                   {adminList.map((acc, idx) => (
-                    <div key={idx} className={`flex items-center justify-between px-4 py-2.5 border rounded-xl text-xs font-bold transition-colors ${
+                    <div key={idx} className={`flex items-center justify-between px-4 py-2.5 border rounded-xl text-xs font-bold transition-colors duration-500 ${
                       theme === 'dark' ? 'bg-[#0a0f1c] border-white/5 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-700'
                     }`}>
                       <span>👤 {acc.username}</span>
-                      <span className={`text-[10px] px-2 py-1 rounded-lg ${theme === 'dark' ? 'text-emerald-400 bg-emerald-500/10' : 'text-emerald-600 bg-emerald-50'}`}>Đang hoạt động</span>
+                      <span className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${theme === 'dark' ? 'text-emerald-400 bg-emerald-500/10' : 'text-emerald-600 bg-emerald-50'}`}>Đang hoạt động</span>
                     </div>
                   ))}
                 </div>
@@ -1443,28 +1444,29 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                   className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
                 />
                 <h2 className="text-[30px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[45px]">
-                  <span className={`font-extrabold tracking-tight transition-colors ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
+                  <span className={`font-extrabold tracking-tight transition-colors duration-700 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
                   <div className="flex items-center">
-                    <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1 animate-smooth-signature">
-                      Mọi thứ đã sẵn sàng !
+                    <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1">
+                      {displayedText}
                     </span>
+                    <span className="w-[3px] h-[32px] bg-orange-500 ml-2 animate-cursor-blink rounded-full"></span>
                   </div>
                 </h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 ${
+                <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-500 ${
                   theme === 'dark' ? 'bg-[#151b2b]/90 border-sky-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-sky-50/40 border-sky-100/80 shadow-[0_10px_30px_rgba(14,165,233,0.08)] hover:shadow-[0_20px_40px_rgba(14,165,233,0.15)]'
                 }`}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
                   <p className="text-sky-500 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Tổng Lớp</p>
                   <div className="flex items-baseline gap-2 relative z-10">
-                    <span className={`text-4xl font-extrabold transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stats.total}</span>
+                    <span className={`text-4xl font-extrabold transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stats.total}</span>
                     <span className="text-slate-500 text-sm font-semibold">hệ thống</span>
                   </div>
                 </div>
                 
-                <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 ${
+                <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-500 ${
                   theme === 'dark' ? 'bg-[#151b2b]/90 border-blue-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-blue-50/40 border-blue-100/80 shadow-[0_10px_30px_rgba(37,99,235,0.08)] hover:shadow-[0_20px_40px_rgba(37,99,235,0.15)]'
                 }`}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
@@ -1475,7 +1477,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                   </div>
                 </div>
 
-                <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 ${
+                <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-500 ${
                   theme === 'dark' ? 'bg-[#151b2b]/90 border-orange-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-orange-50/40 border-orange-100/80 shadow-[0_10px_30px_rgba(249,115,22,0.08)] hover:shadow-[0_20px_40px_rgba(249,115,22,0.15)]'
                 }`}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
@@ -1489,14 +1491,14 @@ const handleLoginSubmit = (e: React.FormEvent) => {
             </div>
 
             <div className="flex-1 px-8 pb-8 min-h-0 flex flex-col">
-              <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-500 ${
+              <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-700 ${
                 theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
               }`}>
                 
-                <div className={`px-6 py-4 border-b flex flex-wrap gap-3 justify-between items-center shrink-0 z-30 relative transition-colors ${
+                <div className={`px-6 py-4 border-b flex flex-wrap gap-3 justify-between items-center shrink-0 z-30 relative transition-colors duration-700 ${
                   theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'
                 }`}>
-                  <h3 className={`font-bold flex items-center gap-3 text-base transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                  <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                     <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
                     {activeNav === "Giữ Slot" ? "📌 Bảng Tác Vụ Giữ Slot Chuyên Biệt" : `Daily — Dữ liệu ${activeNav}`}
                   </h3>
@@ -1510,7 +1512,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                     <button
                       type="button"
                       onClick={() => setFilterToday(!filterToday)}
-                      className={`px-4 py-2 border rounded-xl font-bold text-xs flex items-center gap-2 focus:outline-none transition-all duration-200 active:scale-95 ${
+                      className={`px-4 py-2 border rounded-xl font-bold text-xs flex items-center gap-2 focus:outline-none transition-all duration-300 active:scale-95 ${
                         filterToday
                           ? (theme === 'dark' ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-orange-50 border-orange-400 text-orange-600 shadow-sm")
                           : (theme === 'dark' ? "bg-[#0a0f1c] border-white/10 text-slate-300 hover:border-orange-500/50 hover:text-orange-400" : "bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50/30 hover:text-orange-500")
@@ -1520,7 +1522,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                       {filterToday ? "Đang chọn: Hôm nay" : "Hôm nay"}
                     </button>
 
-                    <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs ${
+                    <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors ${
                       theme === 'dark' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' : 'bg-sky-50 text-sky-600 border-sky-100'
                     }`}>
                       {filteredData.length} kết quả
@@ -1530,7 +1532,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
                 <div className="flex-1 overflow-auto custom-scrollbar relative">
                   <table className="w-full text-sm text-left whitespace-nowrap">
-                    <thead className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors ${
+                    <thead className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors duration-700 ${
                       theme === 'dark' ? 'bg-[#1a2235] text-slate-400 border-white/5' : 'bg-slate-50 text-slate-400 border-slate-100'
                     }`}>
                       <tr>
@@ -1550,7 +1552,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                         {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-right pr-8 text-orange-500">Thao tác giữ</th>}
                       </tr>
                     </thead>
-                    <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`} className={`divide-y transition-colors ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-50'}`}>
+                    <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`} className={`divide-y transition-colors duration-700 ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-50'}`}>
                       {currentTableData.length > 0 ? (
                         currentTableData.map((row, index) => {
                           const maLop = row["Mã lớp"];
@@ -1571,7 +1573,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                             >
                               <td className="px-6 py-4 font-bold text-sky-500">{maLop}</td>
                               <td className="px-6 py-4">
-                                <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border ${
+                                <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border transition-colors ${
                                   theme === 'dark' ? 'bg-white/5 border-white/10 text-slate-300' : getSubjectStyle(subjectStr)
                                 }`}>
                                   {subjectStr}
@@ -1593,7 +1595,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                               {activeNav === "Giữ Slot" && (
                                 <>
                                   <td className="px-6 py-4 text-center">
-                                    <span className={`px-2.5 py-1 rounded-md font-bold text-xs border ${
+                                    <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors ${
                                       availableSlots > 0 
                                         ? (theme === 'dark' ? "bg-orange-500/10 text-orange-400 border-orange-500/20" : "bg-orange-50 text-orange-600 border-orange-200") 
                                         : (theme === 'dark' ? "bg-white/5 text-slate-500 border-white/5" : "bg-slate-100 text-slate-400 border-slate-200")
@@ -1604,11 +1606,11 @@ const handleLoginSubmit = (e: React.FormEvent) => {
 
                                   <td className="px-6 py-4 text-center">
                                     {attendanceCheck.isLow ? (
-                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border animate-pulse ${theme === 'dark' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border animate-pulse transition-colors ${theme === 'dark' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'}`}>
                                         ⚠️ Thiếu sĩ số quá !!
                                       </span>
                                     ) : (
-                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
                                         ✅ Đạt chuẩn
                                       </span>
                                     )}
@@ -1642,10 +1644,10 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                         <tr>
                           <td colSpan={10} className="px-6 py-24 text-center">
                             <div className="flex flex-col items-center justify-center text-slate-400">
-                              <div className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center border-2 border-dashed ${theme === 'dark' ? 'bg-[#0a0f1c] border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+                              <div className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center border-2 border-dashed transition-colors ${theme === 'dark' ? 'bg-[#0a0f1c] border-white/10' : 'bg-slate-50 border-slate-200'}`}>
                                 <span className="text-3xl opacity-60">📭</span>
                               </div>
-                              <p className={`font-bold text-lg mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}>Không tìm thấy dữ liệu phù hợp</p>
+                              <p className={`font-bold text-lg mb-1 transition-colors ${theme === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}>Không tìm thấy dữ liệu phù hợp</p>
                               <p className="text-sm font-medium">Hãy thử thay đổi điều kiện bộ lọc hoặc từ khóa tìm kiếm.</p>
                             </div>
                           </td>
@@ -1656,7 +1658,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className={`flex items-center justify-between px-6 py-4 border-t shrink-0 z-10 transition-colors ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
+                  <div className={`flex items-center justify-between px-6 py-4 border-t shrink-0 z-10 transition-colors duration-700 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
                     <span className="text-[13px] text-slate-500 font-bold tracking-wide uppercase">
                       Page <span className="text-sky-500 text-sm mx-1">{currentPage}</span> / {totalPages}
                     </span>
@@ -1664,7 +1666,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                       <button 
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors active:scale-95 ${
+                        className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-300 active:scale-95 ${
                           theme === 'dark' 
                             ? 'bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400' 
                             : 'bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500'
@@ -1675,7 +1677,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                       <button 
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
-                        className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors active:scale-95 ${
+                        className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-300 active:scale-95 ${
                           theme === 'dark' 
                             ? 'bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400' 
                             : 'bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500'
@@ -1696,22 +1698,22 @@ const handleLoginSubmit = (e: React.FormEvent) => {
       {/* MODAL GIỮ SLOT */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-slide-up">
-          <div className={`rounded-3xl p-6 w-full max-w-md shadow-2xl border relative transition-colors ${
+          <div className={`rounded-3xl p-6 w-full max-w-md shadow-2xl border relative transition-colors duration-500 ${
             theme === 'dark' ? 'bg-[#151b2b] border-white/10 text-slate-200' : 'bg-white border-slate-100'
           }`}>
             <div className="flex items-center gap-3 mb-4">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
                 📌
               </div>
               <div>
-                <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Xác nhận Giữ Slot</h3>
+                <h3 className={`text-lg font-bold transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Xác nhận Giữ Slot</h3>
                 <p className="text-xs text-slate-500">Mã lớp: <strong className="text-sky-500">{selectedRowForSlot?.["Mã lớp"]}</strong></p>
               </div>
             </div>
 
             <div className="space-y-4 my-4">
               <div>
-                <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-700'}`}>
+                <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 transition-colors ${theme === 'dark' ? 'text-slate-400' : 'text-slate-700'}`}>
                   Nhập SID hoặc CID học sinh <span className="text-red-500">*</span>
                 </label>
                 <input 
@@ -1726,7 +1728,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                       setInputError("");
                     }
                   }}
-                  className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-all ${
+                  className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-all duration-300 ${
                     theme === 'dark' ? 'bg-[#0a0f1c] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
                   }`}
                   autoFocus
@@ -1767,16 +1769,11 @@ const handleLoginSubmit = (e: React.FormEvent) => {
         .font-greeting { font-family: 'Baloo 2', cursive; }
         .font-handwriting { font-family: 'Dancing Script', cursive; padding-right: 2px; }
 
-        @keyframes smoothSignature {
-          0%, 10% { clip-path: inset(0 100% 0 0); }
-          45%, 60% { clip-path: inset(0 -5% 0 0); }
-          90%, 100% { clip-path: inset(0 100% 0 0); }
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
         }
-        .animate-smooth-signature {
-          display: inline-block;
-          white-space: nowrap;
-          animation: smoothSignature 4.5s cubic-bezier(0.3, 0.1, 0.3, 1) infinite;
-        }
+        .animate-cursor-blink { animation: cursorBlink 0.8s infinite; }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -1805,5 +1802,4 @@ const handleLoginSubmit = (e: React.FormEvent) => {
         .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}} />
     </div>
-  );
-}
+  );}
