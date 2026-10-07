@@ -229,15 +229,10 @@ export default function Home() {
     }
   };
 
-  // --- RULE CHUẨN XÁC: CHỈ HIỆN ADMIN HỆ THỐNG KHI TÊN NẰM TRONG DANH SÁCH ADMIN ---
-  const currentLoggedUsername = loginRole === "Admin" ? adminUsername : namecode;
-  const isUserAdmin = useMemo(() => {
-    if (loginRole === "Admin") return true;
-    return adminList.some(acc => acc.username.trim() === currentLoggedUsername.trim());
-  }, [adminList, currentLoggedUsername, loginRole]);
-
-  const displayTeamOrRole = isUserAdmin ? "Admin hệ thống" : teamLead;
+  // --- CHECK PHÂN QUYỀN CHUẨN XÁC THEO LOGINROLE VÀ ADMINLIST ---
+  const isUserAdmin = loginRole === "Admin" || adminList.some(acc => acc.username.trim() === namecode.trim());
   const displayName = isUserAdmin ? (adminUsername || namecode || "Admin") : namecode;
+  const displayTeamOrRole = isUserAdmin ? "Admin hệ thống" : teamLead;
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -461,7 +456,7 @@ export default function Home() {
       }, 5 * 60 * 1000); 
       return () => clearInterval(intervalId);
     }
-  }, [isLoggedIn, loginRole]);
+  }, [isLoggedIn, isUserAdmin]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1166,7 +1161,7 @@ export default function Home() {
             <span className="text-xs truncate">Giữ Slot Lớp</span>
           </button>
 
-          {isUserAdmin && (
+          {loginRole === "Admin" && (
             <>
               <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
                 Hệ thống Quản trị
@@ -1215,17 +1210,17 @@ export default function Home() {
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm transition-colors duration-0 ${
               theme === 'dark' 
-                ? (isUserAdmin ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-sky-500/20 border-sky-500/30 text-sky-400")
-                : (isUserAdmin ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700")
+                ? (loginRole === "Admin" ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-sky-500/20 border-sky-500/30 text-sky-400")
+                : (loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700")
             }`}>
-              {displayName.substring(0, 2).toUpperCase()}
+              {(loginRole === "Admin" ? adminUsername : namecode).substring(0, 2).toUpperCase()}
             </div>
             <div className="text-xs truncate max-w-[100px]">
-              <p className={`font-bold truncate transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`} title={displayName}>
-                {displayName}
+              <p className={`font-bold truncate transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`} title={loginRole === "Admin" ? adminUsername : namecode}>
+                {loginRole === "Admin" ? adminUsername : namecode}
               </p>
-              <p className="text-[10px] text-slate-400 truncate" title={displayTeamOrRole}>
-                {displayTeamOrRole}
+              <p className="text-[10px] text-slate-400 truncate" title={loginRole === "Admin" ? "Admin hệ thống" : teamLead}>
+                {loginRole === "Admin" ? "Admin hệ thống" : teamLead}
               </p>
             </div>
           </div>
@@ -1280,7 +1275,7 @@ export default function Home() {
             )}
             
             <button 
-              onClick={() => { loadData(); if(isUserAdmin) loadSlotHistory(); }}
+              onClick={() => { loadData(); if(loginRole === "Admin") loadSlotHistory(); }}
               disabled={loading || loadingHistory}
               className={`px-6 py-2.5 text-sm font-bold rounded-full shadow-sm transition-colors duration-0 flex items-center gap-2.5 focus:outline-none active:scale-95
                 ${(loading || loadingHistory) 
@@ -1308,7 +1303,7 @@ export default function Home() {
           </div>
         </header>
 
-        {isUserAdmin && activeNav === "LichSuSlotAdmin" ? (
+        {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
               theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
@@ -1427,7 +1422,7 @@ export default function Home() {
             </div>
           </div>
 
-        ) : isUserAdmin && activeNav === "ThongKeAdmin" ? (
+        ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
               <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
@@ -1512,7 +1507,7 @@ export default function Home() {
             </div>
           </div>
 
-        ) : isUserAdmin && activeNav === "QuanTriAdmin" ? (
+        ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
             <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center gap-3 mb-6">
