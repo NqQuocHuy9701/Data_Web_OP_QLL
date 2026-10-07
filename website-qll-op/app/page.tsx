@@ -1946,9 +1946,10 @@ export default function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-down { animation: fadeSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
+ 
+        
         .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}} />
     </div>
   );
-}
+}    
