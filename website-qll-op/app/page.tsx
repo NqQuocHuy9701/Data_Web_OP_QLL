@@ -932,12 +932,7 @@ export default function Home() {
           style={{ backgroundImage: `url('/backdrop.jpg')` }}
         ></div>
 
-        {/* TỐI ƯU GPU: Dùng radial-gradient thay vì filter blur để chống lag tuyệt đối ở Dark Mode */}
-      <div className={`absolute inset-0 pointer-events-none -z-10 transition-opacity duration-0 ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(49, 46, 129, 0.4) 0%, rgba(0,0,0,0) 70%)' }}></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(124, 45, 18, 0.2) 0%, rgba(0,0,0,0) 70%)' }}></div>
-        <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(12, 74, 110, 0.3) 0%, rgba(0,0,0,0) 70%)' }}></div>
-      </div>
+
 
         <div className="w-full max-w-[1400px] px-6 lg:px-16 flex items-center justify-between">
           
@@ -1094,16 +1089,15 @@ export default function Home() {
     );
   }
 
-  return (
+return (
     <div className={`flex h-screen font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0 transition-colors duration-0 ${theme === 'dark' ? 'bg-[#070b14] text-slate-300' : 'bg-[#F4F7FE] text-slate-700'}`}>
       
+      {/* TỐI ƯU CỰC ĐẠI DARK MODE: Thay thế toàn bộ "filter blur" gây lag bằng "radial-gradient" siêu nhẹ */}
       <div className={`absolute inset-0 pointer-events-none -z-10 transition-opacity duration-0 ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-indigo-900/30 filter blur-[150px]"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-orange-900/10 filter blur-[150px]"></div>
-        <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] rounded-full bg-sky-900/15 filter blur-[120px]"></div>
+        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(49, 46, 129, 0.4) 0%, rgba(0,0,0,0) 70%)' }}></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(154, 52, 18, 0.15) 0%, rgba(0,0,0,0) 70%)' }}></div>
+        <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(0,0,0,0) 70%)' }}></div>
       </div>
-
-      <div className={`absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-10 transition-opacity duration-0 ${theme === 'light' ? 'opacity-100' : 'opacity-0'}`}></div>
 
       {successMessage && (
         <div className="fixed top-6 right-8 bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl z-50 flex items-center gap-2 font-bold text-sm animate-fade-slide-down">
@@ -1223,7 +1217,7 @@ export default function Home() {
           )}
         </nav>
 
-        <div className={`p-4 border-t shrink-0 flex items-center justify-between transition-colors duration-0 ${theme === 'dark' ? 'bg-[#0a0f1c]/50 border-white/5' : 'bg-slate-50/30 border-slate-100'}`}>
+        <div className={`p-4 border-t shrink-0 flex items-center justify-between transition-colors duration-0 ${theme === 'dark' ? 'bg-[#0a0f1c] border-white/5' : 'bg-slate-50/30 border-slate-100'}`}>
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm transition-colors duration-0 ${
               theme === 'dark' 
@@ -1323,6 +1317,7 @@ export default function Home() {
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
+              // ĐỔI bg-[#151b2b]/90 THÀNH bg-[#151b2b] NỀN ĐẶC
               theme === 'dark' ? 'bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
               <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
@@ -1399,9 +1394,9 @@ export default function Home() {
                               ) : isExpired ? (
                                 <span className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-red-500/10 text-red-400' : 'bg-red-100 text-red-700'}`}>Quá hạn (Đã nhả slot)</span>
                               ) : (
-<span className={`px-2.5 py-1 border font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-   <CountdownTimer timeString={timeStr} />
-</span>
+                                <span className={`px-2.5 py-1 border font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                                  <CountdownTimer timeString={timeStr} />
+                                </span>
                               )}
                             </td>
 
@@ -1559,7 +1554,7 @@ export default function Home() {
 
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
-            <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5' : 'bg-white border-slate-100'}`}>
+            <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors duration-0 ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
                   ⚙️
@@ -1762,7 +1757,6 @@ export default function Home() {
                           return (
                             <tr 
                               key={`${maLop}-${index}`} 
-                              // ĐIỂM FIX 4: XÓA HIỆU ỨNG ANIMATION STAGGER TẠI CÁC DÒNG TABLE GÂY NẶNG GPU KHI CUỘN
                               className={`transition-colors duration-0 group/row ${
                                 theme === 'dark' ? 'hover:bg-[#1e293b] even:bg-[#1a2235]/50' : 'hover:bg-sky-50/40 even:bg-slate-50/60'
                               }`}
@@ -1802,7 +1796,7 @@ export default function Home() {
 
                                   <td className="px-6 py-4 text-center">
                                     {attendanceCheck.isLow ? (
-                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border animate-pulse transition-colors duration-0 ${theme === 'dark' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${theme === 'dark' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'}`}>
                                         ⚠️ Thiếu sĩ số quá !!
                                       </span>
                                     ) : (
@@ -1998,8 +1992,6 @@ export default function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-down { animation: fadeSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}} />
     </div>
   );
