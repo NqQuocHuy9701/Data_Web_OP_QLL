@@ -10,7 +10,8 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOi
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ==========================================
-// TỐI ƯU HÓA: PUB-SUB TIMER (CHỈ 1 INTERVAL CHO TOÀN BỘ TRANG)
+// TỐI ƯU HÓA CỰC ĐẠI: PUB-SUB TIMER
+// 1. Chỉ dùng 1 setInterval cho toàn bộ trang
 // ==========================================
 const timerSubscribers = new Set<() => void>();
 if (typeof window !== "undefined") {
@@ -19,17 +20,17 @@ if (typeof window !== "undefined") {
   }, 1000);
 }
 
-function CountdownTimer({ timeString }: { timeString: string }) {
-  const [remaining, setRemaining] = useState("");
+// 2. Component được bọc React.memo để chặn render thừa
+const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
+  const [remaining, setRemaining] = useState("Đang tính toán...");
 
   useEffect(() => {
-    const update = () => {
-      try {
-        const parts = timeString.split(" ");
-        if (parts.length < 2) {
-          setRemaining("Đang cập nhật");
-          return;
-        }
+    let targetTime = 0;
+
+    // BƯỚC 1: Parse string và tạo Date object CHỈ 1 LẦN DUY NHẤT khi load
+    try {
+      const parts = timeString.split(" ");
+      if (parts.length >= 2) {
         const dateParts = parts[0].split("/");
         const timeParts = parts[1].split(":");
         
@@ -41,35 +42,45 @@ function CountdownTimer({ timeString }: { timeString: string }) {
           parseInt(timeParts[1]), 
           parseInt(timeParts[2] || "0")
         );
-
-        const targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
-        const diff = targetTime - Date.now();
-
-        if (diff <= 0) {
-          setRemaining("⏰ Quá hạn");
-          return;
-        }
-
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-        setRemaining(`${hours}h ${minutes}m ${seconds}s còn lại`);
-      } catch (e) {
-        setRemaining("24h");
+        targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
       }
+    } catch (e) {
+      setRemaining("Lỗi dữ liệu");
+      return;
+    }
+
+    if (!targetTime) {
+      setRemaining("Đang cập nhật");
+      return;
+    }
+
+    // BƯỚC 2: Hàm đếm mỗi giây chỉ thực hiện phép trừ đơn giản (cực nhẹ cho CPU)
+    const tick = () => {
+      const diff = targetTime - Date.now();
+
+      if (diff <= 0) {
+        setRemaining("⏰ Quá hạn");
+        timerSubscribers.delete(tick); // BƯỚC 3: Tự hủy đăng ký để giải phóng CPU khi đã quá hạn
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setRemaining(`${hours}h ${minutes}m ${seconds}s còn lại`);
     };
 
-    update(); // Chạy ngay lần đầu
-    timerSubscribers.add(update); // Đăng ký lắng nghe nhịp đếm chung
-    
+    tick(); // Chạy ngay lập tức lần đầu
+    timerSubscribers.add(tick); // Đăng ký vào nhịp đếm chung
+
     return () => {
-      timerSubscribers.delete(update); // Hủy đăng ký khi component bị ẩn
+      timerSubscribers.delete(tick); // Dọn dẹp khi component unmount
     };
   }, [timeString]);
 
   return <>{remaining}</>;
-}
+});
 // ==========================================
 
 export default function Home() {
