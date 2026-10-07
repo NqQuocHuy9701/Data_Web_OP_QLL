@@ -1415,7 +1415,7 @@ export default function Home() {
                               ) : isExpired ? (
                                 <span className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-red-500/10 text-red-400' : 'bg-red-100 text-red-700'}`}>Quá hạn (Đã nhả slot)</span>
                               ) : (
-                                <span className={`px-2.5 py-1 border font-bold rounded-lg text-xs animate-pulse ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                                <span className={`px-2.5 py-1 border font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                                   <CountdownTimer timeString={timeStr} />
                                 </span>
                               )}
