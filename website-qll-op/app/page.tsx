@@ -1001,15 +1001,11 @@ if (!isLoggedIn) {
   }
 
 // =======================================================================
-  // CHỈ THAY THẾ KHỐI RETURN NÀY (GIAO DIỆN SAU ĐĂNG NHẬP) ĐẾN HẾT FILE
-  // LƯU Ý: TOÀN BỘ LOGIC ĐÃ ĐƯỢC GIỮ NGUYÊN 100%
+  // KHÔI PHỤC GIAO DIỆN GỐC (MƯỢT MÀ, KHÔNG LAG) - LOGIC GIỮ NGUYÊN
   // =======================================================================
   return (
-    <div className="flex h-screen bg-[#f8fafc] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0">
-      
-      {/* 1. Nền Mesh Gradient mờ ảo (Không gian có chiều sâu) */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-sky-300/20 filter blur-[120px] -z-10 pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-orange-300/15 filter blur-[120px] -z-10 pointer-events-none"></div>
+    <div className="flex h-screen bg-[#F4F7FE] text-slate-700 font-vietnam overflow-hidden selection:bg-sky-500/30 relative">
+      <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-sky-50/60 to-transparent pointer-events-none -z-0"></div>
 
       {successMessage && (
         <div className="fixed top-6 right-8 bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl z-50 flex items-center gap-2 font-bold text-sm animate-fade-slide-down">
@@ -1017,10 +1013,9 @@ if (!isLoggedIn) {
         </div>
       )}   
 
-      {/* 2. SIDEBAR: Menu dạng nút nổi (Pill Menu) */}
-      <aside className="w-64 min-w-[16rem] max-w-[16rem] bg-white/80 backdrop-blur-xl border-r border-slate-200/60 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+      <aside className="w-64 min-w-[16rem] max-w-[16rem] bg-white border-r border-slate-200/80 flex flex-col z-20 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         
-        <div className="h-20 flex items-center px-6 border-b border-slate-100/50 shrink-0">
+        <div className="h-20 flex items-center px-6 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-3 cursor-pointer">
             <img 
               src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
@@ -1033,63 +1028,66 @@ if (!isLoggedIn) {
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 mt-2 px-3">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2 px-2">
             Quản lý báo cáo
           </div>
           
           <button
             onClick={() => setActiveNav("Đang học")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 focus:outline-none relative group ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
               activeNav === "Đang học" 
-                ? "bg-white text-sky-600 font-bold shadow-[0_8px_20px_rgba(14,165,233,0.12)] border border-slate-100/50 translate-x-1" 
-                : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-700 font-medium"
+                ? "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]" 
+                : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
             }`}
           >
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-200 ${activeNav === "Đang học" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
             <span className="text-lg">📚</span>
             <span className="text-xs truncate">Lớp Đang Học</span>
           </button>
 
           <button
             onClick={() => setActiveNav("Khai giảng")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 focus:outline-none relative group ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
               activeNav === "Khai giảng" 
-                ? "bg-white text-sky-600 font-bold shadow-[0_8px_20px_rgba(14,165,233,0.12)] border border-slate-100/50 translate-x-1" 
-                : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-700 font-medium"
+                ? "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]" 
+                : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
             }`}
           >
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-200 ${activeNav === "Khai giảng" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
             <span className="text-lg">🚀</span>
             <span className="text-xs truncate">Chờ Khai Giảng</span>
           </button>
 
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 mt-6 px-3">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-6 px-2">
             Tác vụ chuyên biệt
           </div>
 
           <button
             onClick={() => setActiveNav("Giữ Slot")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 focus:outline-none relative group ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
               activeNav === "Giữ Slot" 
-                ? "bg-white text-orange-600 font-bold shadow-[0_8px_20px_rgba(249,115,22,0.12)] border border-slate-100/50 translate-x-1" 
-                : "text-slate-500 hover:bg-slate-100/50 hover:text-orange-500 font-medium"
+                ? "bg-orange-50 text-orange-600 font-bold shadow-[0_2px_10px_rgba(249,115,22,0.1)]" 
+                : "text-slate-500 hover:bg-orange-50/50 hover:text-orange-500 font-medium"
             }`}
           >
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-500 rounded-r-full transition-all duration-200 ${activeNav === "Giữ Slot" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
             <span className="text-lg">📌</span>
             <span className="text-xs truncate">Giữ Slot Lớp</span>
           </button>
 
           {loginRole === "Admin" && (
             <>
-              <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-3 mt-6 px-3">
+              <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
                 Hệ thống Quản trị
               </div>
 
               <button
                 onClick={() => { setActiveNav("LichSuSlotAdmin"); loadSlotHistory(); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 focus:outline-none relative group ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
                   activeNav === "LichSuSlotAdmin" 
-                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold shadow-[0_8px_20px_rgba(249,115,22,0.25)] translate-x-1" 
-                    : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-700 font-medium"
+                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
+                    : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
                 }`}
               >
                 <span className="text-lg">📋</span>
@@ -1098,10 +1096,10 @@ if (!isLoggedIn) {
 
               <button
                 onClick={() => setActiveNav("QuanTriAdmin")}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 focus:outline-none relative group ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 focus:outline-none relative group ${
                   activeNav === "QuanTriAdmin" 
-                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold shadow-[0_8px_20px_rgba(249,115,22,0.25)] translate-x-1" 
-                    : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-700 font-medium"
+                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
+                    : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
                 }`}
               >
                 <span className="text-lg">⚙️</span>
@@ -1111,7 +1109,7 @@ if (!isLoggedIn) {
           )}
         </nav>
 
-        <div className="p-4 border-t border-slate-100/50 bg-slate-50/30 shrink-0 flex items-center justify-between">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/30 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm ${loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700"}`}>
               {namecode.substring(0, 2).toUpperCase()}
@@ -1135,16 +1133,15 @@ if (!isLoggedIn) {
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
-        {/* HEADER */}
-        <header className="h-20 bg-white/60 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-8 shrink-0 z-20">
+        <header className="h-20 bg-white/90 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between px-8 shrink-0 z-20 shadow-[0_2px_10px_rgba(0,0,0,0.01)]">
           <div className="flex-1 max-w-xl relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <span className="text-slate-400 group-focus-within:text-sky-500 transition-colors">🔍</span>
             </div>
             <input 
               type="text" 
-              placeholder="Tìm kiếm mã lớp, môn học..." 
-              className="w-full pl-12 pr-4 py-2.5 bg-white/50 border border-slate-200/80 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-700 placeholder-slate-400 transition-all duration-300 text-sm font-medium hover:bg-white focus:bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
+              placeholder="" 
+              className="w-full pl-12 pr-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 text-slate-700 placeholder-slate-400 transition-all duration-300 text-sm font-medium hover:bg-white focus:bg-white focus:shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -1163,7 +1160,7 @@ if (!isLoggedIn) {
               className={`px-6 py-2.5 text-sm font-bold rounded-full shadow-sm transition-all duration-300 flex items-center gap-2.5 focus:outline-none active:scale-95
                 ${(loading || loadingHistory) 
                   ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
-                  : "bg-sky-500 text-white hover:bg-sky-600 shadow-[0_4px_15px_rgba(14,165,233,0.25)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.35)]"}`}
+                  : "bg-sky-500 text-white hover:bg-sky-600 border border-sky-500 hover:shadow-[0_4px_15px_rgba(14,165,233,0.3)]"}`}
             >
               {loading || loadingHistory ? (
                 <>
@@ -1186,23 +1183,22 @@ if (!isLoggedIn) {
           </div>
         </header>
 
-        {/* NỘI DUNG CHÍNH */}
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col h-full overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-100/50 flex items-center justify-between bg-transparent shrink-0 z-30">
+            <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col h-full overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 z-30">
                 <h3 className="font-bold text-slate-800 flex items-center gap-3 text-base">
-                  <span className="w-1.5 h-6 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
-                  📋 Danh sách lịch sử giữ slot
+                  <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
+                  📋 Danh sách lịch sử giữ slot (Tab: LichSuGiuSlot)
                 </h3>
-                <span className="font-extrabold px-4 py-2 bg-white text-orange-600 rounded-xl shadow-sm text-xs border border-slate-100">
+                <span className="font-extrabold px-3.5 py-2 bg-orange-50 text-orange-600 rounded-xl border border-orange-100 shadow-sm text-xs">
                   Tổng số bản ghi: {slotHistoryData.length}
                 </span>
               </div>
 
-              <div className="flex-1 overflow-auto custom-scrollbar relative">
+              <div className="flex-1 overflow-auto custom-scrollbar relative bg-white">
                 <table className="w-full text-sm text-left whitespace-nowrap">
-                  <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 backdrop-blur-md font-extrabold tracking-wider sticky top-0 z-20 border-b border-slate-100">
+                  <thead className="text-[12px] text-slate-400 uppercase bg-slate-50 font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b border-slate-100">
                     <tr>
                       <th className="px-6 py-4">Thời gian</th>
                       <th className="px-6 py-4">Mã lớp giữ</th>
@@ -1214,7 +1210,7 @@ if (!isLoggedIn) {
                       <th className="px-6 py-4 text-right pr-6">Thao tác xếp</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100/50">
+                  <tbody className="divide-y divide-slate-50">
                     {loadingHistory ? (
                       <tr>
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Vui lòng chờ dữ liệu từ Database !!</td>
@@ -1241,7 +1237,7 @@ if (!isLoggedIn) {
                         const isExpired = checkIsExpired(timeStr);
 
                         return (
-                          <tr key={row.id || index} className={`transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:z-10 relative group/row ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-white hover:scale-[1.002] hover:translate-x-1 even:bg-slate-50/30"}`}>
+                          <tr key={row.id || index} className={`transition-colors ${isDone ? "bg-emerald-50/40 opacity-75" : isExpired ? "bg-red-50/30 opacity-75" : "hover:bg-orange-50/30"}`}>
                             <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
                             <td className="px-6 py-4 font-bold text-sky-600">{maLop || "-"}</td>
                             <td className="px-6 py-4 font-medium text-slate-700">{monHoc}</td>
@@ -1250,11 +1246,11 @@ if (!isLoggedIn) {
                             
                             <td className="px-6 py-4">
                               {isDone ? (
-                                <span className="px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 font-bold rounded-full text-[11px] uppercase tracking-wide">Đã hoàn thành</span>
+                                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs">Đã hoàn thành</span>
                               ) : isExpired ? (
-                                <span className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-100 font-bold rounded-full text-[11px] uppercase tracking-wide">Quá hạn</span>
+                                <span className="px-2.5 py-1 bg-red-100 text-red-700 font-bold rounded-lg text-xs">Quá hạn (Đã nhả slot)</span>
                               ) : (
-                                <span className="px-3 py-1.5 bg-amber-50 text-amber-600 border border-amber-200 font-bold rounded-full text-[11px] uppercase tracking-wide animate-pulse">
+                                <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-lg text-xs animate-pulse">
                                   {calculateTimeRemaining(timeStr)}
                                 </span>
                               )}
@@ -1268,13 +1264,13 @@ if (!isLoggedIn) {
                                   <span>✅</span> Đã xếp xong
                                 </span>
                               ) : isExpired ? (
-                                <span className="px-3 py-1.5 bg-red-50 text-red-600 font-bold rounded-full text-xs inline-flex items-center gap-1 border border-red-100">
-                                  <span>❌</span> Đã nhả slot
+                                <span className="px-3 py-1.5 bg-red-100 text-red-600 font-bold rounded-xl text-xs inline-flex items-center gap-1 shadow-sm">
+                                  <span>❌</span> Quá hạn (Đã nhả slot)
                                 </span>
                               ) : (
                                 <button
                                   onClick={() => handleMarkAsDone(row.id)}
-                                  className="px-4 py-1.5 bg-gradient-to-r from-emerald-400 to-emerald-500 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-full font-bold text-xs shadow-md shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
+                                  className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95"
                                 >
                                   Đã xếp (Done)
                                 </button>
@@ -1295,9 +1291,9 @@ if (!isLoggedIn) {
           </div>
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
-            <div className="max-w-xl mx-auto bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white">
+            <div className="max-w-xl mx-auto bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-500 text-white flex items-center justify-center text-xl font-bold shadow-lg shadow-orange-500/30">
+                <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center text-xl font-bold">
                   ⚙️
                 </div>
                 <div>
@@ -1319,7 +1315,7 @@ if (!isLoggedIn) {
                       setNewAdminUser(e.target.value);
                       setAdminAddError("");
                     }}
-                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 text-slate-800 font-bold text-sm transition-all mb-3 shadow-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 text-slate-800 font-bold text-sm transition-all mb-3"
                   />
                 </div>
 
@@ -1335,7 +1331,7 @@ if (!isLoggedIn) {
                       setNewAdminPass(e.target.value);
                       setAdminAddError("");
                     }}
-                    className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 text-slate-800 font-bold text-sm transition-all shadow-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 text-slate-800 font-bold text-sm transition-all"
                   />
                   {adminAddError && <p className="text-xs font-bold text-red-500 mt-1.5">{adminAddError}</p>}
                   {adminAddSuccess && <p className="text-xs font-bold text-emerald-600 mt-1.5">{adminAddSuccess}</p>}
@@ -1343,7 +1339,7 @@ if (!isLoggedIn) {
 
                 <button 
                   type="submit"
-                  className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-bold text-sm shadow-[0_8px_20px_rgba(249,115,22,0.25)] transition-all cursor-pointer active:scale-95"
+                  className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-all cursor-pointer active:scale-95"
                 >
                   Thêm Tài Khoản Admin
                 </button>
@@ -1353,9 +1349,9 @@ if (!isLoggedIn) {
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Danh sách tài khoản Admin ({adminList.length})</h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
                   {adminList.map((acc, idx) => (
-                    <div key={idx} className="flex items-center justify-between px-4 py-2.5 bg-white border border-slate-100 rounded-2xl shadow-sm text-xs font-bold text-slate-700">
+                    <div key={idx} className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700">
                       <span>👤 {acc.username}</span>
-                      <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-full uppercase tracking-wide">Đang hoạt động</span>
+                      <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Đang hoạt động</span>
                     </div>
                   ))}
                 </div>
@@ -1364,7 +1360,6 @@ if (!isLoggedIn) {
           </div>
         ) : (
           <>
-            {/* 3. PHẦN DASHBOARD CHÍNH CHO QUẢN LÝ LỚP (BÓNG MÀU LƠ LỬNG) */}
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
               <div className="flex items-center gap-4 mb-6">
                 <img 
@@ -1384,29 +1379,29 @@ if (!isLoggedIn) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white/90 backdrop-blur-xl border border-white/50 rounded-3xl p-6 shadow-[0_15px_40px_rgba(14,165,233,0.12)] relative overflow-hidden group transition-all duration-300 hover:-translate-y-1.5">
+                <div className="bg-gradient-to-br from-white via-white to-sky-50/40 border-2 border-sky-100/80 rounded-3xl p-6 shadow-[0_10px_30px_rgba(14,165,233,0.08)] relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(14,165,233,0.15)] transition-all duration-300 hover:-translate-y-1.5">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
                   <p className="text-sky-600 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Tổng Lớp</p>
                   <div className="flex items-baseline gap-2 relative z-10">
-                    <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-blue-600">{stats.total}</span>
+                    <span className="text-4xl font-extrabold text-slate-900">{stats.total}</span>
                     <span className="text-slate-500 text-sm font-semibold">hệ thống</span>
                   </div>
                 </div>
                 
-                <div className="bg-white/90 backdrop-blur-xl border border-white/50 rounded-3xl p-6 shadow-[0_15px_40px_rgba(37,99,235,0.12)] relative overflow-hidden group transition-all duration-300 hover:-translate-y-1.5">
+                <div className="bg-gradient-to-br from-white via-white to-blue-50/40 border-2 border-blue-100/80 rounded-3xl p-6 shadow-[0_10px_30px_rgba(37,99,235,0.08)] relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(37,99,235,0.15)] transition-all duration-300 hover:-translate-y-1.5">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
                   <p className="text-blue-600 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Đang Học</p>
                   <div className="flex items-baseline gap-2 relative z-10">
-                    <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">{stats.studying}</span>
+                    <span className="text-4xl font-extrabold text-blue-600">{stats.studying}</span>
                     <span className="text-slate-500 text-sm font-semibold">đang chạy</span>
                   </div>
                 </div>
 
-                <div className="bg-white/90 backdrop-blur-xl border border-white/50 rounded-3xl p-6 shadow-[0_15px_40px_rgba(249,115,22,0.12)] relative overflow-hidden group transition-all duration-300 hover:-translate-y-1.5">
+                <div className="bg-gradient-to-br from-white via-white to-orange-50/40 border-2 border-orange-100/80 rounded-3xl p-6 shadow-[0_10px_30px_rgba(249,115,22,0.08)] relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(249,115,22,0.15)] transition-all duration-300 hover:-translate-y-1.5">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
                   <p className="text-orange-600 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Chờ Khai Giảng</p>
                   <div className="flex items-baseline gap-2 relative z-10">
-                    <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">{stats.pending}</span>
+                    <span className="text-4xl font-extrabold text-orange-500">{stats.pending}</span>
                     <span className="text-slate-500 text-sm font-semibold">chờ khai giảng</span>
                   </div>
                 </div>
@@ -1414,12 +1409,11 @@ if (!isLoggedIn) {
             </div>
 
             <div className="flex-1 px-8 pb-8 min-h-0 flex flex-col">
-              {/* 4. BẢNG DỮ LIỆU ĐƯỢC BỌC TRONG KHUNG KÍNH */}
-              <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col h-full overflow-hidden">
+              <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col h-full overflow-hidden">
                 
-                <div className="px-6 py-4 border-b border-slate-100/50 flex flex-wrap gap-3 justify-between items-center bg-transparent shrink-0 z-30 relative">
+                <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap gap-3 justify-between items-center bg-white shrink-0 z-30 relative">
                   <h3 className="font-bold text-slate-800 flex items-center gap-3 text-base">
-                    <span className="w-1.5 h-6 bg-gradient-to-b from-sky-400 to-blue-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
+                    <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
                     {activeNav === "Giữ Slot" ? "📌 Bảng Tác Vụ Giữ Slot Chuyên Biệt" : `Daily — Dữ liệu ${activeNav}`}
                   </h3>
 
@@ -1432,25 +1426,25 @@ if (!isLoggedIn) {
                     <button
                       type="button"
                       onClick={() => setFilterToday(!filterToday)}
-                      className={`px-4 py-2 border rounded-xl font-bold text-xs flex items-center gap-2 focus:outline-none transition-all duration-300 active:scale-95 ${
+                      className={`px-4 py-2 border rounded-xl font-bold text-xs flex items-center gap-2 focus:outline-none transition-all duration-200 active:scale-95 ${
                         filterToday
-                          ? "bg-white border-orange-400 text-orange-600 shadow-[0_4px_10px_rgba(249,115,22,0.15)]"
-                          : "bg-white border-slate-200/80 text-slate-600 hover:border-orange-300 hover:text-orange-500 shadow-sm"
+                          ? "bg-orange-50 border-orange-400 text-orange-600 shadow-sm"
+                          : "bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50/30 hover:text-orange-500"
                       }`}
                     >
                       <span className="text-sm">{filterToday ? "📅" : "🗓️"}</span>
                       {filterToday ? "Đang chọn: Hôm nay" : "Hôm nay"}
                     </button>
 
-                    <span className="font-extrabold px-4 py-2 bg-white text-sky-600 rounded-xl shadow-sm border border-slate-100 text-xs">
+                    <span className="font-extrabold px-3.5 py-2 bg-sky-50 text-sky-600 rounded-xl border border-sky-100 shadow-sm text-xs">
                       {filteredData.length} kết quả
                     </span>
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-auto custom-scrollbar relative">
+                <div className="flex-1 overflow-auto custom-scrollbar relative bg-white">
                   <table className="w-full text-sm text-left whitespace-nowrap">
-                    <thead className="text-[11px] text-slate-500 uppercase bg-slate-50/80 backdrop-blur-md font-extrabold tracking-wider sticky top-0 z-20 border-b border-slate-100/50">
+                    <thead className="text-[12px] text-slate-400 uppercase bg-slate-50 font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b border-slate-100">
                       <tr>
                         <th className="px-6 py-4">Mã lớp</th>
                         <th className="px-6 py-4">Môn học</th>
@@ -1468,7 +1462,7 @@ if (!isLoggedIn) {
                         {activeNav === "Giữ Slot" && <th className="px-6 py-4 text-right pr-8 text-orange-600">Thao tác giữ</th>}
                       </tr>
                     </thead>
-                    <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`} className="divide-y divide-slate-100/30">
+                    <tbody key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`} className="divide-y divide-slate-50">
                       {currentTableData.length > 0 ? (
                         currentTableData.map((row, index) => {
                           const maLop = row["Mã lớp"];
@@ -1480,15 +1474,14 @@ if (!isLoggedIn) {
                           const isLoading = isHoldingSlot === maLop;
 
                           return (
-                            // Áp dụng Hover Translate-x tạo cảm giác nổi
                             <tr 
                               key={`${maLop}-${index}`} 
-                              className="hover:bg-white hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:z-10 hover:scale-[1.002] hover:translate-x-1 even:bg-slate-50/40 bg-transparent transition-all duration-300 group/row opacity-0 animate-fade-slide-up-stagger relative"
+                              className="hover:bg-sky-50/40 transition-all duration-200 group/row opacity-0 animate-fade-slide-up-stagger"
                               style={{ animationDelay: `${index * 0.03}s`, animationFillMode: 'forwards' }}
                             >
                               <td className="px-6 py-4 font-bold text-sky-600">{maLop}</td>
                               <td className="px-6 py-4">
-                                <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full border ${getSubjectStyle(subjectStr)}`}>
+                                <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border ${getSubjectStyle(subjectStr)}`}>
                                   {subjectStr}
                                 </span>
                               </td>
@@ -1508,18 +1501,18 @@ if (!isLoggedIn) {
                               {activeNav === "Giữ Slot" && (
                                 <>
                                   <td className="px-6 py-4 text-center">
-                                    <span className={`px-3 py-1.5 rounded-full font-bold text-xs border uppercase tracking-wide ${availableSlots > 0 ? "bg-orange-50 text-orange-600 border-orange-100" : "bg-slate-100 text-slate-400 border-slate-200"}`}>
-                                      {availableSlots > 0 ? `Còn ${availableSlots} slot` : "Hết slot"}
+                                    <span className={`px-2.5 py-1 rounded-md font-bold text-xs border ${availableSlots > 0 ? "bg-orange-50 text-orange-600 border-orange-200" : "bg-slate-100 text-slate-400 border-slate-200"}`}>
+                                      {availableSlots > 0 ? `Còn ${availableSlots} slot` : "Đã hết slot"}
                                     </span>
                                   </td>
 
                                   <td className="px-6 py-4 text-center">
                                     {attendanceCheck.isLow ? (
-                                      <span className="px-3 py-1.5 rounded-full font-bold text-xs bg-red-50 text-red-600 border border-red-100 animate-pulse uppercase tracking-wide">
-                                        ⚠️ Thiếu sĩ số
+                                      <span className="px-2.5 py-1 rounded-md font-bold text-xs bg-red-50 text-red-600 border border-red-200 animate-pulse">
+                                        ⚠️ Thiếu sĩ số quá !!
                                       </span>
                                     ) : (
-                                      <span className="px-3 py-1.5 rounded-full font-bold text-xs bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wide">
+                                      <span className="px-2.5 py-1 rounded-md font-bold text-xs bg-emerald-50 text-emerald-600 border border-emerald-200">
                                         ✅ Đạt chuẩn
                                       </span>
                                     )}
@@ -1529,10 +1522,10 @@ if (!isLoggedIn) {
                                     <button 
                                       onClick={() => handleOpenPopup(row, availableSlots)}
                                       disabled={isFull || isLoading}
-                                      className={`px-4 py-1.5 border font-bold rounded-full focus:outline-none transition-all duration-300 text-xs w-full max-w-[110px] text-center
+                                      className={`px-4 py-1.5 border font-bold rounded-lg focus:outline-none transition-all duration-300 text-xs w-full max-w-[110px] text-center shadow-sm
                                         ${isFull 
-                                          ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
-                                          : 'bg-gradient-to-r from-orange-400 to-orange-500 border-none text-white hover:from-orange-500 hover:to-orange-600 shadow-md shadow-orange-500/20 active:scale-95'
+                                          ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed' 
+                                          : 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600 active:scale-95'
                                         }`}
                                     >
                                       {isLoading ? (
@@ -1567,7 +1560,7 @@ if (!isLoggedIn) {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-t border-slate-100/50 shrink-0 z-10">
+                  <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-slate-100 shrink-0 z-10">
                     <span className="text-[13px] text-slate-500 font-bold tracking-wide uppercase">
                       Page <span className="text-sky-600 text-sm mx-1">{currentPage}</span> / {totalPages}
                     </span>
@@ -1575,14 +1568,14 @@ if (!isLoggedIn) {
                       <button 
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        className="px-5 py-2 bg-white border border-slate-200/80 rounded-xl text-[13px] font-bold text-slate-500 focus:outline-none hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 shadow-sm disabled:opacity-40 disabled:shadow-none disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500 transition-all active:scale-95"
+                        className="px-5 py-2 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-500 focus:outline-none hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500 transition-colors active:scale-95"
                       >
                         ← Back
                       </button>
                       <button 
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
-                        className="px-5 py-2 bg-white border border-slate-200/80 rounded-xl text-[13px] font-bold text-slate-500 focus:outline-none hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 shadow-sm disabled:opacity-40 disabled:shadow-none disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500 transition-all active:scale-95"
+                        className="px-5 py-2 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-500 focus:outline-none hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500 transition-colors active:scale-95"
                       >
                         Next →
                       </button>
@@ -1599,10 +1592,9 @@ if (!isLoggedIn) {
       {/* MODAL GIỮ SLOT */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-slide-up">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-slate-100 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-400/10 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
-            <div className="flex items-center gap-3 mb-4 relative z-10">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-500 text-white flex items-center justify-center text-xl font-bold shadow-lg shadow-orange-500/30">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100 relative">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center text-xl font-bold">
                 📌
               </div>
               <div>
@@ -1611,7 +1603,7 @@ if (!isLoggedIn) {
               </div>
             </div>
 
-            <div className="space-y-4 my-4 relative z-10">
+            <div className="space-y-4 my-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Nhập SID hoặc CID học sinh <span className="text-red-500">*</span>
@@ -1619,7 +1611,7 @@ if (!isLoggedIn) {
                 <input 
                   type="text"
                   maxLength={8}
-                  placeholder="Nhập mã số..."
+                  placeholder=""
                   value={inputValue}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -1628,7 +1620,7 @@ if (!isLoggedIn) {
                       setInputError("");
                     }
                   }}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 text-slate-800 font-bold text-sm transition-all shadow-inner"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 text-slate-800 font-bold text-sm transition-all"
                   autoFocus
                 />
                 {inputError && (
@@ -1637,18 +1629,18 @@ if (!isLoggedIn) {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 mt-6 relative z-10">
+            <div className="flex items-center justify-end gap-3 mt-6">
               <button 
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs transition-colors cursor-pointer shadow-sm"
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs transition-colors cursor-pointer"
               >
                 Hủy bỏ
               </button>
               <button 
                 type="button"
                 onClick={handleConfirmKeepSlot}
-                className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-bold text-xs shadow-[0_8px_20px_rgba(249,115,22,0.25)] transition-all cursor-pointer active:scale-95"
+                className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-orange-500/30 transition-all cursor-pointer active:scale-95"
               >
                 Xác nhận Giữ Slot
               </button>
@@ -1657,7 +1649,7 @@ if (!isLoggedIn) {
         </div>
       )}
 
-      {/* STYLE RENDER (Giữ nguyên các hiệu ứng CSS cũ) */}
+      {/* STYLE RENDER */}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap');
         
