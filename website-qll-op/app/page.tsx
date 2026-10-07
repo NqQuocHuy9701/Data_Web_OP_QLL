@@ -1163,19 +1163,7 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => { setActiveNav("ThongKeAdmin"); loadSlotHistory(); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
-                  activeNav === "ThongKeAdmin" 
-                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
-                    : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium" : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium")
-                }`}
-              >
-                <span className="text-lg">📊</span>
-                <span className="text-xs truncate">Thống Kê QLL</span>
-              </button>
-
-              <button
-                onClick={() => setActiveNav("QuanTriAdmin")}
+                onClick={() => { setActiveNav("QuanTriAdmin"); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
                   activeNav === "QuanTriAdmin" 
                     ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
@@ -1184,6 +1172,19 @@ export default function Home() {
               >
                 <span className="text-lg">⚙️</span>
                 <span className="text-xs truncate">Quản Trị Admin</span>
+              </button>
+
+              {/* THÊM MỤC THEO DÕI TRUY CẬP DƯỚI QUẢN TRỊ NGAY TẠI ĐÂY */}
+              <button
+                onClick={() => { setActiveNav("ThongKeAdmin"); loadSlotHistory(); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
+                  activeNav === "ThongKeAdmin" 
+                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
+                    : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium" : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium")
+                }`}
+              >
+                <span className="text-lg">📊</span>
+                <span className="text-xs truncate">Theo dõi truy cập</span>
               </button>
             </>
           )}
@@ -1405,7 +1406,7 @@ export default function Home() {
             </div>
           </div>
 
-        /* --- 2. MÀN HÌNH THỐNG KÊ ADMIN (REAL-TIME ONLINE) --- */
+        {/* --- 2. MÀN HÌNH THEO DÕI TRUY CẬP (THỐNG KÊ ADMIN & REAL-TIME) --- */}
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
