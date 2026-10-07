@@ -9,7 +9,10 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOi
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// ĐIỂM FIX 1: Tối ưu hàm đếm thời gian (Chỉ hiển thị Giờ, 5 phút tính 1 lần)
+// ==========================================
+// TỐI ƯU HÓA: CHỈ HIỂN THỊ "GIỜ" (HOURS ONLY)
+// Đảm bảo chuẩn logic 24h, cập nhật cực chậm (5 phút/lần)
+// ==========================================
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
   const [text, setText] = useState("Đang tính...");
 
@@ -211,38 +214,6 @@ export default function Home() {
     });
 
     return activeHolds.length;
-  };
-
-  const calculateTimeRemaining = (timeString: string) => {
-    try {
-      const parts = timeString.split(" ");
-      if (parts.length < 2) return "Đang cập nhật";
-      const dateParts = parts[0].split("/");
-      const timeParts = parts[1].split(":");
-      
-      const logDate = new Date(
-        parseInt(dateParts[2]), 
-        parseInt(dateParts[1]) - 1, 
-        parseInt(dateParts[0]), 
-        parseInt(timeParts[0]), 
-        parseInt(timeParts[1]), 
-        parseInt(timeParts[2] || "0")
-      );
-
-      const targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
-      const now = Date.now();
-      const diff = targetTime - now;
-
-      if (diff <= 0) return "⏰ Quá hạn";
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      return `${hours}h ${minutes}m ${seconds}s còn lại`;
-    } catch (e) {
-      return "24h";
-    }
   };
 
   const handleMarkAsDone = async (dbId: string) => {
@@ -507,29 +478,16 @@ export default function Home() {
     setCurrentPage(1);
   }, [searchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
 
-  // ĐIỂM FIX 2: Ẩn nội dung chạy của hiệu ứng gõ chữ, chặn đứng việc kích hoạt render 20 lần/giây.
+  // ĐÃ ẨN ĐOẠN NÀY ĐỂ NGĂN CHẶN LỖI RENDER LẠI TOÀN TRANG GÂY LAG
   useEffect(() => {
-    /* Đã ẩn nội dung để tối ưu chống giật lag
+    /*
     const currentWord = typingWords[currentWordIndex];
     let timeout: NodeJS.Timeout;
 
     if (isDeleting) {
-      if (displayedText.length > 0) {
-        timeout = setTimeout(() => {
-          setDisplayedText(currentWord.substring(0, displayedText.length - 1));
-        }, 50);
-      } else {
-        setIsDeleting(false);
-        setCurrentWordIndex((prev) => (prev + 1) % typingWords.length);
-      }
+      // ...
     } else {
-      if (displayedText.length < currentWord.length) {
-        timeout = setTimeout(() => {
-          setDisplayedText(currentWord.substring(0, displayedText.length + 1));
-        }, 150);
-      } else {
-        timeout = setTimeout(() => setIsDeleting(true), 2500);
-      }
+      // ...
     }
     return () => clearTimeout(timeout);
     */
@@ -705,6 +663,14 @@ export default function Home() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredData, currentPage]);
+
+  // ĐIỂM FIX 3: ÁP DỤNG PHÂN TRANG (PAGINATION) CHO BẢNG LỊCH SỬ ĐỂ LOẠI BỎ LAG KHI CÓ QUÁ NHIỀU DATA
+  const historyTotalPages = Math.ceil(slotHistoryData.length / itemsPerPage);
+  
+  const currentHistoryData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return slotHistoryData.slice(startIndex, startIndex + itemsPerPage);
+  }, [slotHistoryData, currentPage]);
 
   const handleOpenPopup = (row: any, availableSlots: number) => {
     if (availableSlots <= 0) return;
@@ -1389,8 +1355,8 @@ export default function Home() {
                       <tr>
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Vui lòng chờ dữ liệu từ Database !!</td>
                       </tr>
-                    ) : slotHistoryData.length > 0 ? (
-                      slotHistoryData.map((row, index) => {
+                    ) : currentHistoryData.length > 0 ? (
+                      currentHistoryData.map((row, index) => {
                         let timeStr = "";
                         if (row.timestamp) {
                           const d = new Date(Number(row.timestamp));
@@ -1430,7 +1396,6 @@ export default function Home() {
                               ) : isExpired ? (
                                 <span className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-red-500/10 text-red-400' : 'bg-red-100 text-red-700'}`}>Quá hạn (Đã nhả slot)</span>
                               ) : (
-                                // ĐIỂM FIX 3: Xóa animate-pulse ở thẻ span này
                                 <span className={`px-2.5 py-1 border font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                                   <CountdownTimer timeString={timeStr} />
                                 </span>
@@ -1468,6 +1433,39 @@ export default function Home() {
                   </tbody>
                 </table>
               </div>
+              
+              {/* THANH PHÂN TRANG CHO MÀN DS GIỮ SLOT */}
+              {historyTotalPages > 1 && (
+                <div className={`flex items-center justify-between px-6 py-4 border-t shrink-0 z-10 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
+                  <span className="text-[13px] text-slate-500 font-bold tracking-wide uppercase">
+                    Page <span className="text-sky-500 text-sm mx-1">{currentPage}</span> / {historyTotalPages}
+                  </span>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-0 active:scale-95 ${
+                        theme === 'dark' 
+                          ? 'bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400' 
+                          : 'bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500'
+                      }`}
+                    >
+                      ← Back
+                    </button>
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.min(historyTotalPages, p + 1))}
+                      disabled={currentPage === historyTotalPages}
+                      className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-0 active:scale-95 ${
+                        theme === 'dark' 
+                          ? 'bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400' 
+                          : 'bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500'
+                      }`}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1761,10 +1759,10 @@ export default function Home() {
                           return (
                             <tr 
                               key={`${maLop}-${index}`} 
-                              className={`transition-colors duration-0 group/row opacity-0 animate-fade-slide-up-stagger ${
+                              // ĐIỂM FIX 4: XÓA HIỆU ỨNG ANIMATION STAGGER TẠI CÁC DÒNG TABLE GÂY NẶNG GPU KHI CUỘN
+                              className={`transition-colors duration-0 group/row ${
                                 theme === 'dark' ? 'hover:bg-[#1e293b] even:bg-[#1a2235]/50' : 'hover:bg-sky-50/40 even:bg-slate-50/60'
                               }`}
-                              style={{ animationDelay: `${index * 0.03}s`, animationFillMode: 'forwards' }}
                             >
                               <td className="px-6 py-4 font-bold text-sky-500">{maLop}</td>
                               <td className="px-6 py-4">
