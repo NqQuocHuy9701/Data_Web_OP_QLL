@@ -10,93 +10,64 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOi
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ==========================================
-
-// 2. Component được bọc React.memo để chặn render thừa
 // ==========================================
-// ==========================================
-// ==========================================
-// TỐI ƯU HÓA PHƯƠNG ÁN 3: ĐÓNG BĂNG TIME (CHỈ CHẠY KHI HOVER)
-// Xóa bỏ toàn bộ setInterval chạy ngầm gây lag.
+// TỐI ƯU HÓA: ĐẾM THEO PHÚT (KHÔNG HIỂN THỊ GIÂY)
+// Không dùng nhịp đếm liên tục, giảm 99% CPU
 // ==========================================
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [displayText, setDisplayText] = useState("Đang tính...");
-
-  useEffect(() => {
-    let targetTime = 0;
-
-    // 1. Phân tích chuỗi thời gian đúng 1 lần
+  // Tính toán thời gian đích 1 lần duy nhất để không làm nặng React
+  const targetTime = useMemo(() => {
     try {
       const parts = timeString.split(" ");
-      if (parts.length >= 2) {
-        const dateParts = parts[0].split("/");
-        const timeParts = parts[1].split(":");
-        
-        const logDate = new Date(
-          parseInt(dateParts[2]), 
-          parseInt(dateParts[1]) - 1, 
-          parseInt(dateParts[0]), 
-          parseInt(timeParts[0]), 
-          parseInt(timeParts[1]), 
-          parseInt(timeParts[2] || "0")
-        );
-        targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
+      if (parts.length < 2) return null;
+      const dateParts = parts[0].split("/");
+      const timeParts = parts[1].split(":");
+      const logDate = new Date(
+        parseInt(dateParts[2]),
+        parseInt(dateParts[1]) - 1,
+        parseInt(dateParts[0]),
+        parseInt(timeParts[0]),
+        parseInt(timeParts[1]),
+        parseInt(timeParts[2] || "0")
+      );
+      return logDate.getTime() + 24 * 60 * 60 * 1000;
+    } catch {
+      return null;
+    }
+  }, [timeString]);
+
+  // Khởi tạo state tĩnh
+  const [remaining, setRemaining] = useState(() => {
+    if (!targetTime) return "Đang cập nhật";
+    const diff = targetTime - Date.now();
+    if (diff <= 0) return "⏰ Quá hạn";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `⏳ ${hours}h ${minutes}m còn lại`;
+  });
+
+  useEffect(() => {
+    if (!targetTime) return;
+
+    const update = () => {
+      const diff = targetTime - Date.now();
+      if (diff <= 0) {
+        setRemaining("⏰ Quá hạn");
+        return;
       }
-    } catch (e) {
-      setDisplayText("Lỗi dữ liệu");
-      return;
-    }
-
-    if (!targetTime) {
-      setDisplayText("Đang cập nhật");
-      return;
-    }
-
-    // 2. Hàm tạo text tĩnh (Chỉ hiện số giờ) - RẤT NHẸ
-    const getStaticText = () => {
-      const diff = targetTime - Date.now();
-      if (diff <= 0) return "⏰ Quá hạn";
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      return `⏳ Còn ~${hours} tiếng`;
-    };
-
-    // 3. Hàm tạo text chi tiết (Hiện từng giây)
-    const getExactText = () => {
-      const diff = targetTime - Date.now();
-      if (diff <= 0) return "⏰ Quá hạn";
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      return `${hours}h ${minutes}m ${seconds}s còn lại`;
+      setRemaining(`⏳ ${hours}h ${minutes}m còn lại`);
     };
 
-    // 4. Xử lý Logic bật/tắt đếm ngược
-    setDisplayText(isHovered ? getExactText() : getStaticText());
+    // CHỈ CẬP NHẬT 1 PHÚT 1 LẦN (60000ms) THAY VÌ 1 GIÂY
+    const timer = setInterval(update, 60000);
+    return () => clearInterval(timer);
+  }, [targetTime]);
 
-    let timer: NodeJS.Timeout;
-    if (isHovered) {
-      // Chỉ kích hoạt setInterval ĐỘC LẬP cho 1 dòng duy nhất đang được trỏ chuột
-      timer = setInterval(() => {
-        setDisplayText(getExactText());
-      }, 1000);
-    }
-
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [timeString, isHovered]);
-
-  return (
-    <span 
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="cursor-help w-full inline-block px-1"
-      title="Giữ chuột tại đây để xem đếm ngược từng giây"
-    >
-      {displayText}
-    </span>
-  );
+  return <>{remaining}</>;
 });
+// ==========================================
 // ==========================================
 // ==========================================
 
