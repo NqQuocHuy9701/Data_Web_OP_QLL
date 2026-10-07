@@ -50,7 +50,11 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<string>("");
   
   const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot" | "QuanTriAdmin" | "LichSuSlotAdmin" | "ThongKeAdmin">("Giữ Slot");
+  
+  // --- STATE QUẢN LÝ DANH SÁCH NHÂN SỰ ONLINE REAL-TIME ---
+  const [onlineUsers, setOnlineUsers] = useState<{ namecode: string; teamLead: string; onlineAt: number }[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
+
   const [searchTerm, setSearchTerm] = useState("");
   
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
@@ -232,30 +236,47 @@ export default function Home() {
     }
   };
 
-  // --- SUPABASE PRESENCE (THEO DÕI ONLINE REAL-TIME) ---
+  // --- SUPABASE PRESENCE (THEO DÕI ONLINE & THỜI GIAN ONLINE) ---
   useEffect(() => {
     if (isLoggedIn) {
+      const currentLoginTime = Date.now();
       const channel = supabase.channel('qll-room', {
         config: { presence: { key: namecode } },
       });
 
       channel.on('presence', { event: 'sync' }, () => {
         const newState = channel.presenceState();
-        setOnlineCount(Object.keys(newState).length);
+        const usersList: { namecode: string; teamLead: string; onlineAt: number }[] = [];
+
+        Object.keys(newState).forEach(key => {
+          const presences = newState[key] as any[];
+          if (presences && presences.length > 0) {
+            const info = presences[0];
+            usersList.push({
+              namecode: info.user_name || key,
+              teamLead: info.team_lead || "Vận hành chung",
+              onlineAt: info.online_at || currentLoginTime,
+            });
+          }
+        });
+
+        setOnlineUsers(usersList);
+        setOnlineCount(usersList.length);
       });
 
       channel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({
             user_name: namecode,
-            online_at: new Date().toISOString(),
+            team_lead: loginRole === "Admin" ? "Admin hệ thống" : teamLead,
+            online_at: currentLoginTime,
           });
         }
       });
 
       return () => { supabase.removeChannel(channel); };
     }
-  }, [isLoggedIn, namecode]);
+  }, [isLoggedIn, namecode, teamLead, loginRole]);
 
   const qllStats = useMemo(() => {
     if (!slotHistoryData || slotHistoryData.length === 0) return [];
@@ -1174,7 +1195,6 @@ export default function Home() {
                 <span className="text-xs truncate">Quản Trị Admin</span>
               </button>
 
-              {/* THÊM MỤC THEO DÕI TRUY CẬP DƯỚI QUẢN TRỊ NGAY TẠI ĐÂY */}
               <button
                 onClick={() => { setActiveNav("ThongKeAdmin"); loadSlotHistory(); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
@@ -1406,7 +1426,7 @@ export default function Home() {
             </div>
           </div>
 
-
+        {/* --- 2. MÀN HÌNH THEO DÕI TRUY CẬP (HIỂN THỊ DANH SÁCH NAMECODE ONL, TEAM LEAD VÀ SỐ PHÚT ONLINE) --- */}
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
@@ -1436,14 +1456,18 @@ export default function Home() {
               </div>
             </div>
 
+            {/* BẢNG HIỂN THỊ DANH SÁCH CHI TIẾT NHÂN SỰ ĐANG TRUY CẬP */}
             <div className={`flex-1 rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
               theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
               <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
                 <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                   <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
-                  📊 Thống kê hiệu suất Quản Lý Lớp (Top Requester)
+                  🟢 Danh sách nhân sự đang truy cập trực tuyến
                 </h3>
+                <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                  Đang online: {onlineUsers.length} người
+                </span>
               </div>
 
               <div className="flex-1 overflow-auto custom-scrollbar relative">
@@ -1452,49 +1476,35 @@ export default function Home() {
                     theme === 'dark' ? 'bg-[#1a2235] text-slate-400 border-white/5' : 'bg-slate-50 text-slate-400 border-slate-100'
                   }`}>
                     <tr>
-                      <th className="px-6 py-4 text-center w-24">Xếp hạng</th>
-                      <th className="px-6 py-4">Tên QLL (Namecode)</th>
+                      <th className="px-6 py-4 text-center w-24">STT</th>
+                      <th className="px-6 py-4">Tên Namecode (Đang Onl)</th>
                       <th className="px-6 py-4">Team Lead</th>
-                      <th className="px-6 py-4 text-center">Tổng Request</th>
-                      <th className="px-6 py-4 text-center text-emerald-500">Đã Xếp (Done)</th>
-                      <th className="px-6 py-4 text-center text-amber-500">Đang chờ</th>
-                      <th className="px-6 py-4 text-center text-red-500">Quá hạn nhả slot</th>
-                      <th className="px-6 py-4 text-right pr-6">Tỷ lệ hoàn thành</th>
+                      <th className="px-6 py-4 text-right pr-8">Thời gian Online</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y transition-colors duration-0 ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-50'}`}>
-                    {qllStats.length > 0 ? (
-                      qllStats.map((stat, index) => {
-                        const completionRate = stat.total > 0 ? Math.round((stat.done / stat.total) * 100) : 0;
+                    {onlineUsers.length > 0 ? (
+                      onlineUsers.map((user, index) => {
+                        const minutesOnline = Math.max(1, Math.floor((Date.now() - user.onlineAt) / (1000 * 60)));
                         return (
-                          <tr key={stat.name} className={`transition-colors duration-0 ${theme === 'dark' ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50" : "hover:bg-sky-50/40 even:bg-slate-50/60"}`}>
-                            <td className="px-6 py-4 font-bold text-slate-500 flex justify-center">
-                              <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs ${index === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200 shadow-sm' : index === 1 ? 'bg-slate-200 text-slate-600 border border-slate-300' : index === 2 ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-transparent text-slate-400 border'}`}>
-                                #{index + 1}
-                              </span>
+                          <tr key={index} className={`transition-colors duration-0 ${theme === 'dark' ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50" : "hover:bg-sky-50/40 even:bg-slate-50/60"}`}>
+                            <td className="px-6 py-4 font-bold text-slate-500 text-center">#{index + 1}</td>
+                            <td className="px-6 py-4 font-bold text-sky-500 flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                              {user.namecode || "Không rõ"}
                             </td>
-                            <td className="px-6 py-4 font-bold text-sky-500">{stat.name}</td>
-                            <td className={`px-6 py-4 font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{stat.team}</td>
-                            
-                            <td className={`px-6 py-4 text-center font-bold text-lg transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{stat.total}</td>
-                            <td className="px-6 py-4 text-center font-bold text-emerald-500">{stat.done}</td>
-                            <td className="px-6 py-4 text-center font-bold text-amber-500">{stat.pending}</td>
-                            <td className="px-6 py-4 text-center font-bold text-red-500">{stat.expired}</td>
-                            
-                            <td className="px-6 py-4 text-right pr-6">
-                              <div className="flex items-center justify-end gap-3">
-                                <div className={`w-24 h-2.5 rounded-full overflow-hidden transition-colors duration-0 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${completionRate}%` }}></div>
-                                </div>
-                                <span className="font-bold text-xs w-9 text-right text-emerald-500">{completionRate}%</span>
-                              </div>
+                            <td className={`px-6 py-4 font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                              {user.teamLead || "Vận hành chung"}
+                            </td>
+                            <td className="px-6 py-4 text-right pr-8 font-bold text-emerald-500">
+                              {minutesOnline} phút trước
                             </td>
                           </tr>
                         );
                       })
                     ) : (
                       <tr>
-                        <td colSpan={8} className="px-6 py-24 text-center text-slate-400 font-semibold">Chưa có dữ liệu thống kê từ hệ thống.</td>
+                        <td colSpan={4} className="px-6 py-24 text-center text-slate-400 font-semibold">Chưa có nhân sự nào trực tuyến.</td>
                       </tr>
                     )}
                   </tbody>
@@ -1503,7 +1513,7 @@ export default function Home() {
             </div>
           </div>
 
-
+        {/* --- 3. MÀN HÌNH QUẢN TRỊ ADMIN (FORM THÊM TÀI KHOẢN) --- */}
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
             <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
@@ -1578,7 +1588,7 @@ export default function Home() {
             </div>
           </div>
 
-  
+        {/* --- 4. MÀN HÌNH CHUNG DÀNH CHO CẢ ADMIN VÀ QLL --- */}
         ) : (
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
