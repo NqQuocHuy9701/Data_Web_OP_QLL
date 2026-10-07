@@ -932,9 +932,12 @@ export default function Home() {
           style={{ backgroundImage: `url('/backdrop.jpg')` }}
         ></div>
 
-        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-indigo-700/20 filter blur-[150px] -z-20 pointer-events-none"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-cyan-600/15 filter blur-[150px] -z-20 pointer-events-none"></div>
-        <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] rounded-full bg-purple-600/10 filter blur-[120px] -z-20 pointer-events-none"></div>
+        {/* TỐI ƯU GPU: Dùng radial-gradient thay vì filter blur để chống lag tuyệt đối ở Dark Mode */}
+      <div className={`absolute inset-0 pointer-events-none -z-10 transition-opacity duration-0 ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(49, 46, 129, 0.4) 0%, rgba(0,0,0,0) 70%)' }}></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(124, 45, 18, 0.2) 0%, rgba(0,0,0,0) 70%)' }}></div>
+        <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(12, 74, 110, 0.3) 0%, rgba(0,0,0,0) 70%)' }}></div>
+      </div>
 
         <div className="w-full max-w-[1400px] px-6 lg:px-16 flex items-center justify-between">
           
@@ -1251,7 +1254,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
         <header className={`h-20 border-b flex items-center justify-between px-8 shrink-0 z-20 transition-colors duration-0 ${
-          theme === 'dark' ? 'bg-[#0e1320]/80 backdrop-blur-xl border-white/5 shadow-md' : 'bg-white/90 backdrop-blur-md border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.01)]'
+          theme === 'dark' ? 'bg-[#0e1320] border-white/5 shadow-md' : 'bg-white/90 backdrop-blur-md border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.01)]'
         }`}>
           <div className="flex-1 max-w-xl relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -1320,7 +1323,7 @@ export default function Home() {
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
-              theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
+              theme === 'dark' ? 'bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
               <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
                 <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
@@ -1472,19 +1475,19 @@ export default function Home() {
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
-              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
+              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
                 <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-sky-400' : 'text-sky-500'}`}>Tổng Requests</p>
                 <p className={`text-3xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                   {qllStats.reduce((acc, curr) => acc + curr.total, 0)}
                 </p>
               </div>
-              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
+              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
                 <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-500'}`}>Đã xử lý (Done)</p>
                 <p className={`text-3xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                   {qllStats.reduce((acc, curr) => acc + curr.done, 0)}
                 </p>
               </div>
-              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
+              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
                 <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`}>Đang Online (Real-time)</p>
                 <div className="flex items-center gap-3">
                    <span className="relative flex h-3 w-3">
@@ -1499,7 +1502,7 @@ export default function Home() {
             </div>
 
             <div className={`flex-1 rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
-              theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
+              theme === 'dark' ? 'bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
               <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
                 <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
@@ -1556,7 +1559,7 @@ export default function Home() {
 
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
-            <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
+            <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors duration-0 ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
                   ⚙️
@@ -1649,7 +1652,7 @@ export default function Home() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 ${
-                  theme === 'dark' ? 'bg-[#151b2b]/90 border-sky-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-sky-50/40 border-sky-100/80 shadow-[0_10px_30px_rgba(14,165,233,0.08)] hover:shadow-[0_20px_40px_rgba(14,165,233,0.15)]'
+                  theme === 'dark' ? 'bg-[#151b2b] border-sky-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-sky-50/40 border-sky-100/80 shadow-[0_10px_30px_rgba(14,165,233,0.08)] hover:shadow-[0_20px_40px_rgba(14,165,233,0.15)]'
                 }`}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
                   <p className="text-sky-500 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Tổng Lớp</p>
@@ -1660,7 +1663,7 @@ export default function Home() {
                 </div>
                 
                 <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 ${
-                  theme === 'dark' ? 'bg-[#151b2b]/90 border-blue-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-blue-50/40 border-blue-100/80 shadow-[0_10px_30px_rgba(37,99,235,0.08)] hover:shadow-[0_20px_40px_rgba(37,99,235,0.15)]'
+                  theme === 'dark' ? 'bg-[#151b2b] border-blue-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-blue-50/40 border-blue-100/80 shadow-[0_10px_30px_rgba(37,99,235,0.08)] hover:shadow-[0_20px_40px_rgba(37,99,235,0.15)]'
                 }`}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
                   <p className="text-blue-500 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Đang Học</p>
@@ -1671,7 +1674,7 @@ export default function Home() {
                 </div>
 
                 <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 ${
-                  theme === 'dark' ? 'bg-[#151b2b]/90 border-orange-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-orange-50/40 border-orange-100/80 shadow-[0_10px_30px_rgba(249,115,22,0.08)] hover:shadow-[0_20px_40px_rgba(249,115,22,0.15)]'
+                  theme === 'dark' ? 'bg-[#151b2b] border-orange-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-orange-50/40 border-orange-100/80 shadow-[0_10px_30px_rgba(249,115,22,0.08)] hover:shadow-[0_20px_40px_rgba(249,115,22,0.15)]'
                 }`}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-orange-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
                   <p className="text-orange-500 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Chờ Khai Giảng</p>
@@ -1685,7 +1688,7 @@ export default function Home() {
 
             <div className="flex-1 px-8 pb-8 min-h-0 flex flex-col">
               <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
-                theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
+                theme === 'dark' ? 'bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
               }`}>
                 
                 <div className={`px-6 py-4 border-b flex flex-wrap gap-3 justify-between items-center shrink-0 z-30 relative transition-colors duration-0 ${
