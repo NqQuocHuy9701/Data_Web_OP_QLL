@@ -229,19 +229,21 @@ export default function Home() {
     }
   };
 
-  // --- KIỂM TRA QUY TẮC ADMIN THEO USERNAME ---
+  // --- RULE CHUẨN XÁC: CHỈ HIỆN ADMIN HỆ THỐNG KHI TÊN NẰM TRONG DANH SÁCH ADMIN ---
+  const currentLoggedUsername = loginRole === "Admin" ? adminUsername : namecode;
   const isUserAdmin = useMemo(() => {
-    const currentName = loginRole === "Admin" ? adminUsername : namecode;
-    return adminList.some(acc => acc.username.trim() === currentName.trim()) || loginRole === "Admin";
-  }, [adminList, adminUsername, namecode, loginRole]);
+    if (loginRole === "Admin") return true;
+    return adminList.some(acc => acc.username.trim() === currentLoggedUsername.trim());
+  }, [adminList, currentLoggedUsername, loginRole]);
 
   const displayTeamOrRole = isUserAdmin ? "Admin hệ thống" : teamLead;
+  const displayName = isUserAdmin ? (adminUsername || namecode || "Admin") : namecode;
 
   useEffect(() => {
     if (isLoggedIn) {
       const currentLoginTime = Date.now();
       const channel = supabase.channel('qll-room', {
-        config: { presence: { key: namecode || adminUsername } },
+        config: { presence: { key: displayName } },
       });
 
       channel.on('presence', { event: 'sync' }, () => {
@@ -267,7 +269,7 @@ export default function Home() {
       channel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({
-            user_name: loginRole === "Admin" ? adminUsername : namecode,
+            user_name: displayName,
             team_lead: displayTeamOrRole,
             online_at: currentLoginTime,
           });
@@ -276,7 +278,7 @@ export default function Home() {
 
       return () => { supabase.removeChannel(channel); };
     }
-  }, [isLoggedIn, namecode, adminUsername, teamLead, loginRole, displayTeamOrRole]);
+  }, [isLoggedIn, displayName, displayTeamOrRole]);
 
   const qllStats = useMemo(() => {
     if (!slotHistoryData || slotHistoryData.length === 0) return [];
@@ -703,7 +705,7 @@ export default function Home() {
         body: JSON.stringify({
           ma_lop: maLop,
           mon_hoc: row["Môn học"] || "",
-          nguoi_giu: isUserAdmin ? (adminUsername || namecode || "Admin") : namecode,
+          nguoi_giu: displayName,
           team: displayTeamOrRole,
           ngay_bat_dau: formatDate(startDate),
           ngay_het_han: formatDate(expiryDate),
@@ -1164,7 +1166,7 @@ export default function Home() {
             <span className="text-xs truncate">Giữ Slot Lớp</span>
           </button>
 
-          {loginRole === "Admin" && (
+          {isUserAdmin && (
             <>
               <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
                 Hệ thống Quản trị
@@ -1216,11 +1218,11 @@ export default function Home() {
                 ? (isUserAdmin ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-sky-500/20 border-sky-500/30 text-sky-400")
                 : (isUserAdmin ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700")
             }`}>
-              {(isUserAdmin ? adminUsername : namecode).substring(0, 2).toUpperCase()}
+              {displayName.substring(0, 2).toUpperCase()}
             </div>
             <div className="text-xs truncate max-w-[100px]">
-              <p className={`font-bold truncate transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`} title={isUserAdmin ? adminUsername : namecode}>
-                {isUserAdmin ? adminUsername : namecode}
+              <p className={`font-bold truncate transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`} title={displayName}>
+                {displayName}
               </p>
               <p className="text-[10px] text-slate-400 truncate" title={displayTeamOrRole}>
                 {displayTeamOrRole}
@@ -1278,7 +1280,7 @@ export default function Home() {
             )}
             
             <button 
-              onClick={() => { loadData(); if(loginRole === "Admin") loadSlotHistory(); }}
+              onClick={() => { loadData(); if(isUserAdmin) loadSlotHistory(); }}
               disabled={loading || loadingHistory}
               className={`px-6 py-2.5 text-sm font-bold rounded-full shadow-sm transition-colors duration-0 flex items-center gap-2.5 focus:outline-none active:scale-95
                 ${(loading || loadingHistory) 
@@ -1306,7 +1308,7 @@ export default function Home() {
           </div>
         </header>
 
-        {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
+        {isUserAdmin && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
               theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
@@ -1425,7 +1427,7 @@ export default function Home() {
             </div>
           </div>
 
-        ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
+        ) : isUserAdmin && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
               <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
@@ -1510,7 +1512,7 @@ export default function Home() {
             </div>
           </div>
 
-        ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
+        ) : isUserAdmin && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
             <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center gap-3 mb-6">
