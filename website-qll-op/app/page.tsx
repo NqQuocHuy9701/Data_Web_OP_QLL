@@ -324,7 +324,7 @@ export default function Home() {
         setLoginError("Vui lòng chọn hoặc nhập Team Lead!");
         return;
       }
-      setAdminUsername(""); // Reset sạch state admin để tránh lẫn lộn
+      setAdminUsername("");
       const userData = { 
         namecode: namecode.trim(), 
         teamLead: teamLead.trim(), 
@@ -342,7 +342,7 @@ export default function Home() {
         return;
       }
 
-      setNamecode(""); // Reset sạch state qll để tránh lẫn lộn
+      setNamecode("");
       const userData = { 
         namecode: matchedAdmin.username, 
         teamLead: "Admin hệ thống", 
@@ -1842,7 +1842,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        )
+        )}
       </main>
 
       {showModal && (
@@ -1925,7 +1925,7 @@ export default function Home() {
         .animate-smooth-signature {
           display: inline-block;
           white-space: nowrap;
-          animation: smoothSignature 4.5s cubic-bezier(0.3, 0.1, 0.3, 1) inline;
+          animation: smoothSignature 4.5s cubic-bezier(0.3, 0.1, 0.3, 1) infinite;
         }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
