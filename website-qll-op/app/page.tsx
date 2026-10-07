@@ -1949,7 +1949,7 @@ export default function Home() {
  
         
         .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      `}} />
-    </div>
-  );
-}    
+  `}} />
+</div>
+);
+}   
