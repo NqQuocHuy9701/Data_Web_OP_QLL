@@ -229,9 +229,9 @@ export default function Home() {
     }
   };
 
-  // --- CHECK PHÂN QUYỀN CHUẨN XÁC THEO LOGINROLE VÀ ADMINLIST ---
-  const isUserAdmin = loginRole === "Admin" || adminList.some(acc => acc.username.trim() === namecode.trim());
-  const displayName = isUserAdmin ? (adminUsername || namecode || "Admin") : namecode;
+  // --- LOGIC PHÂN QUYỀN TUYỆT ĐỐI CHUẨN XÁC ---
+  const isUserAdmin = loginRole === "Admin";
+  const displayName = isUserAdmin ? adminUsername : namecode;
   const displayTeamOrRole = isUserAdmin ? "Admin hệ thống" : teamLead;
 
   useEffect(() => {
@@ -324,6 +324,7 @@ export default function Home() {
         setLoginError("Vui lòng chọn hoặc nhập Team Lead!");
         return;
       }
+      setAdminUsername(""); // Reset sạch state admin để tránh lẫn lộn
       const userData = { 
         namecode: namecode.trim(), 
         teamLead: teamLead.trim(), 
@@ -341,6 +342,7 @@ export default function Home() {
         return;
       }
 
+      setNamecode(""); // Reset sạch state qll để tránh lẫn lộn
       const userData = { 
         namecode: matchedAdmin.username, 
         teamLead: "Admin hệ thống", 
@@ -359,6 +361,8 @@ export default function Home() {
     setNamecode("");
     setAdminUsername("");
     setAdminPassword("");
+    setLoginRole("QLL");
+    setTeamLead("Team Lead A");
     setActiveNav("Giữ Slot");
   };
 
@@ -1837,7 +1841,7 @@ export default function Home() {
                 
               </div>
             </div>
-          </>
+          </div>
         )}
       </main>
 
@@ -1921,7 +1925,7 @@ export default function Home() {
         .animate-smooth-signature {
           display: inline-block;
           white-space: nowrap;
-          animation: smoothSignature 4.5s cubic-bezier(0.3, 0.1, 0.3, 1) infinite;
+          animation: smoothSignature 4.5s cubic-bezier(0.3, 0.1, 0.3, 1) inline;
         }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -1944,10 +1948,6 @@ export default function Home() {
         }
         .animate-fade-slide-down { animation: fadeSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        @keyframes fadeSlideUpStagger {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
         .animate-fade-slide-up-stagger { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}} />
     </div>
