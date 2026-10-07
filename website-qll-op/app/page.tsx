@@ -1941,8 +1941,13 @@ export default function Home() {
         }
         .animate-bounce-bitu { animation: bounceBitu 1.5s infinite ease-in-out; }
 
-        @keyframes fadeSlideDown {
+@keyframes fadeSlideDown {
           from { opacity: 0; transform: translateY(-15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeSlideUpStagger {
+          from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-down { animation: fadeSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
