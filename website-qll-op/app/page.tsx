@@ -50,7 +50,7 @@ export default function Home() {
   const [filterToday, setFilterToday] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  const typingWords = useMemo(() => ["Xin chào", "hello"], []);
+  const typingWords = useMemo(() => ["Mọi thứ đã sẵn sàng !"], []);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -1186,7 +1186,7 @@ return (
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 z-30">
                 <h3 className="font-bold text-slate-800 flex items-center gap-3 text-base">
                   <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
-                  📋 Danh sách lịch sử giữ slot (Tab: LichSuGiuSlot)
+                  📋 Danh sách lịch sử giữ slot
                 </h3>
                 <span className="font-extrabold px-3.5 py-2 bg-orange-50 text-orange-600 rounded-xl border border-orange-100 shadow-sm text-xs">
                   Tổng số bản ghi: {slotHistoryData.length}
@@ -1359,19 +1359,20 @@ return (
         ) : (
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
-              <div className="flex items-center gap-4 mb-6">
+<div className="flex items-center gap-4 mb-6">
                 <img 
                   src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
                   alt="Bitu Mascot" 
                   className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
                 />
                 <h2 className="text-[30px] font-greeting text-slate-800 tracking-wide flex items-center gap-2 pt-1 h-[45px]">
-                  <span>Vận hành, </span>
+                  <span>Vận hành xin chào, </span>
                   <div className="flex items-center">
                     <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none -mb-2">
                       {displayedText}
                     </span>
-                    <span className="w-[3px] h-[30px] bg-orange-500 ml-1.5 animate-cursor-blink rounded-full"></span>
+                    {/* Bỏ con trỏ gõ máy, thay bằng icon cây bút đang viết tay cực kỳ mượt mà */}
+                    <span className="ml-2 text-[26px] -mt-2 animate-pulse origin-bottom-left select-none pointer-events-none">✍️</span>
                   </div>
                 </h2>
               </div>
