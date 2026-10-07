@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Papa from "papaparse";
 import { createClient } from "@supabase/supabase-js";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sehvatktrqtgsnmvebmm.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
@@ -119,6 +120,42 @@ export default function Home() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
+  // TẠO DỮ LIỆU BIỂU ĐỒ ĐƯỜNG (Nhóm requests theo 24 khung giờ)
+  const requestChartData = useMemo(() => {
+    if (!slotHistoryData || slotHistoryData.length === 0) return [];
+    const hourMap: Record<string, number> = {};
+
+    // Dựng sẵn 24 mốc giờ (00:00 -> 23:00) để biểu đồ chạy mượt không bị đứt đoạn
+    for (let i = 0; i < 24; i++) {
+      hourMap[`${i.toString().padStart(2, '0')}:00`] = 0;
+    }
+
+    slotHistoryData.forEach(row => {
+      let dateObj;
+      if (row.timestamp) {
+        dateObj = new Date(Number(row.timestamp));
+      } else if (row["Thời gian"]) {
+        const parts = row["Thời gian"].split(" ");
+        if (parts.length >= 2) {
+          const timeParts = parts[1].split(":");
+          dateObj = new Date();
+          dateObj.setHours(parseInt(timeParts[0]), 0, 0, 0);
+        }
+      }
+      
+      if (dateObj) {
+        const hour = `${dateObj.getHours().toString().padStart(2, '0')}:00`;
+        if (hourMap[hour] !== undefined) {
+          hourMap[hour] += 1;
+        }
+      }
+    });
+
+    return Object.keys(hourMap).sort().map(hour => ({
+      time: hour,
+      requests: hourMap[hour]
+    }));
+  }, [slotHistoryData]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -1481,30 +1518,53 @@ return (
 
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
-              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
-                <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-sky-400' : 'text-sky-500'}`}>Tổng Requests</p>
-                <p className={`text-3xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                  {qllStats.reduce((acc, curr) => acc + curr.total, 0)}
-                </p>
-              </div>
-              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
-                <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-500'}`}>Đã xử lý (Done)</p>
-                <p className={`text-3xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                  {qllStats.reduce((acc, curr) => acc + curr.done, 0)}
-                </p>
-              </div>
-              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
-                <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`}>Đang Online (Real-time)</p>
-                <div className="flex items-center gap-3">
-                   <span className="relative flex h-3 w-3">
-                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                   </span>
-                   <p className={`text-3xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                     {onlineCount} <span className="text-sm font-medium text-slate-500">nhân sự</span>
-                   </p>
+{/* KHU VỰC BIỂU ĐỒ ĐƯỜNG THEO DÕI REAL-TIME */}
+            <div className={`mb-6 rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${
+              theme === 'dark' ? 'bg-[#151b2b] border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'
+            }`}>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                    <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
+                    📈 Biểu đồ Lưu lượng Requests hôm nay
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 ml-4.5">Theo dõi số lượng thao tác giữ slot theo từng khung giờ trong ngày</p>
                 </div>
+              </div>
+              
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={requestChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
+                    <XAxis 
+                      dataKey="time" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 600 }}
+                      dy={10} 
+                    />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 600 }} 
+                    />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                      itemStyle={{ color: '#0ea5e9', fontWeight: 'bold' }}
+                      labelStyle={{ color: theme === 'dark' ? '#cbd5e1' : '#475569', marginBottom: '4px' }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="requests" 
+                      name="Lượt Requests" 
+                      stroke="#0ea5e9" 
+                      strokeWidth={4} 
+                      dot={{ r: 4, fill: '#0ea5e9', strokeWidth: 0 }} 
+                      activeDot={{ r: 8, stroke: '#e0f2fe', strokeWidth: 4 }} 
+                      animationDuration={1500} 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
