@@ -1406,7 +1406,7 @@ export default function Home() {
             </div>
           </div>
 
-        {/* --- 2. MÀN HÌNH THEO DÕI TRUY CẬP (THỐNG KÊ ADMIN & REAL-TIME) --- */}
+
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
