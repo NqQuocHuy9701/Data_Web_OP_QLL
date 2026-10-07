@@ -1368,11 +1368,10 @@ return (
                 <h2 className="text-[30px] font-greeting text-slate-800 tracking-wide flex items-center gap-2 pt-1 h-[45px]">
                   <span>Vận hành xin chào, </span>
                   <div className="flex items-center">
-                    <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none -mb-2">
-                      {displayedText}
+                    {/* Bỏ {displayedText} và con trỏ nhấp nháy, thay bằng chữ tĩnh chạy CSS Clip-path */}
+                    <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none -mb-2 animate-smooth-signature">
+                      Mọi thứ đã sẵn sàng !
                     </span>
-                    {/* Bỏ con trỏ gõ máy, thay bằng icon cây bút đang viết tay cực kỳ mượt mà */}
-                    <span className="ml-2 text-[26px] -mt-2 animate-pulse origin-bottom-left select-none pointer-events-none">✍️</span>
                   </div>
                 </h2>
               </div>
