@@ -9,67 +9,47 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOi
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// ==========================================
-// ==========================================
-// TỐI ƯU HÓA: ĐẾM THEO PHÚT (KHÔNG HIỂN THỊ GIÂY)
-// Không dùng nhịp đếm liên tục, giảm 99% CPU
-// ==========================================
+// ĐIỂM FIX 1: Tối ưu hàm đếm thời gian (Chỉ hiển thị Giờ, 5 phút tính 1 lần)
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
-  // Tính toán thời gian đích 1 lần duy nhất để không làm nặng React
-  const targetTime = useMemo(() => {
-    try {
-      const parts = timeString.split(" ");
-      if (parts.length < 2) return null;
-      const dateParts = parts[0].split("/");
-      const timeParts = parts[1].split(":");
-      const logDate = new Date(
-        parseInt(dateParts[2]),
-        parseInt(dateParts[1]) - 1,
-        parseInt(dateParts[0]),
-        parseInt(timeParts[0]),
-        parseInt(timeParts[1]),
-        parseInt(timeParts[2] || "0")
-      );
-      return logDate.getTime() + 24 * 60 * 60 * 1000;
-    } catch {
-      return null;
-    }
-  }, [timeString]);
-
-  // Khởi tạo state tĩnh
-  const [remaining, setRemaining] = useState(() => {
-    if (!targetTime) return "Đang cập nhật";
-    const diff = targetTime - Date.now();
-    if (diff <= 0) return "⏰ Quá hạn";
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `⏳ ${hours}h ${minutes}m còn lại`;
-  });
+  const [text, setText] = useState("Đang tính...");
 
   useEffect(() => {
+    let targetTime = 0;
+    try {
+      const parts = timeString.split(" ");
+      if (parts.length >= 2) {
+        const dateParts = parts[0].split("/");
+        const timeParts = parts[1].split(":");
+        const logDate = new Date(
+          parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]),
+          parseInt(timeParts[0]), parseInt(timeParts[1]), parseInt(timeParts[2] || "0")
+        );
+        targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
+      }
+    } catch {
+      setText("24h"); 
+      return;
+    }
+
     if (!targetTime) return;
 
     const update = () => {
       const diff = targetTime - Date.now();
       if (diff <= 0) {
-        setRemaining("⏰ Quá hạn");
-        return;
+        setText("⏰ Quá hạn");
+      } else {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        setText(`⏳ Còn ~${hours} giờ`);
       }
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      setRemaining(`⏳ ${hours}h ${minutes}m còn lại`);
     };
 
-    // CHỈ CẬP NHẬT 1 PHÚT 1 LẦN (60000ms) THAY VÌ 1 GIÂY
-    const timer = setInterval(update, 60000);
+    update();
+    const timer = setInterval(update, 300000); // 5 phút cập nhật 1 lần
     return () => clearInterval(timer);
-  }, [targetTime]);
+  }, [timeString]);
 
-  return <>{remaining}</>;
+  return <>{text}</>;
 });
-// ==========================================
-// ==========================================
-// ==========================================
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -231,6 +211,38 @@ export default function Home() {
     });
 
     return activeHolds.length;
+  };
+
+  const calculateTimeRemaining = (timeString: string) => {
+    try {
+      const parts = timeString.split(" ");
+      if (parts.length < 2) return "Đang cập nhật";
+      const dateParts = parts[0].split("/");
+      const timeParts = parts[1].split(":");
+      
+      const logDate = new Date(
+        parseInt(dateParts[2]), 
+        parseInt(dateParts[1]) - 1, 
+        parseInt(dateParts[0]), 
+        parseInt(timeParts[0]), 
+        parseInt(timeParts[1]), 
+        parseInt(timeParts[2] || "0")
+      );
+
+      const targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const diff = targetTime - now;
+
+      if (diff <= 0) return "⏰ Quá hạn";
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      return `${hours}h ${minutes}m ${seconds}s còn lại`;
+    } catch (e) {
+      return "24h";
+    }
   };
 
   const handleMarkAsDone = async (dbId: string) => {
@@ -495,7 +507,9 @@ export default function Home() {
     setCurrentPage(1);
   }, [searchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
 
+  // ĐIỂM FIX 2: Ẩn nội dung chạy của hiệu ứng gõ chữ, chặn đứng việc kích hoạt render 20 lần/giây.
   useEffect(() => {
+    /* Đã ẩn nội dung để tối ưu chống giật lag
     const currentWord = typingWords[currentWordIndex];
     let timeout: NodeJS.Timeout;
 
@@ -518,6 +532,7 @@ export default function Home() {
       }
     }
     return () => clearTimeout(timeout);
+    */
   }, [displayedText, isDeleting, currentWordIndex, typingWords]);
 
   const dropdownOptions = useMemo(() => {
@@ -1415,6 +1430,7 @@ export default function Home() {
                               ) : isExpired ? (
                                 <span className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-red-500/10 text-red-400' : 'bg-red-100 text-red-700'}`}>Quá hạn (Đã nhả slot)</span>
                               ) : (
+                                // ĐIỂM FIX 3: Xóa animate-pulse ở thẻ span này
                                 <span className={`px-2.5 py-1 border font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                                   <CountdownTimer timeString={timeStr} />
                                 </span>
