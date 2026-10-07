@@ -11,10 +11,8 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ==========================================
 // TỐI ƯU HÓA: CHỈ HIỂN THỊ "GIỜ" (HOURS ONLY)
-// Đảm bảo chuẩn logic 24h, cập nhật cực chậm (5 phút/lần)
-// ==========================================
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
-  const [text, setText] = useState("Đang tính...");
+  const [remaining, setRemaining] = useState("Đang tính...");
 
   useEffect(() => {
     let targetTime = 0;
@@ -30,7 +28,7 @@ const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
         targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
       }
     } catch {
-      setText("24h"); 
+      setRemaining("24h");
       return;
     }
 
@@ -39,19 +37,20 @@ const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
     const update = () => {
       const diff = targetTime - Date.now();
       if (diff <= 0) {
-        setText("⏰ Quá hạn");
+        setRemaining("⏰ Quá hạn");
       } else {
         const hours = Math.floor(diff / (1000 * 60 * 60));
-        setText(`⏳ Còn ~${hours} giờ`);
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        setRemaining(`⏳ ${hours}h ${minutes}m`);
       }
     };
 
-    update();
-    const timer = setInterval(update, 300000); // 5 phút cập nhật 1 lần
+    update(); 
+    const timer = setInterval(update, 60000); // 1 phút mới tính toán lại 1 lần (0% CPU)
     return () => clearInterval(timer);
   }, [timeString]);
 
-  return <>{text}</>;
+  return <>{remaining}</>;
 });
 
 export default function Home() {
@@ -658,6 +657,7 @@ export default function Home() {
   }, [data, activeNav, searchTerm, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  
   
   const currentTableData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -1396,9 +1396,9 @@ export default function Home() {
                               ) : isExpired ? (
                                 <span className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-red-500/10 text-red-400' : 'bg-red-100 text-red-700'}`}>Quá hạn (Đã nhả slot)</span>
                               ) : (
-                                <span className={`px-2.5 py-1 border font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                                  <CountdownTimer timeString={timeStr} />
-                                </span>
+<span className={`px-2.5 py-1 border font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+   <CountdownTimer timeString={timeStr} />
+</span>
                               )}
                             </td>
 
