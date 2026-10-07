@@ -10,9 +10,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOi
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ==========================================
-// TỐI ƯU HÓA: CHỈ HIỂN THỊ "GIỜ" (HOURS ONLY)
+// ==========================================
+// TỐI ƯU: ĐẾM TỪNG GIÂY (BYPASS REACT DOM)
+// Đảm bảo chuẩn 24h, nhảy từng giây nhưng không tốn CPU Render
+// ==========================================
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
-  const [remaining, setRemaining] = useState("Đang tính...");
+  const timerRef = React.useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     let targetTime = 0;
@@ -28,30 +31,39 @@ const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
         targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
       }
     } catch {
-      setRemaining("24h");
+      if (timerRef.current) timerRef.current.innerText = "Lỗi dữ liệu";
       return;
     }
 
     if (!targetTime) return;
 
-    const update = () => {
+    // Hàm chọc thẳng vào DOM HTML để đổi chữ, bỏ qua React setState
+    const updateTimer = () => {
+      if (!timerRef.current) return;
+      
       const diff = targetTime - Date.now();
       if (diff <= 0) {
-        setRemaining("⏰ Quá hạn");
-      } else {
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setRemaining(`⏳ ${hours}h ${minutes}m`);
+        timerRef.current.innerText = "⏰ Quá hạn";
+        return;
       }
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      timerRef.current.innerText = `⏳ ${hours}h ${minutes}m ${seconds}s`;
     };
 
-    update(); 
-    const timer = setInterval(update, 60000); // 1 phút mới tính toán lại 1 lần (0% CPU)
+    updateTimer(); // Chạy ngay lần đầu
+    const timer = setInterval(updateTimer, 1000); // Lặp lại mỗi giây
+    
     return () => clearInterval(timer);
   }, [timeString]);
 
-  return <>{remaining}</>;
+  // Thẻ span tĩnh, React sẽ bỏ qua thẻ này sau lần tải đầu tiên
+  return <span ref={timerRef}>Đang tính...</span>;
 });
+// ==========================================
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
