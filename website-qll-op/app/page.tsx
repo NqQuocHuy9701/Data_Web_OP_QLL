@@ -229,7 +229,6 @@ export default function Home() {
     }
   };
 
-  // --- LOGIC PHÂN QUYỀN TUYỆT ĐỐI CHUẨN XÁC ---
   const isUserAdmin = loginRole === "Admin";
   const displayName = isUserAdmin ? adminUsername : namecode;
   const displayTeamOrRole = isUserAdmin ? "Admin hệ thống" : teamLead;
