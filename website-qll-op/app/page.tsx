@@ -9,48 +9,68 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOi
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-function CountdownTimer({ timeString, tick }: { timeString: string; tick: number }) {
+// ==========================================
+// TỐI ƯU HÓA: PUB-SUB TIMER (CHỈ 1 INTERVAL CHO TOÀN BỘ TRANG)
+// ==========================================
+const timerSubscribers = new Set<() => void>();
+if (typeof window !== "undefined") {
+  setInterval(() => {
+    timerSubscribers.forEach((cb) => cb());
+  }, 1000);
+}
+
+function CountdownTimer({ timeString }: { timeString: string }) {
   const [remaining, setRemaining] = useState("");
 
   useEffect(() => {
-    try {
-      const parts = timeString.split(" ");
-      if (parts.length < 2) {
-        setRemaining("Đang cập nhật");
-        return;
+    const update = () => {
+      try {
+        const parts = timeString.split(" ");
+        if (parts.length < 2) {
+          setRemaining("Đang cập nhật");
+          return;
+        }
+        const dateParts = parts[0].split("/");
+        const timeParts = parts[1].split(":");
+        
+        const logDate = new Date(
+          parseInt(dateParts[2]), 
+          parseInt(dateParts[1]) - 1, 
+          parseInt(dateParts[0]), 
+          parseInt(timeParts[0]), 
+          parseInt(timeParts[1]), 
+          parseInt(timeParts[2] || "0")
+        );
+
+        const targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
+        const diff = targetTime - Date.now();
+
+        if (diff <= 0) {
+          setRemaining("⏰ Quá hạn");
+          return;
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setRemaining(`${hours}h ${minutes}m ${seconds}s còn lại`);
+      } catch (e) {
+        setRemaining("24h");
       }
-      const dateParts = parts[0].split("/");
-      const timeParts = parts[1].split(":");
-      
-      const logDate = new Date(
-        parseInt(dateParts[2]), 
-        parseInt(dateParts[1]) - 1, 
-        parseInt(dateParts[0]), 
-        parseInt(timeParts[0]), 
-        parseInt(timeParts[1]), 
-        parseInt(timeParts[2] || "0")
-      );
+    };
 
-      const targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
-      const diff = targetTime - Date.now();
-
-      if (diff <= 0) {
-        setRemaining("⏰ Quá hạn");
-        return;
-      }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setRemaining(`${hours}h ${minutes}m ${seconds}s còn lại`);
-    } catch (e) {
-      setRemaining("24h");
-    }
-  }, [timeString, tick]);
+    update(); // Chạy ngay lần đầu
+    timerSubscribers.add(update); // Đăng ký lắng nghe nhịp đếm chung
+    
+    return () => {
+      timerSubscribers.delete(update); // Hủy đăng ký khi component bị ẩn
+    };
+  }, [timeString]);
 
   return <>{remaining}</>;
 }
+// ==========================================
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -64,13 +84,6 @@ export default function Home() {
   const [loginError, setLoginError] = useState("");
   
   const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const globalTimer = setInterval(() => setTick(p => p + 1), 1000);
-    return () => clearInterval(globalTimer);
-  }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("qll_theme") as "light" | "dark";
@@ -219,38 +232,6 @@ export default function Home() {
     });
 
     return activeHolds.length;
-  };
-
-  const calculateTimeRemaining = (timeString: string) => {
-    try {
-      const parts = timeString.split(" ");
-      if (parts.length < 2) return "Đang cập nhật";
-      const dateParts = parts[0].split("/");
-      const timeParts = parts[1].split(":");
-      
-      const logDate = new Date(
-        parseInt(dateParts[2]), 
-        parseInt(dateParts[1]) - 1, 
-        parseInt(dateParts[0]), 
-        parseInt(timeParts[0]), 
-        parseInt(timeParts[1]), 
-        parseInt(timeParts[2] || "0")
-      );
-
-      const targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
-      const now = Date.now();
-      const diff = targetTime - now;
-
-      if (diff <= 0) return "⏰ Quá hạn";
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      return `${hours}h ${minutes}m ${seconds}s còn lại`;
-    } catch (e) {
-      return "24h";
-    }
   };
 
   const handleMarkAsDone = async (dbId: string) => {
@@ -1436,7 +1417,7 @@ export default function Home() {
                                 <span className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-red-500/10 text-red-400' : 'bg-red-100 text-red-700'}`}>Quá hạn (Đã nhả slot)</span>
                               ) : (
                                 <span className={`px-2.5 py-1 border font-bold rounded-lg text-xs animate-pulse ${theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                                  <CountdownTimer timeString={timeStr} tick={tick} />
+                                  <CountdownTimer timeString={timeStr} />
                                 </span>
                               )}
                             </td>
