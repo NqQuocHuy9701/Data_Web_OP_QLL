@@ -1585,7 +1585,7 @@ export default function Home() {
           </div>
 
         ) : (
-          <>
+          <div className="flex-1 flex flex-col min-h-0">
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
               <div className="flex items-center gap-4 mb-6">
                 <img 
