@@ -1503,7 +1503,7 @@ export default function Home() {
             </div>
           </div>
 
-        {/* --- 3. MÀN HÌNH QUẢN TRỊ ADMIN (FORM THÊM TÀI KHOẢN) --- */}
+
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
             <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
@@ -1578,7 +1578,7 @@ export default function Home() {
             </div>
           </div>
 
-        {/* --- 4. MÀN HÌNH CHUNG DÀNH CHO CẢ ADMIN VÀ QLL --- */}
+  
         ) : (
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
