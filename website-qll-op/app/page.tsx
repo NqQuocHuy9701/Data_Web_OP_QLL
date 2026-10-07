@@ -235,7 +235,6 @@ export default function Home() {
   };
 
   // --- BẮT ĐẦU BLOCK THỐNG KÊ & REAL-TIME ---
-  // 1. Luồng giám sát Online bằng Supabase Presence
   useEffect(() => {
     if (isLoggedIn) {
       const channel = supabase.channel('qll-room', {
@@ -260,7 +259,6 @@ export default function Home() {
     }
   }, [isLoggedIn, namecode]);
 
-  // 2. Gom nhóm dữ liệu thống kê từ bảng Lịch Sử Giữ Slot
   const qllStats = useMemo(() => {
     if (!slotHistoryData || slotHistoryData.length === 0) return [];
     const map: Record<string, { name: string; team: string; total: number; done: number; pending: number; expired: number }> = {};
@@ -1292,9 +1290,7 @@ export default function Home() {
           </div>
         </header>
 
-        {/* --- CẤU TRÚC 4 MÀN HÌNH ĐÃ ĐƯỢC PHÂN RẼ RÕ RÀNG VÀ CHÍNH XÁC TẠI ĐÂY --- */}
-        
-        {/* 1. MÀN HÌNH LỊCH SỬ SLOT ADMIN */}
+        {/* --- 1. MÀN HÌNH LỊCH SỬ SLOT ADMIN --- */}
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
@@ -1413,8 +1409,8 @@ export default function Home() {
               </div>
             </div>
           </div>
-        
-        {/* 2. MÀN HÌNH THỐNG KÊ ADMIN */}
+
+        {/* --- 2. MÀN HÌNH THỐNG KÊ ADMIN --- */}
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
@@ -1511,7 +1507,7 @@ export default function Home() {
             </div>
           </div>
 
-        {/* 3. MÀN HÌNH QUẢN TRỊ ADMIN (FORM THÊM TÀI KHOẢN) */}
+        {/* --- 3. MÀN HÌNH QUẢN TRỊ ADMIN (FORM THÊM TÀI KHOẢN) --- */}
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
             <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
@@ -1586,7 +1582,7 @@ export default function Home() {
             </div>
           </div>
 
-        {/* 4. MÀN HÌNH CHUNG DÀNH CHO CẢ ADMIN VÀ QLL (TỔNG LỚP, BẢNG DỮ LIỆU CHÍNH) */}
+        {/* --- 4. MÀN HÌNH CHUNG DÀNH CHO CẢ ADMIN VÀ QLL --- */}
         ) : (
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
