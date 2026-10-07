@@ -14,22 +14,18 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // 2. Component được bọc React.memo để chặn render thừa
 // ==========================================
 // ==========================================
-const timerSubscribers = new Set<() => void>();
-if (typeof window !== "undefined") {
-  setInterval(() => {
-    timerSubscribers.forEach((cb) => cb());
-  }, 1000);
-}
-
-// 2. Bypass React Render bằng useRef và Vanilla JavaScript
+// ==========================================
+// TỐI ƯU HÓA PHƯƠNG ÁN 3: ĐÓNG BĂNG TIME (CHỈ CHẠY KHI HOVER)
+// Xóa bỏ toàn bộ setInterval chạy ngầm gây lag.
+// ==========================================
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
-  // Dùng tham chiếu trực tiếp đến thẻ span HTML
-  const timerRef = React.useRef<HTMLSpanElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [displayText, setDisplayText] = useState("Đang tính...");
 
   useEffect(() => {
     let targetTime = 0;
 
-    // BƯỚC 1: Phân tích chuỗi ngày tháng đúng 1 lần
+    // 1. Phân tích chuỗi thời gian đúng 1 lần
     try {
       const parts = timeString.split(" ");
       if (parts.length >= 2) {
@@ -47,46 +43,59 @@ const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
         targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
       }
     } catch (e) {
-      if (timerRef.current) timerRef.current.textContent = "Lỗi dữ liệu";
+      setDisplayText("Lỗi dữ liệu");
       return;
     }
 
     if (!targetTime) {
-      if (timerRef.current) timerRef.current.textContent = "Đang cập nhật";
+      setDisplayText("Đang cập nhật");
       return;
     }
 
-    // BƯỚC 2: Hàm chọc thẳng vào DOM, không dùng setState của React
-    const tick = () => {
-      // Nếu element không còn trên màn hình thì bỏ qua để tránh lỗi
-      if (!timerRef.current) return; 
-
+    // 2. Hàm tạo text tĩnh (Chỉ hiện số giờ) - RẤT NHẸ
+    const getStaticText = () => {
       const diff = targetTime - Date.now();
+      if (diff <= 0) return "⏰ Quá hạn";
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      return `⏳ Còn ~${hours} tiếng`;
+    };
 
-      if (diff <= 0) {
-        timerRef.current.textContent = "⏰ Quá hạn";
-        timerSubscribers.delete(tick); // Tự hủy bộ đếm khi hết hạn
-        return;
-      }
-
+    // 3. Hàm tạo text chi tiết (Hiện từng giây)
+    const getExactText = () => {
+      const diff = targetTime - Date.now();
+      if (diff <= 0) return "⏰ Quá hạn";
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      // Cập nhật DOM trực tiếp (Nhanh gấp 100 lần so với React rendering)
-      timerRef.current.textContent = `${hours}h ${minutes}m ${seconds}s còn lại`;
+      return `${hours}h ${minutes}m ${seconds}s còn lại`;
     };
 
-    tick(); // Chạy ngay lập tức lần đầu
-    timerSubscribers.add(tick); // Đăng ký hàm vào nhịp đếm chung
+    // 4. Xử lý Logic bật/tắt đếm ngược
+    setDisplayText(isHovered ? getExactText() : getStaticText());
+
+    let timer: NodeJS.Timeout;
+    if (isHovered) {
+      // Chỉ kích hoạt setInterval ĐỘC LẬP cho 1 dòng duy nhất đang được trỏ chuột
+      timer = setInterval(() => {
+        setDisplayText(getExactText());
+      }, 1000);
+    }
 
     return () => {
-      timerSubscribers.delete(tick); // Xóa đăng ký khi chuyển trang
+      if (timer) clearInterval(timer);
     };
-  }, [timeString]);
+  }, [timeString, isHovered]);
 
-  // Thẻ span không bao giờ bị render lại bởi React sau lần đầu tiên
-  return <span ref={timerRef}>Đang tính toán...</span>;
+  return (
+    <span 
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="cursor-help w-full inline-block px-1"
+      title="Giữ chuột tại đây để xem đếm ngược từng giây"
+    >
+      {displayText}
+    </span>
+  );
 });
 // ==========================================
 // ==========================================
