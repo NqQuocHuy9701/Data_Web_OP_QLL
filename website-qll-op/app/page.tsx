@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import Papa from "papaparse";
 import { createClient } from "@supabase/supabase-js";
 
-// Đảm bảo lấy đúng biến hoặc gán trực tiếp để loại trừ lỗi thiếu biến môi trường trên Vercel
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sehvatktrqtgsnmvebmm.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
 
@@ -14,16 +13,13 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginRole, setLoginRole] = useState<"QLL" | "Admin">("QLL");
   
-  // Form QLL
   const [namecode, setNamecode] = useState("");
   const [teamLead, setTeamLead] = useState("Team Lead A");
   
-  // Form Admin
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   
-  // --- QUẢN LÝ DARK MODE ---
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
@@ -50,11 +46,8 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<string>("");
   
   const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot" | "QuanTriAdmin" | "LichSuSlotAdmin" | "ThongKeAdmin">("Giữ Slot");
-  
-  // --- STATE QUẢN LÝ DANH SÁCH NHÂN SỰ ONLINE REAL-TIME ---
   const [onlineUsers, setOnlineUsers] = useState<{ namecode: string; teamLead: string; onlineAt: number }[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
-
   const [searchTerm, setSearchTerm] = useState("");
   
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
@@ -236,7 +229,6 @@ export default function Home() {
     }
   };
 
-  // --- SUPABASE PRESENCE (THEO DÕI ONLINE & THỜI GIAN ONLINE) ---
   useEffect(() => {
     if (isLoggedIn) {
       const currentLoginTime = Date.now();
@@ -1097,7 +1089,6 @@ export default function Home() {
         </div>
       )}   
 
-      {/* SIDEBAR */}
       <aside className={`w-64 min-w-[16rem] max-w-[16rem] flex flex-col z-20 shrink-0 transition-colors duration-0 ${
         theme === 'dark' 
           ? 'bg-[#0e1320] border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.5)]' 
@@ -1238,7 +1229,6 @@ export default function Home() {
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
-        {/* HEADER */}
         <header className={`h-20 border-b flex items-center justify-between px-8 shrink-0 z-20 transition-colors duration-0 ${
           theme === 'dark' ? 'bg-[#0e1320]/80 backdrop-blur-xl border-white/5 shadow-md' : 'bg-white/90 backdrop-blur-md border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.01)]'
         }`}>
@@ -1306,7 +1296,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* --- 1. MÀN HÌNH LỊCH SỬ SLOT ADMIN --- */}
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
@@ -1426,7 +1415,6 @@ export default function Home() {
             </div>
           </div>
 
-        {/* --- 2. MÀN HÌNH THEO DÕI TRUY CẬP (HIỂN THỊ DANH SÁCH NAMECODE ONL, TEAM LEAD VÀ SỐ PHÚT ONLINE) --- */}
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
@@ -1456,7 +1444,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* BẢNG HIỂN THỊ DANH SÁCH CHI TIẾT NHÂN SỰ ĐANG TRUY CẬP */}
             <div className={`flex-1 rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
               theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
@@ -1513,7 +1500,6 @@ export default function Home() {
             </div>
           </div>
 
-        {/* --- 3. MÀN HÌNH QUẢN TRỊ ADMIN (FORM THÊM TÀI KHOẢN) --- */}
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div className="flex-1 p-8 overflow-y-auto">
             <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
@@ -1588,7 +1574,6 @@ export default function Home() {
             </div>
           </div>
 
-        {/* --- 4. MÀN HÌNH CHUNG DÀNH CHO CẢ ADMIN VÀ QLL --- */}
         ) : (
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
@@ -1849,7 +1834,6 @@ export default function Home() {
         )}
       </main>
 
-      {/* MODAL GIỮ SLOT */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-slide-up">
           <div className={`rounded-3xl p-6 w-full max-w-md shadow-2xl border relative transition-colors duration-0 ${
@@ -1908,14 +1892,13 @@ export default function Home() {
                 onClick={handleConfirmKeepSlot}
                 className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-orange-500/30 transition-colors duration-0 cursor-pointer active:scale-95"
               >
-                Xác nhận Giữ Slot
+                Xác nhận Giữ Slot	
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* STYLE RENDER & ANIMATION */}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
         
@@ -1940,7 +1923,7 @@ export default function Home() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb.hover { background: #475569; }
 
         @keyframes bounceBitu {
           0%, 100% { transform: translateY(0); }
