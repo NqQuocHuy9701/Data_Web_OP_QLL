@@ -229,11 +229,19 @@ export default function Home() {
     }
   };
 
+  // --- KIỂM TRA QUY TẮC ADMIN THEO USERNAME ---
+  const isUserAdmin = useMemo(() => {
+    const currentName = loginRole === "Admin" ? adminUsername : namecode;
+    return adminList.some(acc => acc.username.trim() === currentName.trim()) || loginRole === "Admin";
+  }, [adminList, adminUsername, namecode, loginRole]);
+
+  const displayTeamOrRole = isUserAdmin ? "Admin hệ thống" : teamLead;
+
   useEffect(() => {
     if (isLoggedIn) {
       const currentLoginTime = Date.now();
       const channel = supabase.channel('qll-room', {
-        config: { presence: { key: namecode } },
+        config: { presence: { key: namecode || adminUsername } },
       });
 
       channel.on('presence', { event: 'sync' }, () => {
@@ -259,8 +267,8 @@ export default function Home() {
       channel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({
-            user_name: namecode,
-            team_lead: loginRole === "Admin" ? "Admin hệ thống" : teamLead,
+            user_name: loginRole === "Admin" ? adminUsername : namecode,
+            team_lead: displayTeamOrRole,
             online_at: currentLoginTime,
           });
         }
@@ -268,7 +276,7 @@ export default function Home() {
 
       return () => { supabase.removeChannel(channel); };
     }
-  }, [isLoggedIn, namecode, teamLead, loginRole]);
+  }, [isLoggedIn, namecode, adminUsername, teamLead, loginRole, displayTeamOrRole]);
 
   const qllStats = useMemo(() => {
     if (!slotHistoryData || slotHistoryData.length === 0) return [];
@@ -695,8 +703,8 @@ export default function Home() {
         body: JSON.stringify({
           ma_lop: maLop,
           mon_hoc: row["Môn học"] || "",
-          nguoi_giu: namecode,
-          team: loginRole === "Admin" ? "Admin hệ thống" : teamLead,
+          nguoi_giu: isUserAdmin ? (adminUsername || namecode || "Admin") : namecode,
+          team: displayTeamOrRole,
           ngay_bat_dau: formatDate(startDate),
           ngay_het_han: formatDate(expiryDate),
           note: `SID/CID: ${cleanVal}`,
@@ -1205,15 +1213,17 @@ export default function Home() {
           <div className="flex items-center gap-3 px-1 cursor-pointer group">
             <div className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm transition-colors duration-0 ${
               theme === 'dark' 
-                ? (loginRole === "Admin" ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-sky-500/20 border-sky-500/30 text-sky-400")
-                : (loginRole === "Admin" ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700")
+                ? (isUserAdmin ? "bg-orange-500/20 border-orange-500/30 text-orange-400" : "bg-sky-500/20 border-sky-500/30 text-sky-400")
+                : (isUserAdmin ? "bg-orange-100 border-orange-200 text-orange-700" : "bg-sky-100 border-sky-200 text-sky-700")
             }`}>
-              {namecode.substring(0, 2).toUpperCase()}
+              {(isUserAdmin ? adminUsername : namecode).substring(0, 2).toUpperCase()}
             </div>
             <div className="text-xs truncate max-w-[100px]">
-              <p className={`font-bold truncate transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`} title={namecode}>{namecode}</p>
-              <p className="text-[10px] text-slate-400 truncate" title={loginRole === "Admin" ? "Admin hệ thống" : teamLead}>
-                {loginRole === "Admin" ? "Admin hệ thống" : teamLead}
+              <p className={`font-bold truncate transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`} title={isUserAdmin ? adminUsername : namecode}>
+                {isUserAdmin ? adminUsername : namecode}
+              </p>
+              <p className="text-[10px] text-slate-400 truncate" title={displayTeamOrRole}>
+                {displayTeamOrRole}
               </p>
             </div>
           </div>
@@ -1892,7 +1902,7 @@ export default function Home() {
                 onClick={handleConfirmKeepSlot}
                 className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-orange-500/30 transition-colors duration-0 cursor-pointer active:scale-95"
               >
-                Xác nhận Giữ Slot	
+                Xác nhận Giữ Slot
               </button>
             </div>
           </div>
@@ -1923,7 +1933,7 @@ export default function Home() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb.hover { background: #475569; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
 
         @keyframes bounceBitu {
           0%, 100% { transform: translateY(0); }
