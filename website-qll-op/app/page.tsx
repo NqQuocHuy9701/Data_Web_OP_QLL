@@ -50,7 +50,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   
-  const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot" | "QuanTriAdmin" | "LichSuSlotAdmin">("Giữ Slot");
+  const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot" | "QuanTriAdmin" | "LichSuSlotAdmin" | "ThongKeAdmin">("Giữ Slot");
+  const [onlineCount, setOnlineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
@@ -233,6 +234,69 @@ useEffect(() => {
     }
   };
 
+// --- BẮT ĐẦU BLOCK THỐNG KÊ & REAL-TIME ---
+  // 1. Luồng giám sát Online bằng Supabase Presence
+  useEffect(() => {
+    if (isLoggedIn) {
+      const channel = supabase.channel('qll-room', {
+        config: { presence: { key: namecode } },
+      });
+
+      channel.on('presence', { event: 'sync' }, () => {
+        const newState = channel.presenceState();
+        setOnlineCount(Object.keys(newState).length);
+      });
+
+      channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_name: namecode,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [isLoggedIn, namecode]);
+
+  // 2. Gom nhóm dữ liệu thống kê từ bảng Lịch Sử Giữ Slot
+  const qllStats = useMemo(() => {
+    if (!slotHistoryData || slotHistoryData.length === 0) return [];
+    const map: Record<string, { name: string; team: string; total: number; done: number; pending: number; expired: number }> = {};
+
+    slotHistoryData.forEach((row, index) => {
+      const nguoiGiu = row.nguoi_giu || row["Người giữ"] || "Không rõ";
+      const team = row.team || row["Team"] || "-";
+
+      let timeStr = "";
+      if (row.timestamp) {
+        const d = new Date(Number(row.timestamp));
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      } else {
+        timeStr = row["Thời gian"] || "";
+      }
+
+      const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+      const rowKey = `${timeStr}-${maLop}-${index}`;
+      
+      const isDone = completedSlots[rowKey] || row.is_done;
+      const isExpired = checkIsExpired(timeStr);
+
+      if (!map[nguoiGiu]) {
+        map[nguoiGiu] = { name: nguoiGiu, team: team, total: 0, done: 0, pending: 0, expired: 0 };
+      }
+
+      map[nguoiGiu].total += 1;
+      if (isDone) map[nguoiGiu].done += 1;
+      else if (isExpired) map[nguoiGiu].expired += 1;
+      else map[nguoiGiu].pending += 1;
+    });
+
+    return Object.values(map).sort((a, b) => b.total - a.total);
+  }, [slotHistoryData, completedSlots]);
+  // --- KẾT THÚC BLOCK THỐNG KÊ & REAL-TIME ---
 const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -1106,6 +1170,7 @@ const handleLoginSubmit = (e: React.FormEvent) => {
             <span className="text-xs truncate">Giữ Slot Lớp</span>
           </button>
 
+
           {loginRole === "Admin" && (
             <>
               <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
@@ -1123,6 +1188,20 @@ const handleLoginSubmit = (e: React.FormEvent) => {
                 <span className="text-lg">📋</span>
                 <span className="text-xs truncate">DS Giữ Slot</span>
               </button>
+
+              <button
+                onClick={() => { setActiveNav("ThongKeAdmin"); loadSlotHistory(); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
+                  activeNav === "ThongKeAdmin" 
+                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
+                    : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium" : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium")
+                }`}
+              >
+                <span className="text-lg">📊</span>
+                <span className="text-xs truncate">Thống Kê QLL</span>
+              </button>
+
+              
 
               <button
                 onClick={() => setActiveNav("QuanTriAdmin")}
@@ -1354,82 +1433,105 @@ const handleLoginSubmit = (e: React.FormEvent) => {
               </div>
             </div>
           </div>
-        ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
-          <div className="flex-1 p-8 overflow-y-auto">
-            <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5' : 'bg-white border-slate-100'}`}>
-              <div className="flex items-center gap-3 mb-6">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors duration-0 ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
-                  ⚙️
-                </div>
-                <div>
-                  <h2 className={`text-xl font-bold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Quản trị Tài khoản Admin</h2>
-                  <p className="text-xs text-slate-500">Thêm tài khoản quản trị viên mới vào hệ thống</p>
-                </div>
+: loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
+          <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
+            
+            {/* THẺ BÁO CÁO TỔNG QUAN (CÓ REAL-TIME ONLINE) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-slide-down">
+              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
+                <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-sky-400' : 'text-sky-500'}`}>Tổng Requests</p>
+                <p className={`text-3xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                  {qllStats.reduce((acc, curr) => acc + curr.total, 0)}
+                </p>
               </div>
-
-              <form onSubmit={handleAddAdminSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Tên đăng nhập Admin mới <span className="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text"
-                    placeholder=""
-                    value={newAdminUser}
-                    onChange={(e) => {
-                      setNewAdminUser(e.target.value);
-                      setAdminAddError("");
-                    }}
-                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-colors duration-0 mb-3 ${
-                      theme === 'dark' ? 'bg-[#0a0f1c] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Mật khẩu Admin mới <span className="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="password"
-                    placeholder=""
-                    value={newAdminPass}
-                    onChange={(e) => {
-                      setNewAdminPass(e.target.value);
-                      setAdminAddError("");
-                    }}
-                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-colors duration-0 ${
-                      theme === 'dark' ? 'bg-[#0a0f1c] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
-                    }`}
-                  />
-                  {adminAddError && <p className="text-xs font-bold text-red-500 mt-1.5">{adminAddError}</p>}
-                  {adminAddSuccess && <p className="text-xs font-bold text-emerald-500 mt-1.5">{adminAddSuccess}</p>}
-                </div>
-
-                <button 
-                  type="submit"
-                  className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-colors cursor-pointer active:scale-95"
-                >
-                  Thêm Tài Khoản Admin
-                </button>
-              </form>
-
-              <div className={`mt-8 pt-6 border-t transition-colors duration-0 ${theme === 'dark' ? 'border-white/5' : 'border-slate-100'}`}>
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Danh sách tài khoản Admin ({adminList.length})</h4>
-                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
-                  {adminList.map((acc, idx) => (
-                    <div key={idx} className={`flex items-center justify-between px-4 py-2.5 border rounded-xl text-xs font-bold transition-colors duration-0 ${
-                      theme === 'dark' ? 'bg-[#0a0f1c] border-white/5 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-700'
-                    }`}>
-                      <span>👤 {acc.username}</span>
-                      <span className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${theme === 'dark' ? 'text-emerald-400 bg-emerald-500/10' : 'text-emerald-600 bg-emerald-50'}`}>Đang hoạt động</span>
-                    </div>
-                  ))}
+              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
+                <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-500'}`}>Đã xử lý (Done)</p>
+                <p className={`text-3xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                  {qllStats.reduce((acc, curr) => acc + curr.done, 0)}
+                </p>
+              </div>
+              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]/90 border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'}`}>
+                <p className={`text-[11px] font-extrabold uppercase tracking-widest mb-1 transition-colors duration-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`}>Đang Online (Real-time)</p>
+                <div className="flex items-center gap-3">
+                   <span className="relative flex h-3 w-3">
+                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                   </span>
+                   <p className={`text-3xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                     {onlineCount} <span className="text-sm font-medium text-slate-500">nhân sự</span>
+                   </p>
                 </div>
               </div>
             </div>
+
+            {/* BẢNG XẾP HẠNG QLL */}
+            <div className={`flex-1 rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
+              theme === 'dark' ? 'bg-[#151b2b]/90 border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
+            }`}>
+              <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
+                <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                  <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
+                  📊 Thống kê hiệu suất Quản Lý Lớp (Top Requester)
+                </h3>
+              </div>
+
+              <div className="flex-1 overflow-auto custom-scrollbar relative">
+                <table className="w-full text-sm text-left whitespace-nowrap">
+                  <thead className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors duration-0 ${
+                    theme === 'dark' ? 'bg-[#1a2235] text-slate-400 border-white/5' : 'bg-slate-50 text-slate-400 border-slate-100'
+                  }`}>
+                    <tr>
+                      <th className="px-6 py-4 text-center w-24">Xếp hạng</th>
+                      <th className="px-6 py-4">Tên QLL (Namecode)</th>
+                      <th className="px-6 py-4">Team Lead</th>
+                      <th className="px-6 py-4 text-center">Tổng Request</th>
+                      <th className="px-6 py-4 text-center text-emerald-500">Đã Xếp (Done)</th>
+                      <th className="px-6 py-4 text-center text-amber-500">Đang chờ</th>
+                      <th className="px-6 py-4 text-center text-red-500">Quá hạn nhả slot</th>
+                      <th className="px-6 py-4 text-right pr-6">Tỷ lệ hoàn thành</th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y transition-colors duration-0 ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-50'}`}>
+                    {qllStats.length > 0 ? (
+                      qllStats.map((stat, index) => {
+                        const completionRate = stat.total > 0 ? Math.round((stat.done / stat.total) * 100) : 0;
+                        return (
+                          <tr key={stat.name} className={`transition-colors duration-0 ${theme === 'dark' ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50" : "hover:bg-sky-50/40 even:bg-slate-50/60"}`}>
+                            <td className="px-6 py-4 font-bold text-slate-500 flex justify-center">
+                              <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs ${index === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200 shadow-sm' : index === 1 ? 'bg-slate-200 text-slate-600 border border-slate-300' : index === 2 ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-transparent text-slate-400 border'}`}>
+                                #{index + 1}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 font-bold text-sky-500">{stat.name}</td>
+                            <td className={`px-6 py-4 font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{stat.team}</td>
+                            
+                            <td className={`px-6 py-4 text-center font-bold text-lg transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{stat.total}</td>
+                            <td className="px-6 py-4 text-center font-bold text-emerald-500">{stat.done}</td>
+                            <td className="px-6 py-4 text-center font-bold text-amber-500">{stat.pending}</td>
+                            <td className="px-6 py-4 text-center font-bold text-red-500">{stat.expired}</td>
+                            
+                            <td className="px-6 py-4 text-right pr-6">
+                              <div className="flex items-center justify-end gap-3">
+                                <div className={`w-24 h-2.5 rounded-full overflow-hidden transition-colors duration-0 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${completionRate}%` }}></div>
+                                </div>
+                                <span className="font-bold text-xs w-9 text-right text-emerald-500">{completionRate}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-24 text-center text-slate-400 font-semibold">Chưa có dữ liệu thống kê từ hệ thống.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        ) : (
+        ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <>
             <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
               <div className="flex items-center gap-4 mb-6">
