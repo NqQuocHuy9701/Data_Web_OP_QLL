@@ -558,13 +558,12 @@ export default function Home() {
     });
   };
 
-const loadSlotHistory = async (isSilent = false) => {
+  const loadSlotHistory = async (isSilent = false) => {
     if (!isSilent) {
       setLoadingHistory(true);
     }
     
     try {
-      // SỬA Ở ĐÂY: Thêm query param Date.now() và headers chống cache tuyệt đối
       const response = await fetch(`/api/slot-hold?t=${Date.now()}`, { 
         cache: 'no-store',
         headers: {
@@ -597,7 +596,7 @@ const loadSlotHistory = async (isSilent = false) => {
     }
   };
 
-useEffect(() => {
+  useEffect(() => {
     if (isLoggedIn) {
       loadData();
       loadSlotHistory(); 
@@ -848,6 +847,15 @@ useEffect(() => {
 
     const row = selectedRowForSlot;
     const maLop = row["Mã lớp"];
+
+    const currentHeldCount = getActiveHeldCount(maLop);
+    const currentAvailable = calculateAvailableSlots(row, currentHeldCount);
+
+    if (currentAvailable <= 0) {
+      alert(`⚠️ Chậm chân mất rồi! Vừa có một QLL khác nhanh tay giữ slot cuối cùng của lớp ${maLop}. Vui lòng f5 hoặc chờ lớp khác nhé!`);
+      setShowModal(false);
+      return;
+    }
 
     setShowModal(false);
     setIsHoldingSlot(maLop);
@@ -1455,7 +1463,7 @@ useEffect(() => {
         </header>
 
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
-          <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
+          <div key="LichSuSlotAdmin" className="flex-1 px-8 pt-5 pb-6 min-h-0 flex flex-col animate-fade-slide-up">
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
               theme === 'dark' ? 'bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
@@ -1606,7 +1614,7 @@ useEffect(() => {
           </div>
 
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
-          <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
+          <div key="ThongKeAdmin" className="flex-1 px-8 pt-5 pb-6 min-h-0 flex flex-col animate-fade-slide-up">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 shrink-0">
               
               <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5' : 'bg-white border-slate-100'}`}>
@@ -1710,7 +1718,7 @@ useEffect(() => {
           </div>
 
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
-          <div className="flex-1 p-8 overflow-y-auto">
+          <div key="QuanTriAdmin" className="flex-1 p-6 overflow-y-auto animate-fade-slide-up">
             <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors duration-0 ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-50 text-orange-500'}`}>
@@ -1784,21 +1792,21 @@ useEffect(() => {
           </div>
 
         ) : (
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="px-8 pt-8 pb-5 shrink-0 animate-fade-slide-down">
-              <div className="flex items-center gap-4 mb-6">
+          <div key={activeNav} className="flex-1 flex flex-col min-h-0 animate-fade-slide-up">
+            <div className="px-8 pt-4 pb-3 shrink-0">
+              <div className="flex items-center gap-4 mb-3">
                 <img 
                   src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
                   alt="Bitu Mascot" 
-                  className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
+                  className="h-12 w-auto object-contain drop-shadow-md animate-bounce-bitu"
                 />
                 
-                <h2 className="text-[30px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[45px]">
+                <h2 className="text-[24px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[36px]">
                   <span className={`font-extrabold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
                   <div className="flex items-center overflow-hidden">
                     <span 
                       key={currentWordIndex}
-                      className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1 animate-smooth-signature"
+                      className="text-orange-500 font-handwriting text-[30px] font-bold tracking-normal leading-none animate-smooth-signature"
                     >
                       {words[currentWordIndex]}
                     </span>
@@ -1806,43 +1814,43 @@ useEffect(() => {
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 ${
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={`border-2 rounded-3xl py-4 px-6 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 ${
                   theme === 'dark' ? 'bg-[#151b2b] border-sky-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-sky-50/40 border-sky-100/80 shadow-[0_10px_30px_rgba(14,165,233,0.08)] hover:shadow-[0_20px_40px_rgba(14,165,233,0.15)]'
                 }`}>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
-                  <p className="text-sky-500 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Tổng Lớp</p>
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-sky-400/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-500 group-hover:scale-125"></div>
+                  <p className="text-sky-500 text-[11px] font-extrabold uppercase tracking-widest mb-1 relative z-10">Tổng Lớp</p>
                   <div className="flex items-baseline gap-2 relative z-10">
-                    <span className={`text-4xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stats.total}</span>
-                    <span className="text-slate-500 text-sm font-semibold">hệ thống</span>
+                    <span className={`text-3xl font-extrabold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stats.total}</span>
+                    <span className="text-slate-500 text-xs font-semibold">hệ thống</span>
                   </div>
                 </div>
                 
-                <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 ${
+                <div className={`border-2 rounded-3xl py-4 px-6 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 ${
                   theme === 'dark' ? 'bg-[#151b2b] border-blue-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-blue-50/40 border-blue-100/80 shadow-[0_10px_30px_rgba(37,99,235,0.08)] hover:shadow-[0_20px_40px_rgba(37,99,235,0.15)]'
                 }`}>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
-                  <p className="text-blue-500 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Đang Học</p>
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-400/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-500 group-hover:scale-125"></div>
+                  <p className="text-blue-500 text-[11px] font-extrabold uppercase tracking-widest mb-1 relative z-10">Đang Học</p>
                   <div className="flex items-baseline gap-2 relative z-10">
-                    <span className="text-4xl font-extrabold text-blue-500">{stats.studying}</span>
-                    <span className="text-slate-500 text-sm font-semibold">đang chạy</span>
+                    <span className="text-3xl font-extrabold text-blue-500">{stats.studying}</span>
+                    <span className="text-slate-500 text-xs font-semibold">đang chạy</span>
                   </div>
                 </div>
 
-                <div className={`border-2 rounded-3xl p-6 relative overflow-hidden group hover:-translate-y-1.5 transition-all duration-300 ${
+                <div className={`border-2 rounded-3xl py-4 px-6 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 ${
                   theme === 'dark' ? 'bg-[#151b2b] border-orange-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-white to-orange-50/40 border-orange-100/80 shadow-[0_10px_30px_rgba(249,115,22,0.08)] hover:shadow-[0_20px_40px_rgba(249,115,22,0.15)]'
                 }`}>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-400/10 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125"></div>
-                  <p className="text-orange-500 text-[11px] font-extrabold uppercase tracking-widest mb-2 relative z-10">Chờ Khai Giảng</p>
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-400/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-500 group-hover:scale-125"></div>
+                  <p className="text-orange-500 text-[11px] font-extrabold uppercase tracking-widest mb-1 relative z-10">Chờ Khai Giảng</p>
                   <div className="flex items-baseline gap-2 relative z-10">
-                    <span className="text-4xl font-extrabold text-orange-500">{stats.pending}</span>
-                    <span className="text-slate-500 text-sm font-semibold">chờ khai giảng</span>
+                    <span className="text-3xl font-extrabold text-orange-500">{stats.pending}</span>
+                    <span className="text-slate-500 text-xs font-semibold">chờ khai giảng</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1 px-8 pb-8 min-h-0 flex flex-col">
+            <div className="flex-1 px-8 pb-6 min-h-0 flex flex-col">
               <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
                 theme === 'dark' ? 'bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
               }`}>
@@ -2031,8 +2039,8 @@ useEffect(() => {
                         ← Back
                       </button>
                       <button 
-                        onClick={() => setCurrentPage(p => Math.min(historyTotalPages, p + 1))}
-                        disabled={currentPage === historyTotalPages}
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
                         className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-0 active:scale-95 ${
                           theme === 'dark' 
                             ? 'bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400' 
@@ -2169,10 +2177,11 @@ useEffect(() => {
         }
 
         @keyframes fadeSlideUpStagger {
-          from { opacity: 0; transform: translateY(10px); }
+          from { opacity: 0; transform: translateY(15px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-down { animation: fadeSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fade-slide-up { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}} />
     </div>
   );
