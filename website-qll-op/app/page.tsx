@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Papa from "papaparse";
 import { createClient } from "@supabase/supabase-js";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sehvatktrqtgsnmvebmm.supabase.co";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// ==========================================
+
 // ==========================================
 // TỐI ƯU: ĐẾM TỪNG GIÂY (BYPASS REACT DOM)
 // Đảm bảo chuẩn 24h, nhảy từng giây nhưng không tốn CPU Render
@@ -121,14 +121,16 @@ export default function Home() {
 
   const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
   // TẠO DỮ LIỆU BIỂU ĐỒ ĐƯỜNG (Nhóm requests theo 24 khung giờ)
-  const requestChartData = useMemo(() => {
+// 1. DATA BIỂU ĐỒ ĐƯỜNG: CHỈ LẤY "HÔM NAY" (Real-time 24h)
+  const todayChartData = useMemo(() => {
     if (!slotHistoryData || slotHistoryData.length === 0) return [];
     const hourMap: Record<string, number> = {};
-
-    // Dựng sẵn 24 mốc giờ (00:00 -> 23:00) để biểu đồ chạy mượt không bị đứt đoạn
     for (let i = 0; i < 24; i++) {
       hourMap[`${i.toString().padStart(2, '0')}:00`] = 0;
     }
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
 
     slotHistoryData.forEach(row => {
       let dateObj;
@@ -137,24 +139,47 @@ export default function Home() {
       } else if (row["Thời gian"]) {
         const parts = row["Thời gian"].split(" ");
         if (parts.length >= 2) {
+          const dateParts = parts[0].split("/");
           const timeParts = parts[1].split(":");
-          dateObj = new Date();
-          dateObj.setHours(parseInt(timeParts[0]), 0, 0, 0);
+          dateObj = new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]), parseInt(timeParts[0]));
+        }
+      }
+      
+      // Chỉ đếm những request có timestamp >= 00:00:00 của ngày hôm nay
+      if (dateObj && dateObj.getTime() >= startOfToday.getTime()) {
+        const hour = `${dateObj.getHours().toString().padStart(2, '0')}:00`;
+        if (hourMap[hour] !== undefined) hourMap[hour] += 1;
+      }
+    });
+
+    return Object.keys(hourMap).sort().map(hour => ({ time: hour, requests: hourMap[hour] }));
+  }, [slotHistoryData]);
+
+  // 2. DATA BIỂU ĐỒ CỘT: LỊCH SỬ CÁC NGÀY TRƯỚC ĐÓ (Nhóm theo Ngày/Tháng)
+  const historicalChartData = useMemo(() => {
+    if (!slotHistoryData || slotHistoryData.length === 0) return [];
+    const dayMap: Record<string, number> = {};
+
+    slotHistoryData.forEach(row => {
+      let dateObj;
+      if (row.timestamp) {
+        dateObj = new Date(Number(row.timestamp));
+      } else if (row["Thời gian"]) {
+        const parts = row["Thời gian"].split(" ");
+        if (parts.length >= 2) {
+          const dateParts = parts[0].split("/");
+          dateObj = new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]));
         }
       }
       
       if (dateObj) {
-        const hour = `${dateObj.getHours().toString().padStart(2, '0')}:00`;
-        if (hourMap[hour] !== undefined) {
-          hourMap[hour] += 1;
-        }
+        const dayStr = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
+        dayMap[dayStr] = (dayMap[dayStr] || 0) + 1;
       }
     });
 
-    return Object.keys(hourMap).sort().map(hour => ({
-      time: hour,
-      requests: hourMap[hour]
-    }));
+    // Lấy 7 ngày gần nhất
+    return Object.keys(dayMap).sort().slice(-7).map(day => ({ date: day, total: dayMap[day] }));
   }, [slotHistoryData]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
@@ -1519,53 +1544,53 @@ return (
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
 {/* KHU VỰC BIỂU ĐỒ ĐƯỜNG THEO DÕI REAL-TIME */}
-            <div className={`mb-6 rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${
-              theme === 'dark' ? 'bg-[#151b2b] border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white border-slate-100 shadow-[0_4px_24px_rgb(0,0,0,0.03)]'
-            }`}>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                    <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
-                    📈 Biểu đồ Lưu lượng Requests hôm nay
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 ml-4.5">Theo dõi số lượng thao tác giữ slot theo từng khung giờ trong ngày</p>
+{/* KHU VỰC 2 BIỂU ĐỒ TỔNG HỢP */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 shrink-0">
+              
+              {/* Biểu đồ 1: Hôm nay (Line Chart) */}
+              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5' : 'bg-white border-slate-100'}`}>
+                <h3 className={`font-bold flex items-center gap-3 text-base mb-6 transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                  <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
+                  📈 Requests Trong Ngày (Hôm nay)
+                </h3>
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={todayChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
+                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 11, fontWeight: 600 }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 11, fontWeight: 600 }} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', borderRadius: '12px' }}
+                        itemStyle={{ color: '#0ea5e9', fontWeight: 'bold' }} labelStyle={{ color: theme === 'dark' ? '#cbd5e1' : '#475569', marginBottom: '4px' }}
+                      />
+                      <Line type="monotone" dataKey="requests" name="Requests" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 3, fill: '#0ea5e9', strokeWidth: 0 }} activeDot={{ r: 6, stroke: '#e0f2fe', strokeWidth: 3 }} animationDuration={1000} />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-              
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={requestChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
-                    <XAxis 
-                      dataKey="time" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 600 }}
-                      dy={10} 
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 600 }} 
-                    />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
-                      itemStyle={{ color: '#0ea5e9', fontWeight: 'bold' }}
-                      labelStyle={{ color: theme === 'dark' ? '#cbd5e1' : '#475569', marginBottom: '4px' }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="requests" 
-                      name="Lượt Requests" 
-                      stroke="#0ea5e9" 
-                      strokeWidth={4} 
-                      dot={{ r: 4, fill: '#0ea5e9', strokeWidth: 0 }} 
-                      activeDot={{ r: 8, stroke: '#e0f2fe', strokeWidth: 4 }} 
-                      animationDuration={1500} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+
+              {/* Biểu đồ 2: Lịch sử (Bar Chart) */}
+              <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5' : 'bg-white border-slate-100'}`}>
+                <h3 className={`font-bold flex items-center gap-3 text-base mb-6 transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                  <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
+                  📊 Lịch sử truy cập (7 ngày qua)
+                </h3>
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={historicalChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barSize={30}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
+                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 11, fontWeight: 600 }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 11, fontWeight: 600 }} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', borderRadius: '12px' }}
+                        itemStyle={{ color: '#f97316', fontWeight: 'bold' }} labelStyle={{ color: theme === 'dark' ? '#cbd5e1' : '#475569', marginBottom: '4px' }} cursor={{fill: theme === 'dark' ? '#1e293b' : '#f1f5f9'}}
+                      />
+                      <Bar dataKey="total" name="Tổng Requests" fill="#f97316" radius={[6, 6, 0, 0]} animationDuration={1000} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
+
             </div>
 
             <div className={`flex-1 rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
@@ -1825,8 +1850,12 @@ return (
                           const attendanceCheck = checkAttendanceStatus(row);
                           const isFull = availableSlots <= 0;
                           const isLoading = isHoldingSlot === maLop;
+                          const lichHocStr = (row["Lịch học"] || "").trim();
+                          const firstSpaceIdx = lichHocStr.indexOf(" ");
+                          const thuPart = firstSpaceIdx > -1 ? lichHocStr.substring(0, firstSpaceIdx) : lichHocStr;
+                          const gioPart = firstSpaceIdx > -1 ? lichHocStr.substring(firstSpaceIdx) : "";
 
-                          return (
+return (
                             <tr 
                               key={`${maLop}-${index}`} 
                               className={`transition-colors duration-0 group/row ${
@@ -1836,31 +1865,35 @@ return (
                               <td className="px-6 py-4 font-bold text-sky-500">{maLop}</td>
                               <td className="px-6 py-4">
                                 <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border transition-colors duration-0 ${
-                                  theme === 'dark' ? 'bg-white/5 border-white/10 text-slate-300' : getSubjectStyle(subjectStr)
+                                  theme === 'dark' ? 'bg-[#1e293b] border-white/20 text-white shadow-sm' : getSubjectStyle(subjectStr)
                                 }`}>
                                   {subjectStr}
                                 </span>
                               </td>
-                              <td className={`px-6 py-4 text-[13px] transition-colors duration-0 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{row["Loại lớp"]}</td>
-                              <td className={`px-6 py-4 text-center font-bold transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{row["Khối"]}</td>
-                              <td className={`px-6 py-4 font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{row["Trình độ"]}</td>
-                              <td className={`px-6 py-4 text-[13px] truncate max-w-[120px] transition-colors duration-0 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{row["Giáo trình"]}</td>
+                              <td className={`px-6 py-4 text-[13px] font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-500'}`}>{row["Loại lớp"]}</td>
+                              <td className={`px-6 py-4 text-center font-bold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-600'}`}>{row["Khối"]}</td>
+                              <td className={`px-6 py-4 font-semibold transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-600'}`}>{row["Trình độ"]}</td>
+                              <td className={`px-6 py-4 text-[13px] truncate max-w-[120px] transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}>{row["Giáo trình"]}</td>
 
                               {activeNav !== "Giữ Slot" && (
-                                <td className="px-6 py-4 font-semibold text-sky-500 text-[13px]">
+                                <td className="px-6 py-4 font-semibold text-sky-400 text-[13px]">
                                   {row["M: Khung chương trình"] || row["Khung chương trình"] || "-"}
                                 </td>
                               )}
 
-                              <td className={`px-6 py-4 font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{row["Lịch học"]}</td>
+                              {/* HIGHLIGHT ĐẶC BIỆT CHO CỘT LỊCH HỌC (THỨ) */}
+                              <td className={`px-6 py-4 font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-600'}`}>
+                                <span className={`${theme === 'dark' ? 'text-amber-400 font-extrabold text-sm' : 'text-orange-600 font-bold'}`}>{thuPart}</span>
+                                <span className="ml-1 opacity-90">{gioPart}</span>
+                              </td>
 
                               {activeNav === "Giữ Slot" && (
                                 <>
                                   <td className="px-6 py-4 text-center">
                                     <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${
                                       availableSlots > 0 
-                                        ? (theme === 'dark' ? "bg-orange-500/10 text-orange-400 border-orange-500/20" : "bg-orange-50 text-orange-600 border-orange-200") 
-                                        : (theme === 'dark' ? "bg-white/5 text-slate-500 border-white/5" : "bg-slate-100 text-slate-400 border-slate-200")
+                                        ? (theme === 'dark' ? "bg-orange-500/20 text-orange-400 border-orange-500/30" : "bg-orange-50 text-orange-600 border-orange-200") 
+                                        : (theme === 'dark' ? "bg-white/10 text-slate-400 border-white/10" : "bg-slate-100 text-slate-400 border-slate-200")
                                     }`}>
                                       {availableSlots > 0 ? `Còn ${availableSlots} slot` : "Đã hết slot"}
                                     </span>
@@ -1868,11 +1901,11 @@ return (
 
                                   <td className="px-6 py-4 text-center">
                                     {attendanceCheck.isLow ? (
-                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${theme === 'dark' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${theme === 'dark' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-50 text-red-600 border-red-200'}`}>
                                         ⚠️ Thiếu sĩ số quá !!
                                       </span>
                                     ) : (
-                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
                                         ✅ Đạt chuẩn
                                       </span>
                                     )}
@@ -1884,7 +1917,7 @@ return (
                                       disabled={isFull || isLoading}
                                       className={`px-4 py-1.5 border font-bold rounded-lg focus:outline-none transition-colors duration-0 text-xs w-full max-w-[110px] text-center shadow-sm
                                         ${isFull 
-                                          ? (theme === 'dark' ? 'bg-white/5 border-white/5 text-slate-500 cursor-not-allowed shadow-none' : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed shadow-none') 
+                                          ? (theme === 'dark' ? 'bg-white/10 border-white/5 text-slate-500 cursor-not-allowed shadow-none' : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed shadow-none') 
                                           : 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600 active:scale-95'
                                         }`}
                                     >
