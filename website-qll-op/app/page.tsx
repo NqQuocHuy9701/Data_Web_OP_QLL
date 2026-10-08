@@ -140,14 +140,12 @@ export default function Home() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
 
   useEffect(() => {
-    // Cứ mỗi 4 giây sẽ tự động chuyển sang câu tiếp theo (vòng tròn 0 -> 1 -> 2 -> 0)
     const timer = setInterval(() => {
       setCurrentWordIndex((prev) => (prev + 1) % words.length);
     }, 4000); 
 
     return () => clearInterval(timer);
   }, [words]);
-
   
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -1209,7 +1207,7 @@ export default function Home() {
             <img 
               src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
               alt="Vuihoc Logo" 
-              className={`h-6 w-auto object-contain transition-all duration-0 ${theme === 'dark' ? 'brightness-0 invert opacity-90' : 'drop-shadow-sm'}`}
+              className="h-6 w-auto object-contain drop-shadow-sm"
             />
             <div className={`border-l-[1.5px] pl-3 transition-colors duration-0 ${theme === 'dark' ? 'border-white/10' : 'border-slate-200'}`}>
               <p className="text-[9px] text-sky-500 font-bold uppercase tracking-widest mt-1">Vận Hành</p>
