@@ -1115,11 +1115,11 @@ export default function Home() {
                         onChange={(e) => setTeamLead(e.target.value)}
                         className="w-full min-h-[54px] px-4.5 py-3.5 bg-[#151a28] border border-white/10 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-cyan-500/50 focus:bg-[#1a2133] transition-all cursor-pointer shadow-inner"
                       >
-                        <option value="Team Lead A" className="bg-[#151a28] text-white">Team Lead A</option>
-                        <option value="Team Lead B" className="bg-[#151a28] text-white">Team Lead B</option>
-                        <option value="Team Lead C" className="bg-[#151a28] text-white">Team Lead C</option>
-                        <option value="Team Lead D" className="bg-[#151a28] text-white">Team Lead D</option>
-                        <option value="Khác" className="bg-[#151a28] text-white">Khác / Vận hành chung</option>
+                        <option value="Team Lead A" className="bg-[#151a28] text-white">Lead LienDT</option>
+                        <option value="Team Lead B" className="bg-[#151a28] text-white">Lead QuyenPT</option>
+                        <option value="Team Lead C" className="bg-[#151a28] text-white">Lead ChiNQ </option>
+                        <option value="Team Lead D" className="bg-[#151a28] text-white">Lead YenDh</option>
+                        <option value="Khác" className="bg-[#151a28] text-white"> Lead ChungMB</option>
                       </select>
                     </div>
                   </>
