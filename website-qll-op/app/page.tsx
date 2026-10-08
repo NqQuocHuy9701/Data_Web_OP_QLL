@@ -188,21 +188,20 @@ const todayChartData = useMemo(() => {
     return Object.keys(hourMap).sort().map(hour => ({ time: hour, requests: hourMap[hour] }));
   }, [systemRequestsData]);
   // 2. DATA BIỂU ĐỒ CỘT: LỊCH SỬ CÁC NGÀY TRƯỚC ĐÓ (Nhóm theo Ngày/Tháng)
+// 2. DATA BIỂU ĐỒ CỘT: LỊCH SỬ CÁC NGÀY TRƯỚC ĐÓ
   const historicalChartData = useMemo(() => {
-    if (!slotHistoryData || slotHistoryData.length === 0) return [];
+    if (!systemRequestsData || systemRequestsData.length === 0) return [];
+    
     const dayMap: Record<string, number> = {};
 
-    slotHistoryData.forEach(row => {
-      let dateObj;
-      if (row.timestamp) {
-        dateObj = new Date(Number(row.timestamp));
-      } else if (row["Thời gian"]) {
-        const parts = row["Thời gian"].split(" ");
-        if (parts.length >= 2) {
-          const dateParts = parts[0].split("/");
-          dateObj = new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]));
+    systemRequestsData.forEach(row => {
+      let dateObj = null;
+      try {
+        if (row.timestamp) {
+          const ts = Number(row.timestamp);
+          dateObj = isNaN(ts) ? new Date(row.timestamp) : new Date(ts);
         }
-      }
+      } catch (e) {}
       
       if (dateObj) {
         const dayStr = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -210,9 +209,8 @@ const todayChartData = useMemo(() => {
       }
     });
 
-    // Lấy 7 ngày gần nhất
     return Object.keys(dayMap).sort().slice(-7).map(day => ({ date: day, total: dayMap[day] }));
-  }, [slotHistoryData]);
+  }, [systemRequestsData]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
