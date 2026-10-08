@@ -18,6 +18,34 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
   const timerRef = React.useRef<HTMLSpanElement>(null);
 
+   // BỘ ĐẾM SYSTEM REQUEST: Chạy 1 lần duy nhất khi có người tải trang
+  useEffect(() => {
+    const logSystemRequest = async () => {
+      try {
+        const currentTime = new Date().getTime();
+        
+        // TẠI ĐÂY LÀ CHỖ ĐỂ BẠN GỌI API BẮN DATA LÊN DATABASE (Bảng Log Truy Cập)
+        /*
+        await fetch('API_URL_CUA_BAN/log-request', {
+          method: 'POST',
+          body: JSON.stringify({
+            timestamp: currentTime,
+            action: "PAGE_LOAD"
+          })
+        });
+        */
+        
+        console.log("🔥 Đã ghi nhận 1 lượt mở trang lúc:", new Date(currentTime).toLocaleTimeString());
+      } catch (error) {
+        console.error("Lỗi ghi log truy cập:", error);
+      }
+    };
+
+    // Gọi luôn hàm đếm mà không cần kiểm tra namecode
+    logSystemRequest();
+  }, []); // <-- Dấu ngoặc vuông rỗng giúp nó chỉ chạy đúng 1 lần khi mở web
+
+
   useEffect(() => {
     let targetTime = 0;
     try {
@@ -106,6 +134,7 @@ export default function Home() {
   const [onlineUsers, setOnlineUsers] = useState<{ namecode: string; teamLead: string; onlineAt: number }[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+
   
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -120,10 +149,18 @@ export default function Home() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
+  const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
   // TẠO DỮ LIỆU BIỂU ĐỒ ĐƯỜNG (Nhóm requests theo 24 khung giờ)
-// 1. DATA BIỂU ĐỒ ĐƯỜNG: CHỈ LẤY "HÔM NAY" (Real-time 24h)
-  const todayChartData = useMemo(() => {
-    if (!slotHistoryData || slotHistoryData.length === 0) return [];
+const todayChartData = useMemo(() => {
+    // Nếu biến chưa được khai báo hoặc chưa có data, trả về mảng rỗng (Tránh lỗi undefined)
+    if (!systemRequestsData || systemRequestsData.length === 0) {
+      const emptyMap: Record<string, number> = {};
+      for (let i = 0; i < 24; i++) {
+        emptyMap[`${i.toString().padStart(2, '0')}:00`] = 0;
+      }
+      return Object.keys(emptyMap).sort().map(hour => ({ time: hour, requests: emptyMap[hour] }));
+    }
+
     const hourMap: Record<string, number> = {};
     for (let i = 0; i < 24; i++) {
       hourMap[`${i.toString().padStart(2, '0')}:00`] = 0;
@@ -132,20 +169,16 @@ export default function Home() {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    slotHistoryData.forEach(row => {
-      let dateObj;
-      if (row.timestamp) {
-        dateObj = new Date(Number(row.timestamp));
-      } else if (row["Thời gian"]) {
-        const parts = row["Thời gian"].split(" ");
-        if (parts.length >= 2) {
-          const dateParts = parts[0].split("/");
-          const timeParts = parts[1].split(":");
-          dateObj = new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]), parseInt(timeParts[0]));
+    systemRequestsData.forEach(row => {
+      let dateObj = null;
+      try {
+        if (row.timestamp) {
+          const ts = Number(row.timestamp);
+          dateObj = isNaN(ts) ? new Date(row.timestamp) : new Date(ts);
         }
-      }
+      } catch (e) {}
       
-      // Chỉ đếm những request có timestamp >= 00:00:00 của ngày hôm nay
+      // Khớp dữ liệu mở trang vào từng khung giờ
       if (dateObj && dateObj.getTime() >= startOfToday.getTime()) {
         const hour = `${dateObj.getHours().toString().padStart(2, '0')}:00`;
         if (hourMap[hour] !== undefined) hourMap[hour] += 1;
@@ -153,8 +186,7 @@ export default function Home() {
     });
 
     return Object.keys(hourMap).sort().map(hour => ({ time: hour, requests: hourMap[hour] }));
-  }, [slotHistoryData]);
-
+  }, [systemRequestsData]);
   // 2. DATA BIỂU ĐỒ CỘT: LỊCH SỬ CÁC NGÀY TRƯỚC ĐÓ (Nhóm theo Ngày/Tháng)
   const historicalChartData = useMemo(() => {
     if (!slotHistoryData || slotHistoryData.length === 0) return [];
@@ -550,6 +582,7 @@ export default function Home() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
+
 
   // ĐÃ ẨN ĐOẠN NÀY ĐỂ NGĂN CHẶN LỖI RENDER LẠI TOÀN TRANG GÂY LAG
   useEffect(() => {
