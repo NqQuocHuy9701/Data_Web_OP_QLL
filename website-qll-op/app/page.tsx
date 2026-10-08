@@ -134,6 +134,14 @@ export default function Home() {
   const [onlineUsers, setOnlineUsers] = useState<{ namecode: string; teamLead: string; onlineAt: number }[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  // LOGIC HIỂN THỊ CÂU CHÀO RANDOM
+  const [greetingText, setGreetingText] = useState("Dữ liệu đã sẵn sàng!");
+
+  useEffect(() => {
+    const words = ["Dữ liệu đã sẵn sàng!", "Xin chào", "Hello !"];
+    const randomWord = words[Math.floor(Math.random() * words.length)];
+    setGreetingText(randomWord);
+  }, []);
 
   
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
@@ -1768,14 +1776,14 @@ return (
                   alt="Bitu Mascot" 
                   className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
                 />
-                <h2 className="text-[30px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[45px]">
-                  <span className={`font-extrabold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
-                  <div className="flex items-center">
-                    <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1 animate-smooth-signature">
-                      Mọi thứ đã sẵn sàng !
-                    </span>
-                  </div>
-                </h2>
+<h2 className="text-[30px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[45px]">
+                <span className={`font-extrabold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
+                <div className="flex items-center">
+                  <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1 animate-smooth-signature">
+                    {greetingText}
+                  </span>
+                </div>
+              </h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
