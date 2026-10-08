@@ -135,22 +135,17 @@ export default function Home() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
-// BỘ MÁY TỰ ĐỘNG CHẠY CHỮ LIÊN TỤC (TỰ ĐỔI SAU MỖI 2.5 GIÂY)
-  const [greetingText, setGreetingText] = useState("Dữ liệu đã sẵn sàng!");
+// BỘ MÁY CHẠY CHỮ TUẦN TỰ (1 -> 2 -> 3)
+  const [wordIndex, setWordIndex] = useState(0);
+  const words = useMemo(() => ["Dữ liệu đã sẵn sàng!", "Xin chào", "Hello !"], []);
 
   useEffect(() => {
-    const words = ["Dữ liệu đã sẵn sàng!", "Xin chào", "Hello !"];
-    let currentIndex = 0; // Vị trí bắt đầu
-
-    // Cài đặt đồng hồ tự động chạy lặp đi lặp lại
     const timer = setInterval(() => {
-      currentIndex = (currentIndex + 1) % words.length; // Tiến lên 1 bước, nếu đến 3 thì vòng về 0
-      setGreetingText(words[currentIndex]);
-    }, 2500); // 2500ms = 2.5 giây (Bạn có thể sửa số này cho chạy nhanh/chậm tùy ý)
+      setWordIndex((prev) => (prev + 1) % words.length);
+    }, 3000); // 3 giây đổi 1 câu
 
-    // Dọn dẹp bộ nhớ khi chuyển trang khác
     return () => clearInterval(timer);
-  }, []);
+  }, [words]);
 
   
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
@@ -1787,9 +1782,12 @@ return (
                 />
 <h2 className="text-[30px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[45px]">
                 <span className={`font-extrabold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
-                <div className="flex items-center">
-                  <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1 animate-smooth-signature">
-                    {greetingText}  {/* <--- QUAN TRỌNG NHẤT LÀ CHỖ NÀY */}
+                <div className="flex items-center overflow-hidden">
+                  <span 
+                    key={wordIndex}
+                    className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1 animate-elegant-reveal"
+                  >
+                    {words[wordIndex]}
                   </span>
                 </div>
               </h2>
