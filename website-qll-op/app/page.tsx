@@ -558,13 +558,20 @@ export default function Home() {
     });
   };
 
-  const loadSlotHistory = async (isSilent = false) => {
+const loadSlotHistory = async (isSilent = false) => {
     if (!isSilent) {
       setLoadingHistory(true);
     }
     
     try {
-      const response = await fetch("/api/slot-hold");
+      // SỬA Ở ĐÂY: Thêm query param Date.now() và headers chống cache tuyệt đối
+      const response = await fetch(`/api/slot-hold?t=${Date.now()}`, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -592,37 +599,40 @@ export default function Home() {
 
 useEffect(() => {
     if (isLoggedIn) {
-      // 1. Load dữ liệu lần đầu khi vừa đăng nhập
       loadData();
       loadSlotHistory(); 
       
-      // 2. Vòng lặp 5 phút: Vẫn giữ để cập nhật file Google Sheet (Lịch học)
       const intervalId = setInterval(() => {
         loadData();
       }, 5 * 60 * 1000); 
 
-      // ==========================================
-      // 3. TÍNH NĂNG MỚI: LẮNG NGHE REALTIME TỪ SUPABASE
-      // Bất kỳ ai thêm slot mới, hoặc bấm "Done", mọi máy khác sẽ tự động load lại ngầm ngay lập tức!
-      // ==========================================
+      // LẮNG NGHE REALTIME TỪ SUPABASE
       const slotHistorySubscription = supabase
         .channel('realtime-slot-holds')
         .on(
           'postgres_changes',
           {
-            event: '*', // Lắng nghe mọi hành động: INSERT (Thêm mới), UPDATE (Bấm Done), DELETE
+            event: '*', 
             schema: 'public',
-            table: 'slot_holds' // Tên bảng lưu lịch sử của bạn
+            table: 'slot_holds' 
           },
           (payload) => {
-            console.log("Dữ liệu DB vừa thay đổi, tự động cập nhật UI...", payload);
-            // Cập nhật lại danh sách một cách âm thầm (isSilent = true) để không bị nháy chữ Loading
+            console.log("⚡ Supabase Realtime báo có thay đổi:", payload);
+            
+            // Nếu là hành động UPDATE (Có người vừa bấm Done)
+            if (payload.eventType === 'UPDATE') {
+              // Ép UI tài khoản 2 đổi sang xanh ngay lập tức không cần đợi API
+              setSlotHistoryData(prev => 
+                prev.map(item => item.id === payload.new.id ? { ...item, is_done: payload.new.is_done } : item)
+              );
+            }
+            
+            // Vẫn gọi API ngầm để đồng bộ lại dữ liệu gốc cho chắc chắn
             loadSlotHistory(true);
           }
         )
         .subscribe();
 
-      // Dọn dẹp bộ nhớ khi thoát
       return () => {
         clearInterval(intervalId);
         supabase.removeChannel(slotHistorySubscription);
