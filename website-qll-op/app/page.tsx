@@ -18,33 +18,18 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
   const timerRef = React.useRef<HTMLSpanElement>(null);
 
-   // BỘ ĐẾM SYSTEM REQUEST: Chạy 1 lần duy nhất khi có người tải trang
   useEffect(() => {
     const logSystemRequest = async () => {
       try {
         const currentTime = new Date().getTime();
-        
-        // TẠI ĐÂY LÀ CHỖ ĐỂ BẠN GỌI API BẮN DATA LÊN DATABASE (Bảng Log Truy Cập)
-        /*
-        await fetch('API_URL_CUA_BAN/log-request', {
-          method: 'POST',
-          body: JSON.stringify({
-            timestamp: currentTime,
-            action: "PAGE_LOAD"
-          })
-        });
-        */
-        
         console.log("🔥 Đã ghi nhận 1 lượt mở trang lúc:", new Date(currentTime).toLocaleTimeString());
       } catch (error) {
         console.error("Lỗi ghi log truy cập:", error);
       }
     };
 
-    // Gọi luôn hàm đếm mà không cần kiểm tra namecode
     logSystemRequest();
-  }, []); // <-- Dấu ngoặc vuông rỗng giúp nó chỉ chạy đúng 1 lần khi mở web
-
+  }, []);
 
   useEffect(() => {
     let targetTime = 0;
@@ -66,7 +51,6 @@ const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
 
     if (!targetTime) return;
 
-    // Hàm chọc thẳng vào DOM HTML để đổi chữ, bỏ qua React setState
     const updateTimer = () => {
       if (!timerRef.current) return;
       
@@ -83,13 +67,12 @@ const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
       timerRef.current.innerText = `⏳ ${hours}h ${minutes}m ${seconds}s`;
     };
 
-    updateTimer(); // Chạy ngay lần đầu
-    const timer = setInterval(updateTimer, 1000); // Lặp lại mỗi giây
+    updateTimer(); 
+    const timer = setInterval(updateTimer, 1000);
     
     return () => clearInterval(timer);
   }, [timeString]);
 
-  // Thẻ span tĩnh, React sẽ bỏ qua thẻ này sau lần tải đầu tiên
   return <span ref={timerRef}>Đang tính...</span>;
 });
 // ==========================================
@@ -99,7 +82,7 @@ export default function Home() {
   const [loginRole, setLoginRole] = useState<"QLL" | "Admin">("QLL");
   
   const [namecode, setNamecode] = useState("");
-  const [teamLead, setTeamLead] = useState("Team Lead A");
+  const [teamLead, setTeamLead] = useState("Lead LienDT");
   
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
@@ -119,12 +102,27 @@ export default function Home() {
   };
 
   const [adminList, setAdminList] = useState<{username: string, pass: string}[]>([
-    { username: "op_vanhanh", pass: "vanhanhvuihoc" }
+    { username: "op_vanhanh", pass: "vhvuihoc123" }
   ]);
   const [newAdminUser, setNewAdminUser] = useState("");
   const [newAdminPass, setNewAdminPass] = useState("");
   const [adminAddSuccess, setAdminAddSuccess] = useState("");
   const [adminAddError, setAdminAddError] = useState("");
+
+  const fetchAdminsFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase.from('admins').select('username, pass');
+      if (!error && data && data.length > 0) {
+        setAdminList(data);
+      }
+    } catch (err) {
+      console.error("Lỗi tải danh sách admin:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminsFromSupabase();
+  }, []);
 
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -241,11 +239,6 @@ export default function Home() {
   const SHEET_CSV_URL = "/api/sheet";
 
   useEffect(() => {
-    const savedAdmins = localStorage.getItem("qll_admin_accounts");
-    if (savedAdmins) {
-      try { setAdminList(JSON.parse(savedAdmins)); } catch (e) { console.error(e); }
-    }
-
     const savedCompleted = localStorage.getItem("qll_completed_slots");
     if (savedCompleted) {
       try { setCompletedSlots(JSON.parse(savedCompleted)); } catch (e) { console.error(e); }
@@ -281,7 +274,7 @@ export default function Home() {
           setTeamLead("Admin hệ thống");
         } else if (parsed.namecode) {
           setNamecode(parsed.namecode);
-          setTeamLead(parsed.teamLead || "Team Lead A");
+          setTeamLead(parsed.teamLead || "Lead LienDT");
           setLoginRole("QLL");
         }
         setIsLoggedIn(true);
@@ -436,7 +429,7 @@ export default function Home() {
     return Object.values(map).sort((a, b) => b.total - a.total);
   }, [slotHistoryData, completedSlots]);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
@@ -456,28 +449,40 @@ export default function Home() {
         role: "QLL" 
       };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
+      setIsLoggedIn(true);
       
     } else {
-      const matchedAdmin = adminList.find(
-        (acc) => acc.username.trim() === adminUsername.trim() && acc.pass === adminPassword.trim()
-      );
-
-      if (!matchedAdmin) {
-        setLoginError("Tên đăng nhập hoặc mật khẩu Admin không chính xác!");
+      if (!adminUsername.trim() || !adminPassword.trim()) {
+        setLoginError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu Admin!");
         return;
       }
 
-      setNamecode("");
-      const userData = { 
-        namecode: matchedAdmin.username, 
-        teamLead: "Admin hệ thống", 
-        role: "Admin" 
-      };
-      localStorage.setItem("qll_logged_user", JSON.stringify(userData));
-      setTeamLead("Admin hệ thống");
-    }
+      try {
+        const { data, error } = await supabase
+          .from('admins')
+          .select('username, pass')
+          .eq('username', adminUsername.trim())
+          .eq('pass', adminPassword.trim())
+          .single();
 
-    setIsLoggedIn(true);
+        if (error || !data) {
+          setLoginError("Tên đăng nhập hoặc mật khẩu Admin không chính xác!");
+          return;
+        }
+
+        setNamecode("");
+        const userData = { 
+          namecode: data.username, 
+          teamLead: "Admin hệ thống", 
+          role: "Admin" 
+        };
+        localStorage.setItem("qll_logged_user", JSON.stringify(userData));
+        setTeamLead("Admin hệ thống");
+        setIsLoggedIn(true);
+      } catch (err) {
+        setLoginError("Lỗi kết nối khi xác thực Admin!");
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -487,11 +492,11 @@ export default function Home() {
     setAdminUsername("");
     setAdminPassword("");
     setLoginRole("QLL");
-    setTeamLead("Team Lead A");
+    setTeamLead("Lead LienDT");
     setActiveNav("Giữ Slot");
   };
 
-  const handleAddAdminSubmit = (e: React.FormEvent) => {
+  const handleAddAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAdminAddError("");
     setAdminAddSuccess("");
@@ -509,13 +514,24 @@ export default function Home() {
       return;
     }
 
-    const updatedList = [...adminList, { username: cleanUser, pass: cleanPass }];
-    setAdminList(updatedList);
-    localStorage.setItem("qll_admin_accounts", JSON.stringify(updatedList));
-    setNewAdminUser("");
-    setNewAdminPass("");
-    setAdminAddSuccess("Đã thêm tài khoản Admin thành công!");
-    setTimeout(() => setAdminAddSuccess(""), 4000);
+    try {
+      const { error } = await supabase
+        .from('admins')
+        .insert([{ username: cleanUser, pass: cleanPass }]);
+
+      if (error) {
+        setAdminAddError("Lỗi lưu vào Supabase: " + error.message);
+        return;
+      }
+
+      await fetchAdminsFromSupabase();
+      setNewAdminUser("");
+      setNewAdminPass("");
+      setAdminAddSuccess("Đã thêm tài khoản Admin vào Database thành công!");
+      setTimeout(() => setAdminAddSuccess(""), 4000);
+    } catch (err) {
+      setAdminAddError("Lỗi kết nối khi thêm Admin!");
+    }
   };
 
   const loadData = () => {
@@ -689,9 +705,9 @@ export default function Home() {
     }
 
     if (dangHoc <= threshold) {
-      return { isLow: true, text: "⚠️ Thiếu sĩ số quá !!" };
+      return { isLow: true, text: "🥲 Lớp còn hơi vắng..." };
     }
-    return { isLow: false, text: "✅ Đạt chuẩn" };
+    return { isLow: false, text: "" };
   };
 
   const filteredData = useMemo(() => {
@@ -1115,11 +1131,11 @@ export default function Home() {
                         onChange={(e) => setTeamLead(e.target.value)}
                         className="w-full min-h-[54px] px-4.5 py-3.5 bg-[#151a28] border border-white/10 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-cyan-500/50 focus:bg-[#1a2133] transition-all cursor-pointer shadow-inner"
                       >
-                        <option value="Team Lead A" className="bg-[#151a28] text-white">Lead LienDT</option>
-                        <option value="Team Lead B" className="bg-[#151a28] text-white">Lead QuyenPT</option>
-                        <option value="Team Lead C" className="bg-[#151a28] text-white">Lead ChiNQ </option>
-                        <option value="Team Lead D" className="bg-[#151a28] text-white">Lead YenDh</option>
-                        <option value="Khác" className="bg-[#151a28] text-white"> Lead ChungMB</option>
+                        <option value="Lead LienDT" className="bg-[#151a28] text-white">Lead LienDT</option>
+                        <option value="Lead QuyenPT" className="bg-[#151a28] text-white">Lead QuyenPT</option>
+                        <option value="Lead ChiNQ" className="bg-[#151a28] text-white">Lead ChiNQ</option>
+                        <option value="Lead ChungMB" className="bg-[#151a28] text-white">Lead ChungMB</option>
+                        <option value="Khác" className="bg-[#151a28] text-white">Khác / Vận hành chung</option>
                       </select>
                     </div>
                   </>
@@ -1912,12 +1928,10 @@ export default function Home() {
                                   <td className="px-6 py-4 text-center">
                                     {attendanceCheck.isLow ? (
                                       <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${theme === 'dark' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                                        ⚠️ Thiếu sĩ số quá !!
+                                        {attendanceCheck.text}
                                       </span>
                                     ) : (
-                                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
-                                        ✅ Đạt chuẩn
-                                      </span>
+                                      <span className="text-transparent">_</span>
                                     )}
                                   </td>
 
@@ -1980,8 +1994,8 @@ export default function Home() {
                         ← Back
                       </button>
                       <button 
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(p => Math.min(historyTotalPages, p + 1))}
+                        disabled={currentPage === historyTotalPages}
                         className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-0 active:scale-95 ${
                           theme === 'dark' 
                             ? 'bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400' 
