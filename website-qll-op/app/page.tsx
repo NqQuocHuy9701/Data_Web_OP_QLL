@@ -135,14 +135,15 @@ export default function Home() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
-// BỘ MÁY CHẠY CHỮ TUẦN TỰ (1 -> 2 -> 3)
-  const [wordIndex, setWordIndex] = useState(0);
-  const words = useMemo(() => ["Dữ liệu đã sẵn sàng!", "Xin chào", "Hello !"], []);
+  // BỘ MÁY CHẠY CHỮ TỰ ĐỘNG TUẦN TỰ (1 -> 2 -> 3)
+  const words = useMemo(() => ["Dữ liệu đã sẵn sàng !", "Xin Chào", "Hello !"], []);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
 
   useEffect(() => {
+    // Cứ mỗi 4 giây sẽ tự động chuyển sang câu tiếp theo (vòng tròn 0 -> 1 -> 2 -> 0)
     const timer = setInterval(() => {
-      setWordIndex((prev) => (prev + 1) % words.length);
-    }, 3000); // 3 giây đổi 1 câu
+      setCurrentWordIndex((prev) => (prev + 1) % words.length);
+    }, 4000); 
 
     return () => clearInterval(timer);
   }, [words]);
@@ -160,11 +161,10 @@ export default function Home() {
   const [filterToday, setFilterToday] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
-  const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
-// 1. BIỂU ĐỒ ĐƯỜNG: ĐỌC TRỰC TIẾP TỪ DANH SÁCH NGƯỜI ĐANG ONLINE BÊN DƯỚI
+
+  // 1. BIỂU ĐỒ ĐƯỜNG: ĐỌC TRỰC TIẾP TỪ DANH SÁCH NGƯỜI ĐANG ONLINE BÊN DƯỚI
   const todayChartData = useMemo(() => {
-    // Tạo mốc 24h
     const hourMap: Record<string, number> = {};
     for (let i = 0; i < 24; i++) {
       hourMap[`${i.toString().padStart(2, '0')}:00`] = 0;
@@ -173,7 +173,6 @@ export default function Home() {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    // Lấy dữ liệu các thao tác đã xảy ra trong ngày làm "nền"
     if (slotHistoryData && slotHistoryData.length > 0) {
       slotHistoryData.forEach(row => {
         let dateObj = null;
@@ -191,7 +190,6 @@ export default function Home() {
       });
     }
 
-    // ĐIỂM QUAN TRỌNG: Bắt trực tiếp độ dài của danh sách onlineUsers ném vào giờ hiện tại!
     const currentHour = `${new Date().getHours().toString().padStart(2, '0')}:00`;
     if (onlineUsers && onlineUsers.length > 0) {
       hourMap[currentHour] += onlineUsers.length; 
@@ -228,9 +226,6 @@ export default function Home() {
 
     return Object.keys(dayMap).sort().slice(-7).map(day => ({ date: day, total: dayMap[day] }));
   }, [slotHistoryData]);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [displayedText, setDisplayedText] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const [heldSlots, setHeldSlots] = useState<Record<string, { timestamp: number }[]>>({});
   const [isHoldingSlot, setIsHoldingSlot] = useState<string | null>(null);
@@ -598,22 +593,6 @@ export default function Home() {
     setCurrentPage(1);
   }, [searchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
 
-
-  // ĐÃ ẨN ĐOẠN NÀY ĐỂ NGĂN CHẶN LỖI RENDER LẠI TOÀN TRANG GÂY LAG
-  useEffect(() => {
-    /*
-    const currentWord = typingWords[currentWordIndex];
-    let timeout: NodeJS.Timeout;
-
-    if (isDeleting) {
-      // ...
-    } else {
-      // ...
-    }
-    return () => clearTimeout(timeout);
-    */
-  }, [displayedText, isDeleting, currentWordIndex, typingWords]);
-
   const dropdownOptions = useMemo(() => {
     const loaiLopSet = new Set<string>();
     const khoiSet = new Set<string>();
@@ -780,13 +759,11 @@ export default function Home() {
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   
-  
   const currentTableData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredData, currentPage]);
 
-  // ĐIỂM FIX 3: ÁP DỤNG PHÂN TRANG (PAGINATION) CHO BẢNG LỊCH SỬ ĐỂ LOẠI BỎ LAG KHI CÓ QUÁ NHIỀU DATA
   const historyTotalPages = Math.ceil(slotHistoryData.length / itemsPerPage);
   
   const currentHistoryData = useMemo(() => {
@@ -1054,10 +1031,7 @@ export default function Home() {
           style={{ backgroundImage: `url('/backdrop.jpg')` }}
         ></div>
 
-
-
         <div className="w-full max-w-[1400px] px-6 lg:px-16 flex items-center justify-between">
-          
           <div className="hidden lg:flex flex-col items-start relative animate-float-bitu z-20 pointer-events-none select-none pl-6 xl:pl-12">
             <div className="mb-4 ml-6 bg-[#1a1f33]/90 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl shadow-2xl relative">
               <p className="text-white font-medium text-base tracking-wide">
@@ -1076,7 +1050,6 @@ export default function Home() {
 
           <div className="animated-border-box w-full max-w-[540px] mx-auto lg:mx-0">
             <div className="animated-border-inner p-10 lg:p-12">
-              
               <div className="flex items-center gap-3.5 mb-6">
                 <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-3 rounded-2xl shadow-lg flex items-center justify-center">
                   <img 
@@ -1205,16 +1178,14 @@ export default function Home() {
               </form>
             </div>
           </div>
-
         </div>
       </div>
     );
   }
 
-return (
+  return (
     <div className={`flex h-screen font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0 transition-colors duration-0 ${theme === 'dark' ? 'bg-[#070b14] text-slate-300' : 'bg-[#F4F7FE] text-slate-700'}`}>
       
-      {/* TỐI ƯU CỰC ĐẠI DARK MODE: Thay thế toàn bộ "filter blur" gây lag bằng "radial-gradient" siêu nhẹ */}
       <div className={`absolute inset-0 pointer-events-none -z-10 transition-opacity duration-0 ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`}>
         <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(49, 46, 129, 0.4) 0%, rgba(0,0,0,0) 70%)' }}></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full" style={{ background: 'radial-gradient(circle, rgba(154, 52, 18, 0.15) 0%, rgba(0,0,0,0) 70%)' }}></div>
@@ -1439,7 +1410,6 @@ return (
         {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
-              // ĐỔI bg-[#151b2b]/90 THÀNH bg-[#151b2b] NỀN ĐẶC
               theme === 'dark' ? 'bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
               <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
@@ -1554,7 +1524,6 @@ return (
                 </table>
               </div>
               
-              {/* THANH PHÂN TRANG CHO MÀN DS GIỮ SLOT */}
               {historyTotalPages > 1 && (
                 <div className={`flex items-center justify-between px-6 py-4 border-t shrink-0 z-10 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
                   <span className="text-[13px] text-slate-500 font-bold tracking-wide uppercase">
@@ -1591,11 +1560,8 @@ return (
 
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div className="flex-1 px-8 py-8 min-h-0 flex flex-col">
-{/* KHU VỰC BIỂU ĐỒ ĐƯỜNG THEO DÕI REAL-TIME */}
-{/* KHU VỰC 2 BIỂU ĐỒ TỔNG HỢP */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 shrink-0">
               
-              {/* Biểu đồ 1: Hôm nay (Line Chart) */}
               <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5' : 'bg-white border-slate-100'}`}>
                 <h3 className={`font-bold flex items-center gap-3 text-base mb-6 transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                   <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
@@ -1617,7 +1583,6 @@ return (
                 </div>
               </div>
 
-              {/* Biểu đồ 2: Lịch sử (Bar Chart) */}
               <div className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b] border-white/5' : 'bg-white border-slate-100'}`}>
                 <h3 className={`font-bold flex items-center gap-3 text-base mb-6 transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                   <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
@@ -1780,17 +1745,19 @@ return (
                   alt="Bitu Mascot" 
                   className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
                 />
-<h2 className="text-[30px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[45px]">
-                <span className={`font-extrabold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
-                <div className="flex items-center overflow-hidden">
-                  <span 
-                    key={wordIndex}
-                    className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1 animate-elegant-reveal"
-                  >
-                    {words[wordIndex]}
-                  </span>
-                </div>
-              </h2>
+                
+                {/* HIỆU ỨNG CHỮ CHẠY TUẦN TỰ (1 -> 2 -> 3) VỚI NÉT BÚT VẼ MƯỢT MÀ */}
+                <h2 className="text-[30px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[45px]">
+                  <span className={`font-extrabold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
+                  <div className="flex items-center overflow-hidden">
+                    <span 
+                      key={currentWordIndex}
+                      className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1 animate-smooth-signature"
+                    >
+                      {words[currentWordIndex]}
+                    </span>
+                  </div>
+                </h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1906,7 +1873,7 @@ return (
                           const thuPart = firstSpaceIdx > -1 ? lichHocStr.substring(0, firstSpaceIdx) : lichHocStr;
                           const gioPart = firstSpaceIdx > -1 ? lichHocStr.substring(firstSpaceIdx) : "";
 
-return (
+                          return (
                             <tr 
                               key={`${maLop}-${index}`} 
                               className={`transition-colors duration-0 group/row ${
@@ -1932,7 +1899,6 @@ return (
                                 </td>
                               )}
 
-                              {/* HIGHLIGHT ĐẶC BIỆT CHO CỘT LỊCH HỌC (THỨ) */}
                               <td className={`px-6 py-4 font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-600'}`}>
                                 <span className={`${theme === 'dark' ? 'text-amber-400 font-extrabold text-sm' : 'text-orange-600 font-bold'}`}>{thuPart}</span>
                                 <span className="ml-1 opacity-90">{gioPart}</span>
@@ -2114,14 +2080,29 @@ return (
         .font-handwriting { font-family: 'Dancing Script', cursive; padding-right: 2px; }
 
         @keyframes smoothSignature {
-          0%, 10% { clip-path: inset(0 100% 0 0); }
-          45%, 60% { clip-path: inset(0 -5% 0 0); }
-          90%, 100% { clip-path: inset(0 100% 0 0); }
+          0% {
+            clip-path: inset(0 100% 0 0);
+            opacity: 0;
+            transform: translateX(-5px);
+          }
+          15% {
+            opacity: 1;
+          }
+          40%, 85% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translateX(0);
+          }
+          100% {
+            clip-path: inset(0 0 0 0);
+            opacity: 1;
+            transform: translateX(0);
+          }
         }
         .animate-smooth-signature {
           display: inline-block;
           white-space: nowrap;
-          animation: smoothSignature 4.5s cubic-bezier(0.3, 0.1, 0.3, 1) infinite;
+          animation: smoothSignature 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
