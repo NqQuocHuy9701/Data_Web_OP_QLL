@@ -101,7 +101,6 @@ export default function Home() {
     localStorage.setItem("qll_theme", newTheme);
   };
 
-  // QUẢN TRỊ ADMIN: Tải và đồng bộ trực tiếp từ bảng 'admins' trên Supabase
   const [adminList, setAdminList] = useState<{username: string, pass: string}[]>([
     { username: "op_vanhanh", pass: "vhvuihoc123" }
   ]);
@@ -160,17 +159,11 @@ export default function Home() {
   
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
 
-  // 1. BIỂU ĐỒ ĐƯỜNG: REAL-TIME CHUẨN THEO TỪNG PHÚT (KHÔNG CỘNG DỒN)
+  // 1. BIỂU ĐỒ ĐƯỜNG: ĐỌC TRỰC TIẾP TỪ DANH SÁCH NGƯỜI ĐANG ONLINE BÊN DƯỚI
   const todayChartData = useMemo(() => {
-    const timeMap: Record<string, number> = {};
-    
-    const now = new Date();
-    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
-
-    for (let i = 0; i <= currentTotalMinutes; i++) {
-      const h = Math.floor(i / 60).toString().padStart(2, '0');
-      const m = (i % 60).toString().padStart(2, '0');
-      timeMap[`${h}:${m}`] = 0;
+    const hourMap: Record<string, number> = {};
+    for (let i = 0; i < 24; i++) {
+      hourMap[`${i.toString().padStart(2, '0')}:00`] = 0;
     }
 
     const startOfToday = new Date();
@@ -187,27 +180,18 @@ export default function Home() {
         } catch (e) {}
         
         if (dateObj && dateObj.getTime() >= startOfToday.getTime()) {
-          const hStr = dateObj.getHours().toString().padStart(2, '0');
-          const mStr = dateObj.getMinutes().toString().padStart(2, '0');
-          const timeKey = `${hStr}:${mStr}`;
-          
-          if (timeMap[timeKey] !== undefined) {
-            timeMap[timeKey] += 1;
-          }
+          const hour = `${dateObj.getHours().toString().padStart(2, '0')}:00`;
+          if (hourMap[hour] !== undefined) hourMap[hour] += 1;
         }
       });
     }
 
-    // Gắn real-time users thẳng vào phút hiện tại
-    const currH = now.getHours().toString().padStart(2, '0');
-    const currM = now.getMinutes().toString().padStart(2, '0');
-    const currentTimeKey = `${currH}:${currM}`;
-    
+    const currentHour = `${new Date().getHours().toString().padStart(2, '0')}:00`;
     if (onlineUsers && onlineUsers.length > 0) {
-      timeMap[currentTimeKey] = onlineUsers.length; 
+      hourMap[currentHour] += onlineUsers.length; 
     }
 
-    return Object.keys(timeMap).map(time => ({ time, requests: timeMap[time] }));
+    return Object.keys(hourMap).sort().map(hour => ({ time: hour, requests: hourMap[hour] }));
   }, [slotHistoryData, onlineUsers]);
 
   // 2. BIỂU ĐỒ CỘT: QUAY VỀ ĐỌC DỮ LIỆU THẬT TỪ DATABASE GIỮ SLOT
@@ -344,7 +328,6 @@ export default function Home() {
       return;
     }
 
-    // Đổi màu ngay lập tức trên máy mình để tạo cảm giác mượt mà
     setSlotHistoryData(prevData =>
       prevData.map(item => (item.id === dbId ? { ...item, is_done: true } : item))
     );
@@ -575,25 +558,38 @@ export default function Home() {
     });
   };
 
-  // TỐI ƯU CỰC KỲ QUAN TRỌNG: Gọi thẳng qua Supabase Client, bỏ qua hoàn toàn Cache của API Next.js
-  const loadSlotHistory = async (isSilent = false) => {
+const loadSlotHistory = async (isSilent = false) => {
     if (!isSilent) {
       setLoadingHistory(true);
     }
+    
     try {
-      const { data, error } = await supabase
-        .from('slot_holds')
-        .select('*');
+      // SỬA Ở ĐÂY: Thêm query param Date.now() và headers chống cache tuyệt đối
+      const response = await fetch(`/api/slot-hold?t=${Date.now()}`, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setSlotHistoryData(prevData => {
+          const doneIds = new Set(prevData.filter(item => item.is_done).map(item => item.id));
+          
+          const mergedData = result.data.map((newItem: any) => {
+            if (doneIds.has(newItem.id)) {
+              return { ...newItem, is_done: true };
+            }
+            return newItem;
+          });
 
-      if (error) throw error;
-
-      if (data) {
-        // Sắp xếp dữ liệu mới nhất lên đầu tiên theo timestamp
-        const sortedData = data.sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
-        setSlotHistoryData(sortedData);
+          return mergedData;
+        });
       }
     } catch (err) {
-      console.error("Lỗi fetch lịch sử giữ slot từ Supabase:", err);
+      console.error("Lỗi fetch lịch sử giữ slot:", err);
     } finally {
       if (!isSilent) {
         setLoadingHistory(false);
@@ -601,7 +597,7 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     if (isLoggedIn) {
       loadData();
       loadSlotHistory(); 
@@ -610,27 +606,28 @@ export default function Home() {
         loadData();
       }, 5 * 60 * 1000); 
 
-      // ==========================================
-      // LẮNG NGHE REALTIME TỪ SUPABASE: TỐI ƯU CẬP NHẬT INSTANT TRÊN MỌI MÁY
-      // ==========================================
+      // LẮNG NGHE REALTIME TỪ SUPABASE
       const slotHistorySubscription = supabase
         .channel('realtime-slot-holds')
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'slot_holds' },
+          {
+            event: '*', 
+            schema: 'public',
+            table: 'slot_holds' 
+          },
           (payload) => {
             console.log("⚡ Supabase Realtime báo có thay đổi:", payload);
             
-            // Ép giao diện của các máy khác cập nhật ngay lập tức không cần đợi API load xong
+            // Nếu là hành động UPDATE (Có người vừa bấm Done)
             if (payload.eventType === 'UPDATE') {
+              // Ép UI tài khoản 2 đổi sang xanh ngay lập tức không cần đợi API
               setSlotHistoryData(prev => 
-                prev.map(item => item.id === payload.new.id ? { ...item, ...payload.new } : item)
+                prev.map(item => item.id === payload.new.id ? { ...item, is_done: payload.new.is_done } : item)
               );
-            } else if (payload.eventType === 'INSERT') {
-              setSlotHistoryData(prev => [payload.new, ...prev]);
             }
-
-            // Gọi tải lại ngầm DB cho chắc chắn (Dữ liệu đã gọi mới thẳng 100% nhờ query Supabase trực tiếp)
+            
+            // Vẫn gọi API ngầm để đồng bộ lại dữ liệu gốc cho chắc chắn
             loadSlotHistory(true);
           }
         )
@@ -851,15 +848,6 @@ export default function Home() {
 
     const row = selectedRowForSlot;
     const maLop = row["Mã lớp"];
-
-    const currentHeldCount = getActiveHeldCount(maLop);
-    const currentAvailable = calculateAvailableSlots(row, currentHeldCount);
-
-    if (currentAvailable <= 0) {
-      alert(`⚠️ Chậm chân mất rồi! Vừa có một QLL khác nhanh tay giữ slot cuối cùng của lớp ${maLop}. Vui lòng f5 hoặc chờ lớp khác nhé!`);
-      setShowModal(false);
-      return;
-    }
 
     setShowModal(false);
     setIsHoldingSlot(maLop);
@@ -2043,8 +2031,8 @@ export default function Home() {
                         ← Back
                       </button>
                       <button 
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(p => Math.min(historyTotalPages, p + 1))}
+                        disabled={currentPage === historyTotalPages}
                         className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-0 active:scale-95 ${
                           theme === 'dark' 
                             ? 'bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400' 
