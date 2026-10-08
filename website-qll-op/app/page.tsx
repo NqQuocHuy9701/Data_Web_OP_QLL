@@ -135,19 +135,22 @@ export default function Home() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
-// BỘ MÁY CHẠY LẦN LƯỢT CÂU CHÀO (1 -> 2 -> 3)
-  const [wordIndex, setWordIndex] = useState(0);
+// BỘ MÁY TỰ ĐỘNG CHẠY CHỮ LIÊN TỤC (TỰ ĐỔI SAU MỖI 2.5 GIÂY)
   const [greetingText, setGreetingText] = useState("Dữ liệu đã sẵn sàng!");
 
   useEffect(() => {
     const words = ["Dữ liệu đã sẵn sàng!", "Xin chào", "Hello !"];
-    
-    // Cập nhật giao diện với câu chào ở vị trí hiện tại
-    setGreetingText(words[wordIndex]);
-    
-    // Nhích số thứ tự lên 1 để chuẩn bị cho lần chuyển Tab tiếp theo. Nếu đến cuối (số 3) thì vòng lại 0.
-    setWordIndex((prevIndex) => (prevIndex + 1) % words.length);
-  }, [activeNav]);
+    let currentIndex = 0; // Vị trí bắt đầu
+
+    // Cài đặt đồng hồ tự động chạy lặp đi lặp lại
+    const timer = setInterval(() => {
+      currentIndex = (currentIndex + 1) % words.length; // Tiến lên 1 bước, nếu đến 3 thì vòng về 0
+      setGreetingText(words[currentIndex]);
+    }, 2500); // 2500ms = 2.5 giây (Bạn có thể sửa số này cho chạy nhanh/chậm tùy ý)
+
+    // Dọn dẹp bộ nhớ khi chuyển trang khác
+    return () => clearInterval(timer);
+  }, []);
 
   
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
@@ -161,15 +164,7 @@ export default function Home() {
   const [filterLichHoc, setFilterLichHoc] = useState("Tất cả");
   const [filterToday, setFilterToday] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  // BỘ MÁY RANDOM CÂU CHÀO
-
-  useEffect(() => {
-    // Mỗi lần F5 sẽ lấy ngẫu nhiên 1 trong 3 câu này
-    const words = ["Dữ liệu đã sẵn sàng!", "Xin chào", "Hello !"];
-    const randomWord = words[Math.floor(Math.random() * words.length)];
-    setGreetingText(randomWord);
-  }, []);
-
+  
   const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
 // 1. BIỂU ĐỒ ĐƯỜNG: ĐỌC TRỰC TIẾP TỪ DANH SÁCH NGƯỜI ĐANG ONLINE BÊN DƯỚI
