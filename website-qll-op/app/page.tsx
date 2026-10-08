@@ -150,6 +150,21 @@ export default function Home() {
 
   const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
+  // BƠM DỮ LIỆU MẪU (MOCK DATA) ĐỂ BIỂU ĐỒ HIỂN THỊ NGAY LẬP TỨC
+  useEffect(() => {
+    const now = new Date().getTime();
+    const mockData = [
+      { timestamp: now - 1000 * 60 * 60 * 2 },  // Truy cập 2 tiếng trước
+      { timestamp: now - 1000 * 60 * 60 * 1 },  // Truy cập 1 tiếng trước
+      { timestamp: now },                       // Truy cập lúc này (hiện tại)
+      { timestamp: now - 1000 * 60 * 60 * 24 }, // Truy cập hôm qua
+      { timestamp: now - 1000 * 60 * 60 * 24 }, // Truy cập hôm qua (lượt 2)
+      { timestamp: now - 1000 * 60 * 60 * 48 }, // Truy cập hôm kia
+      { timestamp: now - 1000 * 60 * 60 * 72 }  // Truy cập 3 ngày trước
+    ];
+    // Đẩy dữ liệu vào State để 2 biểu đồ cùng đọc
+    setSystemRequestsData(mockData);
+  }, []);
   // TẠO DỮ LIỆU BIỂU ĐỒ ĐƯỜNG (Nhóm requests theo 24 khung giờ)
 const todayChartData = useMemo(() => {
     // Nếu biến chưa được khai báo hoặc chưa có data, trả về mảng rỗng (Tránh lỗi undefined)
