@@ -1048,22 +1048,18 @@ export default function Home() {
 
           <div className="animated-border-box w-full max-w-[540px] mx-auto lg:mx-0">
             <div className="animated-border-inner p-10 lg:p-12">
-              <div className="flex items-center gap-3.5 mb-6">
-                <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-3 rounded-2xl shadow-lg flex items-center justify-center">
-                  <img 
-                    src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
-                    alt="Vuihoc Logo" 
-                    className="h-6 w-auto object-contain brightness-0 invert"
-                  />
-                </div>
-                <div>
-                  <span className="text-white font-semibold tracking-wider uppercase text-sm block">Vuihoc Operations</span>
-                  <span className="text-slate-400 text-xs font-normal">Hệ thống quản lý vận hành QLL</span>
+              <div className="flex items-center gap-3 mb-6">
+                <img 
+                  src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png" 
+                  alt="Vuihoc Logo" 
+                  className="h-6 w-auto object-contain drop-shadow-sm"
+                />
+                <div className="border-l-[1.5px] border-white/10 pl-3">
+                  <p className="text-[9px] text-sky-400 font-bold uppercase tracking-widest mt-1">Vận Hành</p>
                 </div>
               </div>
 
-              <h2 className="text-3xl lg:text-4xl font-semibold text-white mb-1.5">Đăng nhập</h2>
-              <p className="text-slate-400 text-sm mb-7">Chào mừng bạn quay trở lại làm việc.</p>
+              <h2 className="text-3xl lg:text-4xl font-semibold text-white mb-7">Đăng nhập</h2>
 
               <div className="grid grid-cols-2 gap-2.5 p-1.5 bg-[#070a14] rounded-2xl mb-7 border border-white/5 shadow-inner">
                 <button
@@ -1744,7 +1740,6 @@ export default function Home() {
                   className="h-15 w-auto object-contain drop-shadow-md animate-bounce-bitu"
                 />
                 
-                {/* HIỆU ỨNG CHỮ CHẠY TUẦN TỰ (1 -> 2 -> 3) VỚI NÉT BÚT VẼ MƯỢT MÀ */}
                 <h2 className="text-[30px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[45px]">
                   <span className={`font-extrabold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
                   <div className="flex items-center overflow-hidden">
