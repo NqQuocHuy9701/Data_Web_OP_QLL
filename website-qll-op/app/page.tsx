@@ -134,8 +134,6 @@ export default function Home() {
   const [onlineUsers, setOnlineUsers] = useState<{ namecode: string; teamLead: string; onlineAt: number }[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  // LOGIC HIỂN THỊ CÂU CHÀO RANDOM
-  const [greetingText, setGreetingText] = useState("Dữ liệu đã sẵn sàng!");
 
   useEffect(() => {
     const words = ["Dữ liệu đã sẵn sàng!", "Xin chào", "Hello !"];
@@ -155,6 +153,15 @@ export default function Home() {
   const [filterLichHoc, setFilterLichHoc] = useState("Tất cả");
   const [filterToday, setFilterToday] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  // BỘ MÁY RANDOM CÂU CHÀO
+  const [greetingText, setGreetingText] = useState("Dữ liệu đã sẵn sàng!");
+
+  useEffect(() => {
+    // Mỗi lần F5 sẽ lấy ngẫu nhiên 1 trong 3 câu này
+    const words = ["Dữ liệu đã sẵn sàng!", "Xin chào", "Hello !"];
+    const randomWord = words[Math.floor(Math.random() * words.length)];
+    setGreetingText(randomWord);
+  }, []);
 
   const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
@@ -1780,7 +1787,7 @@ return (
                 <span className={`font-extrabold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
                 <div className="flex items-center">
                   <span className="text-orange-500 font-handwriting text-[36px] font-bold tracking-normal leading-none mt-1 animate-smooth-signature">
-                    {greetingText}
+                    {greetingText}  {/* <--- QUAN TRỌNG NHẤT LÀ CHỖ NÀY */}
                   </span>
                 </div>
               </h2>
