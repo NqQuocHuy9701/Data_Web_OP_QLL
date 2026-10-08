@@ -150,32 +150,9 @@ export default function Home() {
 
   const typingWords = useMemo(() => ["Hello !", "Xin Chào", "Mọi thứ đã sẵn sàng !"], []);
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
-  // BƠM DỮ LIỆU MẪU (MOCK DATA) ĐỂ BIỂU ĐỒ HIỂN THỊ NGAY LẬP TỨC
-  useEffect(() => {
-    const now = new Date().getTime();
-    const mockData = [
-      { timestamp: now - 1000 * 60 * 60 * 2 },  // Truy cập 2 tiếng trước
-      { timestamp: now - 1000 * 60 * 60 * 1 },  // Truy cập 1 tiếng trước
-      { timestamp: now },                       // Truy cập lúc này (hiện tại)
-      { timestamp: now - 1000 * 60 * 60 * 24 }, // Truy cập hôm qua
-      { timestamp: now - 1000 * 60 * 60 * 24 }, // Truy cập hôm qua (lượt 2)
-      { timestamp: now - 1000 * 60 * 60 * 48 }, // Truy cập hôm kia
-      { timestamp: now - 1000 * 60 * 60 * 72 }  // Truy cập 3 ngày trước
-    ];
-    // Đẩy dữ liệu vào State để 2 biểu đồ cùng đọc
-    setSystemRequestsData(mockData);
-  }, []);
-  // TẠO DỮ LIỆU BIỂU ĐỒ ĐƯỜNG (Nhóm requests theo 24 khung giờ)
-const todayChartData = useMemo(() => {
-    // Nếu biến chưa được khai báo hoặc chưa có data, trả về mảng rỗng (Tránh lỗi undefined)
-    if (!systemRequestsData || systemRequestsData.length === 0) {
-      const emptyMap: Record<string, number> = {};
-      for (let i = 0; i < 24; i++) {
-        emptyMap[`${i.toString().padStart(2, '0')}:00`] = 0;
-      }
-      return Object.keys(emptyMap).sort().map(hour => ({ time: hour, requests: emptyMap[hour] }));
-    }
-
+// 1. BIỂU ĐỒ ĐƯỜNG: ĐỌC TRỰC TIẾP TỪ DANH SÁCH NGƯỜI ĐANG ONLINE BÊN DƯỚI
+  const todayChartData = useMemo(() => {
+    // Tạo mốc 24h
     const hourMap: Record<string, number> = {};
     for (let i = 0; i < 24; i++) {
       hourMap[`${i.toString().padStart(2, '0')}:00`] = 0;
@@ -184,37 +161,50 @@ const todayChartData = useMemo(() => {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    systemRequestsData.forEach(row => {
-      let dateObj = null;
-      try {
-        if (row.timestamp) {
-          const ts = Number(row.timestamp);
-          dateObj = isNaN(ts) ? new Date(row.timestamp) : new Date(ts);
+    // Lấy dữ liệu các thao tác đã xảy ra trong ngày làm "nền"
+    if (slotHistoryData && slotHistoryData.length > 0) {
+      slotHistoryData.forEach(row => {
+        let dateObj = null;
+        try {
+          if (row.timestamp) {
+            const ts = Number(row.timestamp);
+            dateObj = isNaN(ts) ? new Date(row.timestamp) : new Date(ts);
+          }
+        } catch (e) {}
+        
+        if (dateObj && dateObj.getTime() >= startOfToday.getTime()) {
+          const hour = `${dateObj.getHours().toString().padStart(2, '0')}:00`;
+          if (hourMap[hour] !== undefined) hourMap[hour] += 1;
         }
-      } catch (e) {}
-      
-      // Khớp dữ liệu mở trang vào từng khung giờ
-      if (dateObj && dateObj.getTime() >= startOfToday.getTime()) {
-        const hour = `${dateObj.getHours().toString().padStart(2, '0')}:00`;
-        if (hourMap[hour] !== undefined) hourMap[hour] += 1;
-      }
-    });
+      });
+    }
+
+    // ĐIỂM QUAN TRỌNG: Bắt trực tiếp độ dài của danh sách onlineUsers ném vào giờ hiện tại!
+    const currentHour = `${new Date().getHours().toString().padStart(2, '0')}:00`;
+    if (onlineUsers && onlineUsers.length > 0) {
+      hourMap[currentHour] += onlineUsers.length; 
+    }
 
     return Object.keys(hourMap).sort().map(hour => ({ time: hour, requests: hourMap[hour] }));
-  }, [systemRequestsData]);
-  // 2. DATA BIỂU ĐỒ CỘT: LỊCH SỬ CÁC NGÀY TRƯỚC ĐÓ (Nhóm theo Ngày/Tháng)
-// 2. DATA BIỂU ĐỒ CỘT: LỊCH SỬ CÁC NGÀY TRƯỚC ĐÓ
+  }, [slotHistoryData, onlineUsers]);
+
+  // 2. BIỂU ĐỒ CỘT: QUAY VỀ ĐỌC DỮ LIỆU THẬT TỪ DATABASE GIỮ SLOT
   const historicalChartData = useMemo(() => {
-    if (!systemRequestsData || systemRequestsData.length === 0) return [];
-    
+    if (!slotHistoryData || slotHistoryData.length === 0) return [];
     const dayMap: Record<string, number> = {};
 
-    systemRequestsData.forEach(row => {
+    slotHistoryData.forEach(row => {
       let dateObj = null;
       try {
         if (row.timestamp) {
           const ts = Number(row.timestamp);
           dateObj = isNaN(ts) ? new Date(row.timestamp) : new Date(ts);
+        } else if (row["Thời gian"]) {
+          const parts = row["Thời gian"].split(" ");
+          if (parts.length >= 2) {
+            const dParts = parts[0].split("/");
+            dateObj = new Date(parseInt(dParts[2]), parseInt(dParts[1]) - 1, parseInt(dParts[0]));
+          }
         }
       } catch (e) {}
       
@@ -225,7 +215,7 @@ const todayChartData = useMemo(() => {
     });
 
     return Object.keys(dayMap).sort().slice(-7).map(day => ({ date: day, total: dayMap[day] }));
-  }, [systemRequestsData]);
+  }, [slotHistoryData]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
