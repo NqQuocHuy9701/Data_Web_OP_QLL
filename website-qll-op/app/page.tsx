@@ -590,16 +590,43 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     if (isLoggedIn) {
+      // 1. Load dữ liệu lần đầu khi vừa đăng nhập
       loadData();
       loadSlotHistory(); 
       
+      // 2. Vòng lặp 5 phút: Vẫn giữ để cập nhật file Google Sheet (Lịch học)
       const intervalId = setInterval(() => {
         loadData();
-        loadSlotHistory();
       }, 5 * 60 * 1000); 
-      return () => clearInterval(intervalId);
+
+      // ==========================================
+      // 3. TÍNH NĂNG MỚI: LẮNG NGHE REALTIME TỪ SUPABASE
+      // Bất kỳ ai thêm slot mới, hoặc bấm "Done", mọi máy khác sẽ tự động load lại ngầm ngay lập tức!
+      // ==========================================
+      const slotHistorySubscription = supabase
+        .channel('realtime-slot-holds')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Lắng nghe mọi hành động: INSERT (Thêm mới), UPDATE (Bấm Done), DELETE
+            schema: 'public',
+            table: 'slot_holds' // Tên bảng lưu lịch sử của bạn
+          },
+          (payload) => {
+            console.log("Dữ liệu DB vừa thay đổi, tự động cập nhật UI...", payload);
+            // Cập nhật lại danh sách một cách âm thầm (isSilent = true) để không bị nháy chữ Loading
+            loadSlotHistory(true);
+          }
+        )
+        .subscribe();
+
+      // Dọn dẹp bộ nhớ khi thoát
+      return () => {
+        clearInterval(intervalId);
+        supabase.removeChannel(slotHistorySubscription);
+      };
     }
   }, [isLoggedIn, isUserAdmin]);
 
