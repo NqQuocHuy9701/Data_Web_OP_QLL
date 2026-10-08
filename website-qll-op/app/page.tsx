@@ -135,11 +135,19 @@ export default function Home() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
+// BỘ MÁY CHẠY LẦN LƯỢT CÂU CHÀO (1 -> 2 -> 3)
+  const [wordIndex, setWordIndex] = useState(0);
+  const [greetingText, setGreetingText] = useState("Dữ liệu đã sẵn sàng!");
+
   useEffect(() => {
     const words = ["Dữ liệu đã sẵn sàng!", "Xin chào", "Hello !"];
-    const randomWord = words[Math.floor(Math.random() * words.length)];
-    setGreetingText(randomWord);
-  }, []);
+    
+    // Cập nhật giao diện với câu chào ở vị trí hiện tại
+    setGreetingText(words[wordIndex]);
+    
+    // Nhích số thứ tự lên 1 để chuẩn bị cho lần chuyển Tab tiếp theo. Nếu đến cuối (số 3) thì vòng lại 0.
+    setWordIndex((prevIndex) => (prevIndex + 1) % words.length);
+  }, [activeNav]);
 
   
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
@@ -154,7 +162,6 @@ export default function Home() {
   const [filterToday, setFilterToday] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   // BỘ MÁY RANDOM CÂU CHÀO
-  const [greetingText, setGreetingText] = useState("Dữ liệu đã sẵn sàng!");
 
   useEffect(() => {
     // Mỗi lần F5 sẽ lấy ngẫu nhiên 1 trong 3 câu này
