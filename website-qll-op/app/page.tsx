@@ -159,12 +159,31 @@ export default function Home() {
   
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
 // =====================================================================
-  // BỘ NHỚ LƯU TRỮ LƯU LƯỢNG TRUY CẬP (TRAFFIC ANALYTICS)
+// =====================================================================
+  // BỘ NHỚ LƯU TRỮ LƯU VẾT TRUY CẬP (TRAFFIC ANALYTICS) - LƯU CỨNG MỐC QUÁ KHỨ
   // =====================================================================
-  // State lưu trữ tổng số request truy cập tích lũy trong ngày
-  const [dailyTrafficStats, setDailyTrafficStats] = useState<Record<string, number>>({});
-  
-  // Logic đếm nhịp: Mỗi khi danh sách online thay đổi, cộng dồn vào mốc 5 phút hiện tại
+  // Đọc bộ nhớ cứng để chống F5 mất dữ liệu
+  const [dailyTrafficStats, setDailyTrafficStats] = useState<Record<string, number>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('qll_daily_traffic');
+      const savedDate = localStorage.getItem('qll_daily_traffic_date');
+      const today = new Date().toDateString();
+      if (saved && savedDate === today) {
+        return JSON.parse(saved);
+      }
+    }
+    return {};
+  });
+
+  // Lưu ngầm vào bộ nhớ cứng khi có dữ liệu mới
+  useEffect(() => {
+    if (Object.keys(dailyTrafficStats).length > 0) {
+      localStorage.setItem('qll_daily_traffic', JSON.stringify(dailyTrafficStats));
+      localStorage.setItem('qll_daily_traffic_date', new Date().toDateString());
+    }
+  }, [dailyTrafficStats]);
+
+  // Logic đếm nhịp: Ghi vết số người online vào đúng mốc 5 phút
   useEffect(() => {
     if (onlineUsers.length > 0) {
       const now = new Date();
@@ -174,8 +193,7 @@ export default function Home() {
 
       setDailyTrafficStats(prev => {
         const currentCount = prev[timeKey] || 0;
-        // Nếu số người online hiện tại lớn hơn số đã lưu ở mốc này, cập nhật lên mức cao nhất
-        // (Đây là thủ thuật để đếm số user unique cao nhất trong khung 5 phút)
+        // Lấy mức cao nhất trong khoảng 5 phút đó để lưu vết
         if (onlineUsers.length > currentCount) {
           return { ...prev, [timeKey]: onlineUsers.length };
         }
@@ -184,32 +202,34 @@ export default function Home() {
     }
   }, [onlineUsers.length]);
 
-  // 1. BIỂU ĐỒ ĐƯỜNG: SỐ LƯỢNG TRUY CẬP TRONG NGÀY (CỘNG DỒN / CUMULATIVE TRAFFIC)
+  // 1. BIỂU ĐỒ ĐƯỜNG: VẼ LẠI LƯU VẾT QUÁ KHỨ VÀ DỪNG LẠI Ở HIỆN TẠI
   const todayChartData = useMemo(() => {
-    const timeMap: Record<string, number> = {};
     const now = new Date();
     const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // Khởi tạo các mốc 5 phút từ 00:00 đến hiện tại
+    const chartData = [];
+    
+    // Mấu chốt: Lưu vết mốc trước đó để đường biểu đồ chạy ngang (Step) nếu không có ai truy cập
+    let lastKnownValue = 0;
+
+    // Chỉ tạo các mốc từ 00:00 đến ĐÚNG PHÚT HIỆN TẠI
     for (let i = 0; i <= currentTotalMinutes; i += 5) {
       const h = Math.floor(i / 60).toString().padStart(2, '0');
       const m = (i % 60).toString().padStart(2, '0');
-      timeMap[`${h}:${m}`] = 0;
+      const timeKey = `${h}:${m}`;
+      
+      // Nếu mốc này có dữ liệu lưu vết -> Lấy dữ liệu đó và cập nhật lastKnownValue
+      if (dailyTrafficStats[timeKey] !== undefined) {
+        lastKnownValue = dailyTrafficStats[timeKey];
+        chartData.push({ time: timeKey, requests: lastKnownValue });
+      } else {
+        // Nếu mốc này chưa có ai vào (như nửa đêm) hoặc không có dữ liệu mới
+        // -> Vẽ tiếp bằng giá trị cũ (lastKnownValue) để lưu cứng mốc
+        chartData.push({ time: timeKey, requests: lastKnownValue });
+      }
     }
 
-    // Gắn dữ liệu Traffic đã đo lường được
-    Object.keys(dailyTrafficStats).forEach(key => {
-      if (timeMap[key] !== undefined) {
-        timeMap[key] = dailyTrafficStats[key];
-      }
-    });
-
-    // Tính Lũy kế (Cộng dồn) để tạo đồ thị đi lên hoặc đi ngang
-    let runningTotal = 0;
-    return Object.keys(timeMap).sort().map(timeKey => {
-      runningTotal += timeMap[timeKey];
-      return { time: timeKey, requests: runningTotal };
-    });
+    return chartData;
   }, [dailyTrafficStats]);
 
 
