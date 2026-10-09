@@ -730,16 +730,15 @@ useEffect(() => {
               }
 
               // 2. TÍNH NĂNG MỚI: Nếu là hành động INSERT (Có người vừa tạo Giữ Slot mới)
+// 2. TÍNH NĂNG MỚI: Nếu là hành động INSERT (Có người vừa tạo Giữ Slot mới)
               if (payload.eventType === 'INSERT') {
-                // Bắn thông báo Web Push nếu đang là tài khoản Admin
+                // Bắn thông báo Web Push góc màn hình (CHỈ HIỆN HÌNH - KHÔNG PHÁT ÂM THANH)
                 if (loginRole === "Admin" && "Notification" in window && Notification.permission === "granted") {
-                  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-                  audio.play().catch(e => console.log("Trình duyệt chặn tự động phát âm thanh:", e));
-
+                  
                   const notif = new Notification('🚨 CÓ YÊU CẦU GIỮ SLOT MỚI!', {
                     body: `QLL ${payload.new.nguoi_giu} vừa xin giữ mã lớp: ${payload.new.ma_lop}. Click để xử lý ngay!`,
                     icon: 'https://vuihoc.vn/favicon.ico', 
-                    requireInteraction: true 
+                    requireInteraction: true // Ép thông báo nằm chờ ở góc màn hình cho đến khi Admin thao tác
                   });
 
                   notif.onclick = () => {
