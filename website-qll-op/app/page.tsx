@@ -814,12 +814,31 @@ export default function Home() {
     return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredData, currentPage]);
 
-  const historyTotalPages = Math.ceil(slotHistoryData.length / itemsPerPage);
+// 1. TẠO BỘ LỌC TÌM KIẾM CHO LỊCH SỬ
+  const filteredHistoryData = useMemo(() => {
+    if (!searchTerm) return slotHistoryData;
+    const lowerSearch = searchTerm.toLowerCase().trim();
+
+    return slotHistoryData.filter((item) => {
+      const maLop = (item.ma_lop || item["Mã lớp giữ"] || item["Mã lớp"] || "").toLowerCase();
+      const monHoc = (item.mon_hoc || item["Môn học"] || "").toLowerCase();
+      const nguoiGiu = (item.nguoi_giu || item["Người giữ"] || "").toLowerCase();
+      const note = (item.note || item["lưu ý ( mục note của QLL )"] || item["lưu ý"] || "").toLowerCase();
+
+      return maLop.includes(lowerSearch) || 
+             monHoc.includes(lowerSearch) || 
+             nguoiGiu.includes(lowerSearch) || 
+             note.includes(lowerSearch);
+    });
+  }, [slotHistoryData, searchTerm]);
+
+  // 2. CẬP NHẬT LẠI PHÂN TRANG DỰA TRÊN DỮ LIỆU ĐÃ LỌC
+  const historyTotalPages = Math.ceil(filteredHistoryData.length / itemsPerPage);
   
   const currentHistoryData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return slotHistoryData.slice(startIndex, startIndex + itemsPerPage);
-  }, [slotHistoryData, currentPage]);
+    return filteredHistoryData.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredHistoryData, currentPage]);
 
   const handleOpenPopup = (row: any, availableSlots: number) => {
     if (availableSlots <= 0) return;
