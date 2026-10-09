@@ -158,14 +158,13 @@ export default function Home() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
-
-// 1. BIỂU ĐỒ ĐƯỜNG: CỘNG DỒN LŨY KẾ (CUMULATIVE) CHUẨN XÁC THEO TỪNG 5 PHÚT
+// 1. BIỂU ĐỒ ĐƯỜNG: CỘNG DỒN LŨY KẾ & GIỮ NGUYÊN ĐỈNH (FILL PREVIOUS)
   const todayChartData = useMemo(() => {
     const timeMap: Record<string, number> = {};
     const now = new Date();
     const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // Bước 1: Khởi tạo các mốc mỗi 5 phút từ 00:00 đến ĐÚNG phút hiện tại
+    // Tạo sẵn các mốc 5 phút từ 00:00 đến hiện tại
     for (let i = 0; i <= currentTotalMinutes; i += 5) {
       const h = Math.floor(i / 60).toString().padStart(2, '0');
       const m = (i % 60).toString().padStart(2, '0');
@@ -175,7 +174,7 @@ export default function Home() {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    // Bước 2: Đếm số lượng request phát sinh vào đúng giỏ 5 phút đó
+    // Ghi nhận request mới vào đúng khung giờ phát sinh
     if (slotHistoryData && slotHistoryData.length > 0) {
       slotHistoryData.forEach(row => {
         let dateObj = null;
@@ -187,11 +186,10 @@ export default function Home() {
         } catch (e) {}
         
         if (dateObj && dateObj.getTime() >= startOfToday.getTime()) {
-          const h = dateObj.getHours();
-          const m = dateObj.getMinutes();
-          const roundedM = Math.floor(m / 5) * 5;
-          const timeKey = `${h.toString().padStart(2, '0')}:${roundedM.toString().padStart(2, '0')}`;
+          const h = dateObj.getHours().toString().padStart(2, '0');
+          const m = (Math.floor(dateObj.getMinutes() / 5) * 5).toString().padStart(2, '0');
           
+          const timeKey = `${h}:${m}`;
           if (timeMap[timeKey] !== undefined) {
             timeMap[timeKey] += 1;
           }
@@ -199,20 +197,14 @@ export default function Home() {
       });
     }
 
-    // Bước 3: TÍNH LŨY KẾ (CỘNG DỒN) - Giữ cứng mốc cũ, không bao giờ tụt xuống 0
+    // TÍNH LŨY KẾ: Lưu cứng mốc cũ, cộng dồn tiến lên, không bao giờ rớt xuống 0
     let runningTotal = 0;
-    const result = Object.keys(timeMap).sort().map(timeKey => {
-      runningTotal += timeMap[timeKey]; // Cộng dồn số lượng của mốc này vào tổng
+    return Object.keys(timeMap).sort().map(timeKey => {
+      runningTotal += timeMap[timeKey];
       return { time: timeKey, requests: runningTotal };
     });
 
-    // Bước 4: Cộng thêm số lượng Online hiện hành vào mốc cuối cùng (mốc hiện tại)
-    if (result.length > 0 && onlineUsers && onlineUsers.length > 0) {
-      result[result.length - 1].requests += onlineUsers.length;
-    }
-
-    return result;
-  }, [slotHistoryData, onlineUsers]);
+  }, [slotHistoryData]); // Đã xóa bỏ sự phụ thuộc vào onlineUsers gây nhiễu biểu đồ
 // 2. BIỂU ĐỒ CỘT: TỔNG HỢP 7 NGÀY GẦN NHẤT & ĐỒNG BỘ DỮ LIỆU
   const historicalChartData = useMemo(() => {
     const last7Days: string[] = [];
