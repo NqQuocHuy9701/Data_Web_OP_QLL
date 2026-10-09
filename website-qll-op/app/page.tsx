@@ -194,34 +194,57 @@ export default function Home() {
     return Object.keys(hourMap).sort().map(hour => ({ time: hour, requests: hourMap[hour] }));
   }, [slotHistoryData, onlineUsers]);
 
-  // 2. BIỂU ĐỒ CỘT: QUAY VỀ ĐỌC DỮ LIỆU THẬT TỪ DATABASE GIỮ SLOT
+// 2. BIỂU ĐỒ CỘT: TỔNG HỢP 7 NGÀY GẦN NHẤT & ĐỒNG BỘ DỮ LIỆU
   const historicalChartData = useMemo(() => {
-    if (!slotHistoryData || slotHistoryData.length === 0) return [];
+    const last7Days: string[] = [];
     const dayMap: Record<string, number> = {};
 
-    slotHistoryData.forEach(row => {
-      let dateObj = null;
-      try {
-        if (row.timestamp) {
-          const ts = Number(row.timestamp);
-          dateObj = isNaN(ts) ? new Date(row.timestamp) : new Date(ts);
-        } else if (row["Thời gian"]) {
-          const parts = row["Thời gian"].split(" ");
-          if (parts.length >= 2) {
-            const dParts = parts[0].split("/");
-            dateObj = new Date(parseInt(dParts[2]), parseInt(dParts[1]) - 1, parseInt(dParts[0]));
+    // 1. Khởi tạo mốc 7 ngày gần nhất (Đảm bảo đúng thứ tự thời gian và luôn hiển thị cả ngày 0 request)
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+      last7Days.push(dayStr);
+      dayMap[dayStr] = 0;
+    }
+
+    // 2. Đếm số lượng request thực tế từ Database lịch sử
+    if (slotHistoryData && slotHistoryData.length > 0) {
+      slotHistoryData.forEach(row => {
+        let dateObj = null;
+        try {
+          if (row.timestamp) {
+            const ts = Number(row.timestamp);
+            dateObj = isNaN(ts) ? new Date(row.timestamp) : new Date(ts);
+          } else if (row["Thời gian"]) {
+            const parts = row["Thời gian"].split(" ");
+            if (parts.length >= 2) {
+              const dParts = parts[0].split("/");
+              dateObj = new Date(parseInt(dParts[2]), parseInt(dParts[1]) - 1, parseInt(dParts[0]));
+            }
+          }
+        } catch (e) {}
+        
+        if (dateObj) {
+          const dayStr = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
+          if (dayMap[dayStr] !== undefined) {
+            dayMap[dayStr] += 1;
           }
         }
-      } catch (e) {}
-      
-      if (dateObj) {
-        const dayStr = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
-        dayMap[dayStr] = (dayMap[dayStr] || 0) + 1;
-      }
-    });
+      });
+    }
 
-    return Object.keys(dayMap).sort().slice(-7).map(day => ({ date: day, total: dayMap[day] }));
-  }, [slotHistoryData]);
+    // 3. ĐỒNG BỘ BIỂU ĐỒ: Cộng số người đang Online vào tổng ngày hôm nay để khớp với biểu đồ Line
+    const today = new Date();
+    const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+    
+    if (onlineUsers && onlineUsers.length > 0 && dayMap[todayStr] !== undefined) {
+      dayMap[todayStr] += onlineUsers.length;
+    }
+
+    // Trả về mảng đúng chuẩn 7 ngày
+    return last7Days.map(day => ({ date: day, total: dayMap[day] }));
+  }, [slotHistoryData, onlineUsers]);
 
   const [heldSlots, setHeldSlots] = useState<Record<string, { timestamp: number }[]>>({});
   const [isHoldingSlot, setIsHoldingSlot] = useState<string | null>(null);
