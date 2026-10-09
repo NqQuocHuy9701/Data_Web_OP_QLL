@@ -361,17 +361,29 @@ export default function Home() {
     return activeHolds.length;
   };
 
-  const handleMarkAsDone = async (dbId: string) => {
+const handleMarkAsDone = async (dbId: string) => {
     if (!dbId) {
       alert("Lỗi: Không tìm thấy ID bản ghi trong cơ sở dữ liệu!");
       return;
     }
 
+    // 1. Đổi giao diện màn hình của chính mình (Tài khoản A) ngay lập tức
     setSlotHistoryData(prevData =>
       prevData.map(item => (item.id === dbId ? { ...item, is_done: true } : item))
     );
 
     try {
+      // ========================================================
+      // 2. TÍNH NĂNG MỚI: Bắn tín hiệu "Broadcast" thẳng sang màn hình Tài khoản B
+      // Giúp màn B ẩn nút ngay lập tức mà không cần đợi Database hay API
+      // ========================================================
+      await supabase.channel('qll-room').send({
+        type: 'broadcast',
+        event: 'slot_done',
+        payload: { id: dbId }
+      });
+
+      // 3. Vẫn update vào Database bình thường để lưu lại lịch sử
       const { error } = await supabase
         .from('slot_holds')
         .update({ is_done: true })
@@ -391,11 +403,14 @@ export default function Home() {
   const displayName = isUserAdmin ? adminUsername : namecode;
   const displayTeamOrRole = isUserAdmin ? "Admin hệ thống" : teamLead;
 
-  useEffect(() => {
+useEffect(() => {
     if (isLoggedIn) {
       const currentLoginTime = Date.now();
       const channel = supabase.channel('qll-room', {
-        config: { presence: { key: displayName } },
+        config: { 
+          presence: { key: displayName },
+          broadcast: { self: false } // QUAN TRỌNG: Mở cổng để nhận "tin nhắn ngầm" từ máy khác
+        },
       });
 
       channel.on('presence', { event: 'sync' }, () => {
@@ -416,6 +431,20 @@ export default function Home() {
 
         setOnlineUsers(usersList);
         setOnlineCount(usersList.length);
+      });
+
+      // ========================================================
+      // TÍNH NĂNG MỚI: Lắng nghe nếu có ai đó (Tài khoản A) vừa bấm Done
+      // Màn hình của mình (Tài khoản B) sẽ lập tức chuyển sang "Đã xếp xong"
+      // ========================================================
+      channel.on('broadcast', { event: 'slot_done' }, (payload) => {
+        const doneId = payload.payload.id;
+        console.log("🔥 Tín hiệu Realtime: Mã slot ID", doneId, "vừa được xếp xong!");
+        
+        // Ép dữ liệu bảng ở máy mình đổi sang is_done = true
+        setSlotHistoryData(prevData =>
+          prevData.map(item => (item.id === doneId ? { ...item, is_done: true } : item))
+        );
       });
 
       channel.subscribe(async (status) => {
