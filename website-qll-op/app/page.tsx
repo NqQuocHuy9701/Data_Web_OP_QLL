@@ -159,7 +159,7 @@ export default function Home() {
   
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
 
-  // 1. BIỂU ĐỒ ĐƯỜNG: ĐỌC TRỰC TIẾP TỪ DANH SÁCH NGƯỜI ĐANG ONLINE BÊN DƯỚI
+// 1. BIỂU ĐỒ ĐƯỜNG: CỘNG DỒN TÍCH LŨY (CUMULATIVE)
   const todayChartData = useMemo(() => {
     const hourMap: Record<string, number> = {};
     for (let i = 0; i < 24; i++) {
@@ -169,6 +169,7 @@ export default function Home() {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
+    // Bước 1: Phân loại số lượng request vào từng giỏ (Khung giờ)
     if (slotHistoryData && slotHistoryData.length > 0) {
       slotHistoryData.forEach(row => {
         let dateObj = null;
@@ -186,14 +187,31 @@ export default function Home() {
       });
     }
 
-    const currentHour = `${new Date().getHours().toString().padStart(2, '0')}:00`;
-    if (onlineUsers && onlineUsers.length > 0) {
-      hourMap[currentHour] += onlineUsers.length; 
-    }
+    // Bước 2: Tính tổng cộng dồn (Lũy kế) từ 0h sáng đến giờ hiện tại
+    let runningTotal = 0;
+    const currentHourNum = new Date().getHours();
 
-    return Object.keys(hourMap).sort().map(hour => ({ time: hour, requests: hourMap[hour] }));
+    return Object.keys(hourMap).sort().map(hourStr => {
+      const hNum = parseInt(hourStr.split(':')[0]);
+
+      // Cộng dồn số request của khung giờ này vào tổng số
+      runningTotal += hourMap[hourStr];
+
+      // Nếu là khung giờ hiện tại, cộng thêm những người đang Online
+      let finalValue = runningTotal;
+      if (hNum === currentHourNum && onlineUsers && onlineUsers.length > 0) {
+        finalValue += onlineUsers.length;
+        runningTotal = finalValue; // Cập nhật lại tổng
+      }
+
+      // UX TỐI ƯU: Nếu là giờ trong tương lai chưa xảy ra, trả về null.
+      // Recharts sẽ tự động ngắt đường vẽ ở đúng giờ hiện tại cực kỳ chuyên nghiệp.
+      return { 
+        time: hourStr, 
+        requests: hNum > currentHourNum ? null : finalValue 
+      };
+    });
   }, [slotHistoryData, onlineUsers]);
-
 // 2. BIỂU ĐỒ CỘT: TỔNG HỢP 7 NGÀY GẦN NHẤT & ĐỒNG BỘ DỮ LIỆU
   const historicalChartData = useMemo(() => {
     const last7Days: string[] = [];
