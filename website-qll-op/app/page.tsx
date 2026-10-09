@@ -159,17 +159,23 @@ export default function Home() {
   
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
 
-// 1. BIỂU ĐỒ ĐƯỜNG: CỘNG DỒN TÍCH LŨY (CUMULATIVE)
+// 1. BIỂU ĐỒ ĐƯỜNG: CHI TIẾT THEO TỪNG 5 PHÚT VÀ CẮT TẠI THỜI ĐIỂM HIỆN TẠI (GRAFANA STYLE)
   const todayChartData = useMemo(() => {
-    const hourMap: Record<string, number> = {};
-    for (let i = 0; i < 24; i++) {
-      hourMap[`${i.toString().padStart(2, '0')}:00`] = 0;
+    const timeMap: Record<string, number> = {};
+    const now = new Date();
+    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // Khởi tạo các mốc mỗi 5 phút từ 00:00 đến ĐÚNG THỜI ĐIỂM HIỆN TẠI (Không vẽ tương lai)
+    for (let i = 0; i <= currentTotalMinutes; i += 5) {
+      const h = Math.floor(i / 60).toString().padStart(2, '0');
+      const m = (i % 60).toString().padStart(2, '0');
+      timeMap[`${h}:${m}`] = 0;
     }
 
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    // Bước 1: Phân loại số lượng request vào từng giỏ (Khung giờ)
+    // Gắn số liệu vào chính xác slot 5 phút diễn ra thao tác
     if (slotHistoryData && slotHistoryData.length > 0) {
       slotHistoryData.forEach(row => {
         let dateObj = null;
@@ -181,36 +187,28 @@ export default function Home() {
         } catch (e) {}
         
         if (dateObj && dateObj.getTime() >= startOfToday.getTime()) {
-          const hour = `${dateObj.getHours().toString().padStart(2, '0')}:00`;
-          if (hourMap[hour] !== undefined) hourMap[hour] += 1;
+          const h = dateObj.getHours();
+          const m = dateObj.getMinutes();
+          const roundedM = Math.floor(m / 5) * 5; // Làm tròn xuống mốc 5 phút
+          const timeKey = `${h.toString().padStart(2, '0')}:${roundedM.toString().padStart(2, '0')}`;
+          
+          if (timeMap[timeKey] !== undefined) {
+            timeMap[timeKey] += 1;
+          }
         }
       });
     }
 
-    // Bước 2: Tính tổng cộng dồn (Lũy kế) từ 0h sáng đến giờ hiện tại
-    let runningTotal = 0;
-    const currentHourNum = new Date().getHours();
+    // Gắn số người Online vào đúng cột mốc thời gian hiện tại
+    const currH = now.getHours().toString().padStart(2, '0');
+    const currM = Math.floor(now.getMinutes() / 5) * 5;
+    const currentTimeKey = `${currH}:${currM.toString().padStart(2, '0')}`;
+    
+    if (onlineUsers && onlineUsers.length > 0 && timeMap[currentTimeKey] !== undefined) {
+      timeMap[currentTimeKey] += onlineUsers.length; 
+    }
 
-    return Object.keys(hourMap).sort().map(hourStr => {
-      const hNum = parseInt(hourStr.split(':')[0]);
-
-      // Cộng dồn số request của khung giờ này vào tổng số
-      runningTotal += hourMap[hourStr];
-
-      // Nếu là khung giờ hiện tại, cộng thêm những người đang Online
-      let finalValue = runningTotal;
-      if (hNum === currentHourNum && onlineUsers && onlineUsers.length > 0) {
-        finalValue += onlineUsers.length;
-        runningTotal = finalValue; // Cập nhật lại tổng
-      }
-
-      // UX TỐI ƯU: Nếu là giờ trong tương lai chưa xảy ra, trả về null.
-      // Recharts sẽ tự động ngắt đường vẽ ở đúng giờ hiện tại cực kỳ chuyên nghiệp.
-      return { 
-        time: hourStr, 
-        requests: hNum > currentHourNum ? null : finalValue 
-      };
-    });
+    return Object.keys(timeMap).sort().map(time => ({ time, requests: timeMap[time] }));
   }, [slotHistoryData, onlineUsers]);
 // 2. BIỂU ĐỒ CỘT: TỔNG HỢP 7 NGÀY GẦN NHẤT & ĐỒNG BỘ DỮ LIỆU
   const historicalChartData = useMemo(() => {
