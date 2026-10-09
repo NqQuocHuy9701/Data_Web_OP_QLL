@@ -1321,7 +1321,8 @@ useEffect(() => {
                         <option value="Lead QuyenPT" className="bg-[#151a28] text-white">Lead QuyenPT</option>
                         <option value="Lead ChiNQ" className="bg-[#151a28] text-white">Lead ChiNQ</option>
                         <option value="Lead ChungMB" className="bg-[#151a28] text-white">Lead ChungMB</option>
-                        <option value="Khác" className="bg-[#151a28] text-white">Khác / Vận hành chung</option>
+                        <option value="Lead ChungMB" className="bg-[#151a28] text-white">Lead XuanNT14</option>
+                        <option value="Khác" className="bg-[#151a28] text-white">Khác / QLL chung</option>
                       </select>
                     </div>
                   </>
