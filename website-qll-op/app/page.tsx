@@ -31,6 +31,15 @@ const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
     logSystemRequest();
   }, []);
 
+  // Yêu cầu quyền hiển thị thông báo popup trên máy tính (Web Push)
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
   useEffect(() => {
     let targetTime = 0;
     try {
@@ -709,20 +718,40 @@ useEffect(() => {
             schema: 'public',
             table: 'slot_holds' 
           },
-          (payload) => {
-            console.log("⚡ Supabase Realtime báo có thay đổi:", payload);
-            
-            // Nếu là hành động UPDATE (Có người vừa bấm Done)
-            if (payload.eventType === 'UPDATE') {
-              // Ép UI tài khoản 2 đổi sang xanh ngay lập tức không cần đợi API
-              setSlotHistoryData(prev => 
-                prev.map(item => item.id === payload.new.id ? { ...item, is_done: payload.new.is_done } : item)
-              );
+(payload) => {
+              console.log("⚡ Supabase Realtime báo có thay đổi:", payload);
+              
+              // 1. Nếu là hành động UPDATE (Có người vừa bấm Done)
+              if (payload.eventType === 'UPDATE') {
+                // Ép UI tài khoản 2 đổi sang xanh ngay lập tức không cần đợi API
+                setSlotHistoryData(prev =>
+                  prev.map(item => item.id === payload.new.id ? { ...item, is_done: payload.new.is_done } : item)
+                );
+              }
+
+              // 2. TÍNH NĂNG MỚI: Nếu là hành động INSERT (Có người vừa tạo Giữ Slot mới)
+              if (payload.eventType === 'INSERT') {
+                // Bắn thông báo Web Push nếu đang là tài khoản Admin
+                if (loginRole === "Admin" && "Notification" in window && Notification.permission === "granted") {
+                  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+                  audio.play().catch(e => console.log("Trình duyệt chặn tự động phát âm thanh:", e));
+
+                  const notif = new Notification('🚨 CÓ YÊU CẦU GIỮ SLOT MỚI!', {
+                    body: `QLL ${payload.new.nguoi_giu} vừa xin giữ mã lớp: ${payload.new.ma_lop}. Click để xử lý ngay!`,
+                    icon: 'https://vuihoc.vn/favicon.ico', 
+                    requireInteraction: true 
+                  });
+
+                  notif.onclick = () => {
+                    window.focus(); 
+                    notif.close();  
+                  };
+                }
+              }
+              
+              // Vẫn gọi API ngầm để đồng bộ lại dữ liệu gốc cho chắc chắn
+              loadSlotHistory(true);
             }
-            
-            // Vẫn gọi API ngầm để đồng bộ lại dữ liệu gốc cho chắc chắn
-            loadSlotHistory(true);
-          }
         )
         .subscribe();
 
