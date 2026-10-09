@@ -159,13 +159,13 @@ export default function Home() {
   
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
 
-// 1. BIỂU ĐỒ ĐƯỜNG: CHI TIẾT THEO TỪNG 5 PHÚT VÀ CẮT TẠI THỜI ĐIỂM HIỆN TẠI (GRAFANA STYLE)
+// 1. BIỂU ĐỒ ĐƯỜNG: CỘNG DỒN LŨY KẾ (CUMULATIVE) CHUẨN XÁC THEO TỪNG 5 PHÚT
   const todayChartData = useMemo(() => {
     const timeMap: Record<string, number> = {};
     const now = new Date();
     const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // Khởi tạo các mốc mỗi 5 phút từ 00:00 đến ĐÚNG THỜI ĐIỂM HIỆN TẠI (Không vẽ tương lai)
+    // Bước 1: Khởi tạo các mốc mỗi 5 phút từ 00:00 đến ĐÚNG phút hiện tại
     for (let i = 0; i <= currentTotalMinutes; i += 5) {
       const h = Math.floor(i / 60).toString().padStart(2, '0');
       const m = (i % 60).toString().padStart(2, '0');
@@ -175,7 +175,7 @@ export default function Home() {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    // Gắn số liệu vào chính xác slot 5 phút diễn ra thao tác
+    // Bước 2: Đếm số lượng request phát sinh vào đúng giỏ 5 phút đó
     if (slotHistoryData && slotHistoryData.length > 0) {
       slotHistoryData.forEach(row => {
         let dateObj = null;
@@ -189,7 +189,7 @@ export default function Home() {
         if (dateObj && dateObj.getTime() >= startOfToday.getTime()) {
           const h = dateObj.getHours();
           const m = dateObj.getMinutes();
-          const roundedM = Math.floor(m / 5) * 5; // Làm tròn xuống mốc 5 phút
+          const roundedM = Math.floor(m / 5) * 5;
           const timeKey = `${h.toString().padStart(2, '0')}:${roundedM.toString().padStart(2, '0')}`;
           
           if (timeMap[timeKey] !== undefined) {
@@ -199,16 +199,19 @@ export default function Home() {
       });
     }
 
-    // Gắn số người Online vào đúng cột mốc thời gian hiện tại
-    const currH = now.getHours().toString().padStart(2, '0');
-    const currM = Math.floor(now.getMinutes() / 5) * 5;
-    const currentTimeKey = `${currH}:${currM.toString().padStart(2, '0')}`;
-    
-    if (onlineUsers && onlineUsers.length > 0 && timeMap[currentTimeKey] !== undefined) {
-      timeMap[currentTimeKey] += onlineUsers.length; 
+    // Bước 3: TÍNH LŨY KẾ (CỘNG DỒN) - Giữ cứng mốc cũ, không bao giờ tụt xuống 0
+    let runningTotal = 0;
+    const result = Object.keys(timeMap).sort().map(timeKey => {
+      runningTotal += timeMap[timeKey]; // Cộng dồn số lượng của mốc này vào tổng
+      return { time: timeKey, requests: runningTotal };
+    });
+
+    // Bước 4: Cộng thêm số lượng Online hiện hành vào mốc cuối cùng (mốc hiện tại)
+    if (result.length > 0 && onlineUsers && onlineUsers.length > 0) {
+      result[result.length - 1].requests += onlineUsers.length;
     }
 
-    return Object.keys(timeMap).sort().map(time => ({ time, requests: timeMap[time] }));
+    return result;
   }, [slotHistoryData, onlineUsers]);
 // 2. BIỂU ĐỒ CỘT: TỔNG HỢP 7 NGÀY GẦN NHẤT & ĐỒNG BỘ DỮ LIỆU
   const historicalChartData = useMemo(() => {
@@ -1719,7 +1722,7 @@ useEffect(() => {
                         contentStyle={{ backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', borderRadius: '12px' }}
                         itemStyle={{ color: '#0ea5e9', fontWeight: 'bold' }} labelStyle={{ color: theme === 'dark' ? '#cbd5e1' : '#475569', marginBottom: '4px' }}
                       />
-                      <Line type="monotone" dataKey="requests" name="Requests" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 3, fill: '#0ea5e9', strokeWidth: 0 }} activeDot={{ r: 6, stroke: '#e0f2fe', strokeWidth: 3 }} animationDuration={1000} />
+                      <Line type="linear" dataKey="requests" name="Requests" stroke="#0ea5e9" strokeWidth={2} dot={false} activeDot={{ r: 6, stroke: '#e0f2fe', strokeWidth: 3 }} animationDuration={1000} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
