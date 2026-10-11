@@ -2458,8 +2458,7 @@ const renderCustomDropdown = (
           <div key={activeNav} className="flex-1 flex flex-col min-h-0 animate-fade-slide-up">
             <div className="px-8 pt-4 pb-3 shrink-0">
 {/* BƯỚC 2: BANNER CHÀO MỪNG CÁ NHÂN HÓA CHO QLL */}
-              <div className="flex items-center justify-between gap-4 mb-3 bg-gradient-to-r from-orange-500/10 via-sky-500/5 to-transparent p-4 rounded-3xl border border-orange-500/20 shadow-sm animate-fade-slide-down">
-<div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-3">
                 <img 
                   src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
                   alt="Bitu Mascot" 
@@ -2477,7 +2476,6 @@ const renderCustomDropdown = (
                     </span>
                   </div>
                 </h2>
-              </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
