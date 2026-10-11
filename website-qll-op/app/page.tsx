@@ -2085,8 +2085,9 @@ const filteredData = useMemo(() => {
                     {activeNav === "Giữ Slot" ? "📌 Bảng Tác Vụ Giữ Slot Chuyên Biệt" : `Daily — Dữ liệu ${activeNav}`}
                   </h3>
 
-                  <div className="flex flex-wrap items-center gap-2.5">
+<div className="flex flex-wrap items-center gap-2.5">
                     {renderCustomDropdown("Môn", "mon", filterMonHoc, dropdownOptions.monHoc, setFilterMonHoc)}
+                    
                     {/* BỘ LỌC TÀNG HÌNH: Chỉ trượt ra khi Môn = KHTN */}
                     {filterMonHoc === "KHTN" && (
                       <div className="animate-fade-slide-up">
@@ -2100,7 +2101,7 @@ const filteredData = useMemo(() => {
                       </div>
                     )}
 
-                    {renderCustomDropdown("Khối", "khoi", filterKhoi, dropdownOptions.khoi, setFilterKhoi, (val) => `Khối ${val}`)}
+                    {/* Chỉ giữ lại đúng 1 dòng của bộ lọc Khối */}
                     {renderCustomDropdown("Khối", "khoi", filterKhoi, dropdownOptions.khoi, setFilterKhoi, (val) => `Khối ${val}`)}
                     {renderCustomDropdown("Loại lớp", "loai", filterLoaiLop, dropdownOptions.loaiLop, setFilterLoaiLop)}
                     {renderCustomDropdown("Lịch", "lich", filterLichHoc, dropdownOptions.lichHoc, setFilterLichHoc)}
