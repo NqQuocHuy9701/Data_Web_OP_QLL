@@ -793,7 +793,20 @@ useEffect(() => {
     data.forEach(item => {
       if (item["Loại lớp"]) loaiLopSet.add(item["Loại lớp"].trim());
       if (item["Khối"]) khoiSet.add(item["Khối"].trim());
-      if (item["Môn học"]) monHocSet.add(item["Môn học"].trim());
+      
+      // TỐI ƯU HIỆU NĂNG V3: Chỉ bóc tách chữ nếu môn học gốc là Toán
+      const rawSub = (item["Môn học"] || "").trim();
+      if (rawSub.toLowerCase().includes("toán") || rawSub.toLowerCase().includes("toan")) {
+        const maLop = (item["Mã lớp"] || "").trim().toUpperCase();
+        if (maLop.startsWith("TCLC")) {
+          monHocSet.add("Toán TCLC");
+        } else {
+          monHocSet.add("Toán");
+        }
+      } else {
+        if (rawSub) monHocSet.add(rawSub); // Các môn khác bê nguyên xi vào menu
+      }
+
       if (item["Lịch học"]) {
         const fullLich = item["Lịch học"].trim();
         const daysPart = fullLich.split(" ")[0];
@@ -925,7 +938,22 @@ useEffect(() => {
 
       if (filterLoaiLop !== "Tất cả" && (item["Loại lớp"] || "").trim() !== filterLoaiLop) return false;
       if (filterKhoi !== "Tất cả" && (item["Khối"] || "").trim() !== filterKhoi) return false;
-      if (filterMonHoc !== "Tất cả" && (item["Môn học"] || "").trim() !== filterMonHoc) return false;
+      // TỐI ƯU LỌC V3: Rẽ nhánh riêng biệt cho Toán để tránh lag 5000+ dòng
+      if (filterMonHoc !== "Tất cả") {
+        if (filterMonHoc === "Toán" || filterMonHoc === "Toán TCLC") {
+          const rawSub = (item["Môn học"] || "").toLowerCase().trim();
+          // Loại ngay lập tức nếu môn gốc ở Sheet không phải là Toán
+          if (!rawSub.includes("toán") && !rawSub.includes("toan")) return false; 
+          
+          const isTCLC = (item["Mã lớp"] || "").toUpperCase().startsWith("TCLC");
+          
+          if (filterMonHoc === "Toán TCLC" && !isTCLC) return false;
+          if (filterMonHoc === "Toán" && isTCLC) return false;
+        } else {
+          // Các môn khác (KHTN, Anh...): So sánh chuỗi tĩnh bình thường, tốc độ chớp mắt
+          if ((item["Môn học"] || "").trim() !== filterMonHoc) return false;
+        }
+      }
       
       const itemLich = (item["Lịch học"] || "").trim();
       
@@ -1138,6 +1166,12 @@ useEffect(() => {
 
   const getSubjectStyle = (subject: string) => {
     const s = subject.toLowerCase();
+    
+    // Thêm màu Tím Indigo cho Toán TCLC
+    if (s.includes("tclc")) {
+      return "bg-indigo-50 text-indigo-600 border-indigo-100";
+    }
+    
     if (s.includes("toán") || s.includes("toan")) {
       return "bg-blue-50 text-blue-600 border-blue-100";
     }
@@ -2083,7 +2117,10 @@ useEffect(() => {
                       {currentTableData.length > 0 ? (
                         currentTableData.map((row, index) => {
                           const maLop = row["Mã lớp"];
-                          const subjectStr = row["Môn học"] || "";
+                          const rawSubjectStr = row["Môn học"] || "";
+                            let displaySubject = rawSubjectStr;
+                            if (rawSubjectStr.toLowerCase().includes("toán") || rawSubjectStr.toLowerCase().includes("toan")) {
+                              displaySubject = (maLop || "").toUpperCase().startsWith("TCLC") ? "Toán TCLC" : "Toán";}
                           const heldCount = getActiveHeldCount(maLop);
                           const availableSlots = calculateAvailableSlots(row, heldCount);
                           const attendanceCheck = checkAttendanceStatus(row);
@@ -2104,9 +2141,9 @@ useEffect(() => {
                               <td className="px-6 py-4 font-bold text-sky-500">{maLop}</td>
                               <td className="px-6 py-4">
                                 <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border transition-colors duration-0 ${
-                                  theme === 'dark' ? 'bg-[#1e293b] border-white/20 text-white shadow-sm' : getSubjectStyle(subjectStr)
+                                  theme === 'dark' ? 'bg-[#1e293b] border-white/20 text-white shadow-sm' : getSubjectStyle(displaySubject)
                                 }`}>
-                                  {subjectStr}
+                                  {displaySubject}
                                 </span>
                               </td>
                               <td className={`px-6 py-4 text-[13px] font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-500'}`}>{row["Loại lớp"]}</td>
