@@ -110,7 +110,7 @@ export default function Home() {
     setTheme(newTheme);
     localStorage.setItem("qll_theme", newTheme);
   };
-const [isOpenTeamDropdown, setIsOpenTeamDropdown] = useState(false);
+
   const [adminList, setAdminList] = useState<{username: string, pass: string}[]>([
     { username: "op_vanhanh", pass: "vhvuihoc123" }
   ]);
@@ -1176,60 +1176,60 @@ const filteredData = useMemo(() => {
     const isOpen = openDropdown === key;
 
     return (
-<div className="relative">
-                  {/* Nút bấm hiển thị chính */}
-                  <button
-                    type="button"
-                    onClick={() => setIsOpenTeamDropdown(!isOpenTeamDropdown)}
-                    className={`flex items-center justify-between gap-3 px-4 py-2.5 border rounded-2xl font-bold text-xs focus:outline-none cursor-pointer transition-all duration-200 shadow-sm ${
-                      theme === 'dark' 
-                        ? 'bg-[#0a0f1c] border-white/15 text-slate-200 hover:border-orange-500/50' 
-                        : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-orange-400'
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpenDropdown(isOpen ? null : key)}
+          className={`px-3.5 py-2 bg-white border rounded-xl font-semibold text-slate-700 shadow-sm text-xs flex items-center gap-2 transition-all cursor-pointer focus:outline-none ${
+            isOpen || currentValue !== "Tất cả" 
+              ? "border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/30 text-sky-700" 
+              : "border-slate-200 hover:border-sky-300"
+          }`}
+        >
+          <span>{label}: <strong className="font-bold">{currentValue}</strong></span>
+          <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] py-2 z-50 animate-fade-slide-up">
+            <div className="max-h-60 overflow-y-auto custom-scrollbar px-1.5 space-y-0.5">
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange("Tất cả");
+                  setOpenDropdown(null);
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
+                  currentValue === "Tất cả" ? "bg-sky-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                {label}: Tất cả
+              </div>
+              {options.map((opt, idx) => {
+                const displayVal = formatItem ? formatItem(opt) : opt;
+                const isSelected = currentValue === opt;
+                return (
+                  <div
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChange(opt);
+                      setOpenDropdown(null);
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors truncate ${
+                      isSelected ? "bg-sky-500 text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    <span className="flex items-center gap-1.5">
-                      <span>👑</span>
-                      <span>{filterTeam === "Tất cả" ? "Tất cả Team Lead" : filterTeam}</span>
-                    </span>
-                    <svg className={`w-4 h-4 text-orange-500 transition-transform duration-200 ${isOpenTeamDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  {/* Menu xổ xuống (Dropdown list) được custom bo tròn tuyệt đối */}
-                  {isOpenTeamDropdown && (
-                    <div className={`absolute left-0 mt-2 w-52 rounded-2xl border shadow-xl z-50 overflow-hidden py-1.5 animate-in fade-in zoom-in-95 duration-150 ${
-                      theme === 'dark' ? 'bg-[#0f172a] border-white/10 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
-                    }`}>
-                      <button
-                        type="button"
-                        onClick={() => { setFilterTeam("Tất cả"); setIsOpenTeamDropdown(false); }}
-                        className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center gap-2 ${
-                          filterTeam === "Tất cả" 
-                            ? 'bg-orange-500 text-white' 
-                            : theme === 'dark' ? 'hover:bg-white/5' : 'hover:bg-orange-50 hover:text-orange-600'
-                        }`}
-                      >
-                        👑 Tất cả Team Lead
-                      </button>
-
-                      {Array.from(new Set(currentHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => { setFilterTeam(t); setIsOpenTeamDropdown(false); }}
-                          className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center gap-2 ${
-                            filterTeam === t 
-                              ? 'bg-orange-500 text-white' 
-                              : theme === 'dark' ? 'hover:bg-white/5' : 'hover:bg-orange-50 hover:text-orange-600'
-                          }`}
-                        >
-                          🛡️ {t}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                    {displayVal}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -1759,34 +1759,34 @@ const filteredData = useMemo(() => {
 <div className="flex items-center gap-2.5 flex-wrap justify-end">
                   {/* BỘ LỌC THEO TEAM LEAD */}
 <div className="flex items-center gap-2.5 flex-wrap justify-end">
-                  {/* Ô CHỌN TEAM LEAD DẠNG XỔ XUỐNG GỌN GÀNG */}
+                  {/* Ô CHỌN TEAM LEAD DẠNG XỔ XUỐNG (DROPDOWN) */}
                   <div className="relative">
                     <select
                       value={filterTeam}
                       onChange={(e) => setFilterTeam(e.target.value)}
-                      className={`appearance-none px-4 py-2.5 pr-10 border rounded-2xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 shadow-sm ${
+                      className={`appearance-none px-4 py-2.5 pr-10 border rounded-2xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 ${
                         theme === 'dark' 
-                          ? 'bg-[#0a0f1c] border-white/15 text-slate-200 hover:border-orange-500/50 focus:border-orange-500' 
+                          ? 'bg-[#0a0f1c] border-white/10 text-slate-200 hover:border-orange-500/50 focus:border-orange-500' 
                           : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-orange-400 focus:border-orange-500'
                       }`}
                     >
-                      <option value="Tất cả" className={theme === 'dark' ? 'bg-[#0a0f1c] text-white py-2' : 'bg-white text-slate-800 py-2'}>
+                      <option value="Tất cả" className={theme === 'dark' ? 'bg-[#0a0f1c] text-white' : 'bg-white text-slate-800'}>
                         👑 Tất cả Team Lead
                       </option>
                       {Array.from(new Set(currentHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
-                        <option key={idx} value={t} className={theme === 'dark' ? 'bg-[#0a0f1c] text-white py-2' : 'bg-white text-slate-800 py-2'}>
+                        <option key={idx} value={t} className={theme === 'dark' ? 'bg-[#0a0f1c] text-white' : 'bg-white text-slate-800'}>
                           {t}
                         </option>
                       ))}
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-orange-500">
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
                   </div>
 
-                  {/* BỘ LỌC TRẠNG THÁI */}
+                  {/* BỘ LỌC TRẠNG THÁI CŨ (ĐÃ ĐƯỢC KHÔI PHỤC ĐẦY ĐỦ) */}
                   <div className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
                     theme === 'dark' ? 'bg-[#0a0f1c] border-white/10' : 'bg-slate-50 border-slate-200'
                   }`}>
@@ -1816,6 +1816,35 @@ const filteredData = useMemo(() => {
                       );
                     })}
                   </div>
+
+                  {/* TỔNG SỐ BẢN GHI */}
+                  <span className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
+                    theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 border-orange-600 border-orange-100'
+                  }`}>
+                    Tổng: {currentHistoryData.filter((row, index) => {
+                      const teamVal = row.team || row["Team"] || "";
+                      if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
+
+                      if (filterHistoryStatus === "Tất cả") return true;
+                      let timeStr = "";
+                      if (row.timestamp) {
+                        const d = new Date(Number(row.timestamp));
+                        const pad = (n: number) => n.toString().padStart(2, '0');
+                        timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                      } else {
+                        timeStr = row["Thời gian"] || "";
+                      }
+                      const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                      const rowKey = `${timeStr}-${maLop}-${index}`;
+                      const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Trạng thái xếp"] === "Đã xếp xong"; 
+                      const isExpired = checkIsExpired(timeStr);
+
+                      if (filterHistoryStatus === "Đã xử lý") return isDone;
+                      if (filterHistoryStatus === "Quá hạn") return !isDone && isExpired;
+                      if (filterHistoryStatus === "Chưa xử lý") return !isDone && !isExpired;
+                      return true;
+                    }).length}
+                  </span>
                 </div>
 
                   {/* HIỂN THỊ TỔNG SỐ BẢN GHI SAU KHI LỌC */}
