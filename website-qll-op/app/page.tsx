@@ -2169,12 +2169,6 @@ const filteredData = useMemo(() => {
                     }`}>
                       {filteredData.length} kết quả
                     </span>
-
-                    <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
-                      theme === 'dark' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' : 'bg-sky-50 text-sky-600 border-sky-100'
-                    }`}>
-                      {filteredData.length} kết quả
-                    </span>
                   </div>
                 </div>
 
