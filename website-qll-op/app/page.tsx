@@ -2459,23 +2459,17 @@ const renderCustomDropdown = (
             <div className="px-8 pt-4 pb-3 shrink-0">
 {/* BƯỚC 2: BANNER CHÀO MỪNG CÁ NHÂN HÓA CHO QLL */}
               <div className="flex items-center justify-between gap-4 mb-3 bg-gradient-to-r from-orange-500/10 via-sky-500/5 to-transparent p-4 rounded-3xl border border-orange-500/20 shadow-sm animate-fade-slide-down">
-<div className="flex items-center gap-3">
+<div className="flex items-center gap-3 mb-1">
                 <img 
                   src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
                   alt="Bitu Mascot" 
-                  className="h-8 w-auto object-contain"
+                  className="h-7 w-auto object-contain shrink-0"
                 />
                 
-                <h2 className="text-[18px] font-greeting tracking-wide flex items-center gap-1.5 h-[28px]">
-                  <span className={`font-bold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Vận hành,</span>
-                  <div className="flex items-center overflow-hidden">
-                    <span 
-                      key={currentWordIndex}
-                      className="text-orange-500 font-handwriting text-[22px] font-bold tracking-normal leading-none animate-smooth-signature"
-                    >
-                      {currentWordIndex === 0 ? `Chào mừng ${displayName} !` : words[currentWordIndex]}
-                    </span>
-                  </div>
+                <h2 className="text-[13px] lg:text-[14px] font-medium tracking-wide flex items-center gap-1.5 truncate">
+                  <span className={theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}>
+                    ✨ Chào mừng <strong className="text-orange-500 font-bold">{displayName}</strong> đến với website Vận hành! Chúc bạn một ngày làm việc thật hiệu quả nhé. 🚀
+                  </span>
                 </h2>
               </div>
               </div>
