@@ -138,7 +138,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   
-  const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot" | "QuanTriAdmin" | "LichSuSlotAdmin" | "ThongKeAdmin">("Giữ Slot");
+  const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot" | "SlotDaGiu" | "QuanTriAdmin" | "LichSuSlotAdmin" | "ThongKeAdmin">("Giữ Slot");
   const [onlineUsers, setOnlineUsers] = useState<{ namecode: string; teamLead: string; onlineAt: number }[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
   
@@ -1590,6 +1590,19 @@ const filteredData = useMemo(() => {
             <span className="text-xs truncate">Giữ Slot Lớp</span>
           </button>
 
+          <button
+            onClick={() => { setActiveNav("SlotDaGiu"); loadSlotHistory(); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
+              activeNav === "SlotDaGiu" 
+                ? (theme === 'dark' ? "bg-amber-500/10 text-amber-400 font-bold border border-amber-500/20" : "bg-amber-50 text-amber-600 font-bold shadow-[0_2px_10px_rgba(251,191,36,0.1)]") 
+                : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-amber-400 font-medium" : "text-slate-500 hover:bg-amber-50/50 hover:text-amber-500 font-medium")
+            }`}
+          >
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-amber-500 rounded-r-full transition-all duration-0 ${activeNav === "SlotDaGiu" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}></div>
+            <span className="text-lg">🕒</span>
+            <span className="text-xs truncate">Slot Đã Giữ</span>
+          </button>
+
           {loginRole === "Admin" && (
             <>
               <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
@@ -1608,17 +1621,6 @@ const filteredData = useMemo(() => {
                 <span className="text-xs truncate">DS Giữ Slot</span>
               </button>
 
-              <button
-                onClick={() => { setActiveNav("QuanTriAdmin"); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
-                  activeNav === "QuanTriAdmin" 
-                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
-                    : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium" : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium")
-                }`}
-              >
-                <span className="text-lg">⚙️</span>
-                <span className="text-xs truncate">Quản Trị Admin</span>
-              </button>
 
               <button
                 onClick={() => { setActiveNav("ThongKeAdmin"); loadSlotHistory(); }}
@@ -1630,6 +1632,18 @@ const filteredData = useMemo(() => {
               >
                 <span className="text-lg">📊</span>
                 <span className="text-xs truncate">Theo dõi truy cập</span>
+              </button>
+
+                            <button
+                onClick={() => { setActiveNav("QuanTriAdmin"); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
+                  activeNav === "QuanTriAdmin" 
+                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]" 
+                    : (theme === 'dark' ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium" : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium")
+                }`}
+                >
+                <span className="text-lg">⚙️</span>
+                <span className="text-xs truncate">Quản Trị Admin</span>
               </button>
             </>
           )}
@@ -1987,6 +2001,114 @@ const filteredData = useMemo(() => {
             </div>
           </div>
 
+        ) : activeNav === "SlotDaGiu" ? (
+          <div key="SlotDaGiu" className="flex-1 px-8 pt-5 pb-6 min-h-0 flex flex-col animate-fade-slide-up">
+            <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
+              theme === 'dark' ? 'bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
+            }`}>
+              <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
+                <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                  <span className="w-1.5 h-6 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+                  🕒 Danh sách Slot lớp bạn đã giữ
+                </h3>
+                <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
+                  theme === 'dark' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-100'
+                }`}>
+                  Đã giữ: {slotHistoryData.filter((item) => (item.nguoi_giu || item["Người giữ"]) === displayName).length} slot
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-auto custom-scrollbar relative">
+                <table className="w-full text-sm text-left whitespace-nowrap">
+                  <thead className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors duration-0 ${
+                    theme === 'dark' ? 'bg-[#1a2235] text-slate-400 border-white/5' : 'bg-slate-50 text-slate-400 border-slate-100'
+                  }`}>
+                    <tr>
+                      <th className="px-6 py-4">Thời gian tạo</th>
+                      <th className="px-6 py-4">Mã lớp</th>
+                      <th className="px-6 py-4">Môn học</th>
+                      <th className="px-6 py-4">Lưu ý (SID/CID)</th>
+                      <th className="px-6 py-4 text-center">Time còn lại (24h)</th>
+                      <th className="px-6 py-4 text-right pr-6">Trạng thái xếp</th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y transition-colors duration-0 ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-50'}`}>
+                    {slotHistoryData.filter((item) => (item.nguoi_giu || item["Người giữ"]) === displayName).length > 0 ? (
+                      slotHistoryData.filter((item) => (item.nguoi_giu || item["Người giữ"]) === displayName).map((row, index) => {
+                        let timeStr = "";
+                        if (row.timestamp) {
+                          const d = new Date(Number(row.timestamp));
+                          const pad = (n: number) => n.toString().padStart(2, '0');
+                          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                        } else {
+                          timeStr = row["Thời gian"] || "";
+                        }
+
+                        const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                        const monHoc = row.mon_hoc || row["Môn học"] || "-";
+                        const note = row.note || row["lưu ý ( mục note của QLL )"] || row["lưu ý"] || "-";
+                        
+                        const rowKey = `${timeStr}-${maLop}-${index}`;
+                        const isDone = completedSlots[rowKey] || row.is_done;
+                        const isExpired = checkIsExpired(timeStr);
+
+                        return (
+                          <tr key={row.id || index} className={`transition-colors duration-0 ${
+                            isDone 
+                              ? (theme === 'dark' ? "bg-emerald-900/20 opacity-75" : "bg-emerald-50/40 opacity-75")
+                              : isExpired 
+                                ? (theme === 'dark' ? "bg-red-900/20 opacity-75" : "bg-red-50/30 opacity-75") 
+                                : (theme === 'dark' ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50" : "hover:bg-amber-50/40 even:bg-slate-50/60")
+                          }`}>
+                            <td className="px-6 py-4 text-slate-500 text-xs">{timeStr || "-"}</td>
+                            <td className="px-6 py-4 font-bold text-sky-500">{maLop || "-"}</td>
+                            <td className={`px-6 py-4 font-medium transition-colors ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{monHoc}</td>
+                            <td className={`px-6 py-4 font-medium transition-colors ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{note}</td>
+                            
+                            <td className="px-6 py-4 text-center">
+                              {isDone ? (
+                                <span className="text-slate-400 text-xs italic">Đã xử lý xong</span>
+                              ) : isExpired ? (
+                                <span className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === 'dark' ? 'bg-red-500/10 text-red-400' : 'bg-red-100 text-red-700'}`}>Hết hạn</span>
+                              ) : (
+                                <span className={`px-3 py-1.5 border font-bold rounded-xl text-xs shadow-sm inline-flex justify-center min-w-[120px] ${theme === 'dark' ? 'bg-[#0a0f1c] text-amber-400 border-amber-500/30' : 'bg-white text-amber-600 border-amber-200'}`}>
+                                  <CountdownTimer timeString={timeStr} />
+                                </span>
+                              )}
+                            </td>
+                            
+                            <td className="px-6 py-4 text-right pr-6">
+                              {isDone ? (
+                                <span className="text-xs font-bold text-emerald-500 flex items-center justify-end gap-1">
+                                  <span>✅</span> Admin đã chốt xếp
+                                </span>
+                              ) : isExpired ? (
+                                <span className={`text-xs font-bold ${theme === 'dark' ? 'text-red-400' : 'text-red-500'} flex items-center justify-end gap-1`}>
+                                  <span>❌</span> Đã nhả slot
+                                </span>
+                              ) : (
+                                <span className="text-xs font-bold text-amber-500 flex items-center justify-end gap-1 animate-pulse">
+                                  <span>⏳</span> Chờ Admin xếp...
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-24 text-center text-slate-400 font-semibold">
+                           <div className="text-3xl mb-3">🕒</div>
+                           Bạn chưa yêu cầu giữ slot nào.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div key="QuanTriAdmin" className="flex-1 p-6 overflow-y-auto animate-fade-slide-up">
             <div className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === 'dark' ? 'bg-[#151b2b]' : 'bg-white border-slate-100'}`}>
@@ -2133,7 +2255,7 @@ const filteredData = useMemo(() => {
                     {activeNav === "Giữ Slot" ? "📌 Bảng Tác Vụ Giữ Slot Chuyên Biệt" : `Daily — Dữ liệu ${activeNav}`}
                   </h3>
 
-<div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                     {renderCustomDropdown("Môn", "mon", filterMonHoc, dropdownOptions.monHoc, setFilterMonHoc)}
                     
                     {/* BỘ LỌC TÀNG HÌNH: Chỉ trượt ra khi Môn = KHTN */}
