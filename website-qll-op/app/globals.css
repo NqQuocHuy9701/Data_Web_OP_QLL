@@ -265,10 +265,10 @@ body {
   }
 }
 
-/* --- NÚT ACTION TỐI ƯU ĐỘ TƯƠNG PHẢN (KHÔNG BỊ MẤT CHỮ) --- */
+/* --- NÚT ACTION MÀU XANH DA TRỜI ĐẬM --- */
 .custom-btn {
   --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  --yellow-bg: linear-gradient(114deg, #fdc100 0%, #dd7d00 100%);
+  --blue-bg: linear-gradient(114deg, #2668e2 0%, #174299 100%); /* Nền xanh da trời đậm */
   
   border-radius: 23px;
   letter-spacing: 0.5px;
@@ -280,22 +280,22 @@ body {
   height: 38px;
   cursor: pointer;
   position: relative;
-  border: 1px solid #dd7d00;
-  background: var(--yellow-bg);
+  border: 1px solid #174299;
+  background: var(--blue-bg);
   overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(221, 125, 0, 0.3);
+  box-shadow: 0 2px 6px rgba(38, 104, 226, 0.3);
 }
 
-/* Lớp nền trượt khi hover */
+/* Lớp nền trượt khi hover (có thể giữ màu tối hoặc màu xanh nhạt tuỳ ý) */
 .custom-btn::before {
   transition: var(--transition);
   content: "";
   width: 0%;
   height: 100%;
-  background: #1a1a1a; /* Nền tối khi hover */
+  background: #0d1b3e; /* Nền xanh đen cực đậm khi hover */
   position: absolute;
   top: 0;
   right: 0;
@@ -314,16 +314,16 @@ body {
 .custom-btn.btn-hover .btn-text {
   color: #ffffff;
   position: relative;
-  z-index: 2; /* Đảm bảo chữ luôn nằm trên lớp nền trượt */
+  z-index: 2;
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Thêm bóng chữ giúp nổi bật trên mọi nền */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* Hiệu ứng chuyển đổi chữ Giữ Slot -> Đồng ý mượt mà */
+/* Hiệu ứng chuyển đổi chữ Giữ Slot -> Đồng ý */
 .btn-label-swap {
   position: relative;
   display: inline-block;
