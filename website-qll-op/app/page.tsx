@@ -2458,25 +2458,25 @@ const renderCustomDropdown = (
           <div key={activeNav} className="flex-1 flex flex-col min-h-0 animate-fade-slide-up">
             <div className="px-8 pt-4 pb-3 shrink-0">
 {/* BƯỚC 2: BANNER CHÀO MỪNG CÁ NHÂN HÓA CHO QLL */}
-              <div className="flex items-center gap-3 mb-3">
-                <img 
-                  src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
-                  alt="Bitu Mascot" 
-                  className="h-7 w-auto object-contain"
-                />
-                
-                <h2 className="text-[17px] font-greeting tracking-wide flex items-center gap-1.5 h-[24px]">
-                  <span className={`font-bold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Vận hành,</span>
-                  <div className="flex items-center overflow-hidden">
-                    <span 
-                      key={currentWordIndex}
-                      className="text-orange-500 font-handwriting text-[20px] font-bold tracking-normal leading-none animate-smooth-signature"
-                    >
-                      {currentWordIndex === 0 ? `✨ Chào mừng ${displayName} đến với website Vận hành! Chúc bạn một ngày làm việc thật hiệu quả nhé.` : words[currentWordIndex - 1]}
-                    </span>
-                  </div>
-                </h2>
-              </div>
+<div className="flex items-center gap-3 mb-3">
+  <img 
+    src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
+    alt="Bitu Mascot" 
+    className="h-10 w-auto object-contain drop-shadow-sm"
+  />
+  
+  <h2 className="text-[17px] font-greeting tracking-wide flex items-center gap-1.5 h-[28px]">
+    <span className={`font-bold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Vận hành,</span>
+    <div className="flex items-center overflow-hidden">
+      <span 
+        key={currentWordIndex}
+        className="text-orange-500 font-handwriting text-[20px] font-bold tracking-normal leading-none animate-smooth-signature"
+      >
+        {currentWordIndex === 0 ? `✨ Chào mừng ${displayName} đến với website Vận hành! Chúc bạn một ngày làm việc thật hiệu quả nhé.` : words[currentWordIndex - 1]}
+      </span>
+    </div>
+  </h2>
+</div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className={`border-2 rounded-3xl py-4 px-6 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 ${
