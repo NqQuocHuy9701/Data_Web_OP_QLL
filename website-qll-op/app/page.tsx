@@ -10,7 +10,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOi
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-
 // ==========================================
 // TỐI ƯU: ĐẾM TỪNG GIÂY (BYPASS REACT DOM)
 // Đảm bảo chuẩn 24h, nhảy từng giây nhưng không tốn CPU Render
@@ -18,27 +17,8 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
   const timerRef = React.useRef<HTMLSpanElement>(null);
 
-  useEffect(() => {
-    const logSystemRequest = async () => {
-      try {
-        const currentTime = new Date().getTime();
-        console.log("🔥 Đã ghi nhận 1 lượt mở trang lúc:", new Date(currentTime).toLocaleTimeString());
-      } catch (error) {
-        console.error("Lỗi ghi log truy cập:", error);
-      }
-    };
-
-    logSystemRequest();
-  }, []);
-
-  // Yêu cầu quyền hiển thị thông báo popup trên máy tính (Web Push)
-  useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-        Notification.requestPermission();
-      }
-    }
-  }, []);
+  // [TỐI ƯU V3] Đã di chuyển logSystemRequest và Notification.requestPermission
+  // ra khỏi Component này để tránh bị gọi lặp lại hàng chục lần khi render bảng.
 
   useEffect(() => {
     let targetTime = 0;
@@ -99,6 +79,27 @@ export default function Home() {
   
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
+  // [TỐI ƯU V3] Hook chạy 1 lần duy nhất khi vào web để ghi log và xin quyền thông báo
+  useEffect(() => {
+    // 1. Ghi log truy cập hệ thống
+    const logSystemRequest = async () => {
+      try {
+        const currentTime = new Date().getTime();
+        console.log("🔥 Đã ghi nhận 1 lượt mở trang lúc:", new Date(currentTime).toLocaleTimeString());
+      } catch (error) {
+        console.error("Lỗi ghi log truy cập:", error);
+      }
+    };
+    logSystemRequest();
+
+    // 2. Yêu cầu quyền hiển thị thông báo popup trên máy tính (Web Push)
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("qll_theme") as "light" | "dark";
     if (savedTheme) setTheme(savedTheme);
@@ -140,7 +141,17 @@ export default function Home() {
   const [activeNav, setActiveNav] = useState<"Đang học" | "Khai giảng" | "Giữ Slot" | "QuanTriAdmin" | "LichSuSlotAdmin" | "ThongKeAdmin">("Giữ Slot");
   const [onlineUsers, setOnlineUsers] = useState<{ namecode: string; teamLead: string; onlineAt: number }[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
+  
+  // [TỐI ƯU V3] State Debounce để xử lý chống lag khi gõ tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 250); // Delay 250ms
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // BỘ MÁY CHẠY CHỮ TỰ ĐỘNG TUẦN TỰ (1 -> 2 -> 3)
   const words = useMemo(() => ["Dữ liệu đã sẵn sàng !", "Xin Chào", "Hello !"], []);
@@ -167,6 +178,10 @@ export default function Home() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
+
+  // [TỐI ƯU V3] State khóa nút chống click liên tục trong form xác nhận
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
 // =====================================================================
 // =====================================================================
   // BỘ NHỚ LƯU TRỮ LƯU VẾT TRUY CẬP (TRAFFIC ANALYTICS) - LƯU CỨNG MỐC QUÁ KHỨ
@@ -240,10 +255,6 @@ export default function Home() {
 
     return chartData;
   }, [dailyTrafficStats]);
-
-
-
-
 
 // 2. BIỂU ĐỒ CỘT: TỔNG HỢP 7 NGÀY GẦN NHẤT & ĐỒNG BỘ DỮ LIỆU
   const historicalChartData = useMemo(() => {
@@ -718,39 +729,46 @@ useEffect(() => {
             schema: 'public',
             table: 'slot_holds' 
           },
-(payload) => {
-              console.log("⚡ Supabase Realtime báo có thay đổi:", payload);
-              
-              // 1. Nếu là hành động UPDATE (Có người vừa bấm Done)
-              if (payload.eventType === 'UPDATE') {
-                // Ép UI tài khoản 2 đổi sang xanh ngay lập tức không cần đợi API
-                setSlotHistoryData(prev =>
-                  prev.map(item => item.id === payload.new.id ? { ...item, is_done: payload.new.is_done } : item)
-                );
-              }
-
-              // 2. TÍNH NĂNG MỚI: Nếu là hành động INSERT (Có người vừa tạo Giữ Slot mới)
-// 2. TÍNH NĂNG MỚI: Nếu là hành động INSERT (Có người vừa tạo Giữ Slot mới)
-              if (payload.eventType === 'INSERT') {
-                // Bắn thông báo Web Push góc màn hình (CHỈ HIỆN HÌNH - KHÔNG PHÁT ÂM THANH)
-                if (loginRole === "Admin" && "Notification" in window && Notification.permission === "granted") {
-                  
-                  const notif = new Notification('🚨 CÓ YÊU CẦU GIỮ SLOT MỚI!', {
-                    body: `QLL ${payload.new.nguoi_giu} vừa xin giữ mã lớp: ${payload.new.ma_lop}. Click để xử lý ngay!`,
-                    icon: 'https://vuihoc.vn/favicon.ico', 
-                    requireInteraction: true // Ép thông báo nằm chờ ở góc màn hình cho đến khi Admin thao tác
-                  });
-
-                  notif.onclick = () => {
-                    window.focus(); 
-                    notif.close();  
-                  };
-                }
-              }
-              
-              // Vẫn gọi API ngầm để đồng bộ lại dữ liệu gốc cho chắc chắn
-              loadSlotHistory(true);
+          (payload) => {
+            console.log("⚡ Supabase Realtime báo có thay đổi:", payload);
+            
+            // 1. Nếu là hành động UPDATE (Có người vừa bấm Done)
+            if (payload.eventType === 'UPDATE') {
+              // Ép UI tài khoản đổi sang xanh ngay lập tức
+              setSlotHistoryData(prev =>
+                prev.map(item => item.id === payload.new.id ? { ...item, is_done: payload.new.is_done } : item)
+              );
             }
+
+            // 2. TÍNH NĂNG MỚI: Nếu là hành động INSERT (Có người vừa tạo Giữ Slot mới)
+            if (payload.eventType === 'INSERT') {
+              // [TỐI ƯU V3] Bổ sung Optimistic Update cho INSERT
+              // Đẩy thẳng bản ghi mới vào danh sách giúp trừ slot ngay lập tức không cần đợi Server
+              setSlotHistoryData(prev => {
+                // Đảm bảo không bị thêm trùng nếu máy mình vừa bấm gọi API xong
+                if (prev.some(item => item.id === payload.new.id)) return prev;
+                return [payload.new, ...prev];
+              });
+
+              // Bắn thông báo Web Push góc màn hình cho Admin
+              if (loginRole === "Admin" && "Notification" in window && Notification.permission === "granted") {
+                const notif = new Notification('🚨 CÓ YÊU CẦU GIỮ SLOT MỚI!', {
+                  body: `QLL ${payload.new.nguoi_giu} vừa xin giữ mã lớp: ${payload.new.ma_lop}. Click để xử lý ngay!`,
+                  icon: 'https://vuihoc.vn/favicon.ico', 
+                  requireInteraction: true 
+                });
+
+                notif.onclick = () => {
+                  window.focus(); 
+                  notif.close();  
+                };
+              }
+            }
+            
+            // [TỐI ƯU V3] Đã loại bỏ loadSlotHistory(true) khỏi luồng sự kiện INSERT
+            // để tránh bão Request (Spike) từ 50 máy trút lên API cùng 1 lúc. 
+            // Dữ liệu đã được Optimistic Update bên trên!
+          }
         )
         .subscribe();
 
@@ -761,9 +779,10 @@ useEffect(() => {
     }
   }, [isLoggedIn, isUserAdmin]);
 
+  // [TỐI ƯU V3] Cập nhật mảng phụ thuộc cho Pagination từ searchTerm sang debouncedSearchTerm
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
+  }, [debouncedSearchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
 
   const dropdownOptions = useMemo(() => {
     const loaiLopSet = new Set<string>();
@@ -917,8 +936,9 @@ useEffect(() => {
         if (!itemLich.includes(todayStr)) return false;
       }
 
-      if (searchTerm) {
-        const searchStr = searchTerm.toLowerCase().trim();
+      // [TỐI ƯU V3] Đã đổi thành debouncedSearchTerm để thanh tìm kiếm mượt mà
+      if (debouncedSearchTerm) {
+        const searchStr = debouncedSearchTerm.toLowerCase().trim();
         const matchSearch = 
           (item["Mã lớp"] || "").toLowerCase().includes(searchStr) ||
           (item["Môn học"] || "").toLowerCase().includes(searchStr);
@@ -927,7 +947,7 @@ useEffect(() => {
 
       return true; 
     });
-  }, [data, activeNav, searchTerm, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
+  }, [data, activeNav, debouncedSearchTerm, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   
@@ -938,8 +958,9 @@ useEffect(() => {
 
 // 1. TẠO BỘ LỌC TÌM KIẾM CHO LỊCH SỬ
   const filteredHistoryData = useMemo(() => {
-    if (!searchTerm) return slotHistoryData;
-    const lowerSearch = searchTerm.toLowerCase().trim();
+    // [TỐI ƯU V3] Áp dụng luôn debounce cho bảng lịch sử Admin
+    if (!debouncedSearchTerm) return slotHistoryData;
+    const lowerSearch = debouncedSearchTerm.toLowerCase().trim();
 
     return slotHistoryData.filter((item) => {
       const maLop = (item.ma_lop || item["Mã lớp giữ"] || item["Mã lớp"] || "").toLowerCase();
@@ -952,7 +973,7 @@ useEffect(() => {
              nguoiGiu.includes(lowerSearch) || 
              note.includes(lowerSearch);
     });
-  }, [slotHistoryData, searchTerm]);
+  }, [slotHistoryData, debouncedSearchTerm]);
 
   // 2. CẬP NHẬT LẠI PHÂN TRANG DỰA TRÊN DỮ LIỆU ĐÃ LỌC
   const historyTotalPages = Math.ceil(filteredHistoryData.length / itemsPerPage);
@@ -998,6 +1019,8 @@ useEffect(() => {
       return;
     }
 
+    // [TỐI ƯU V3] Bật trạng thái khóa nút để chống spam click
+    setIsSubmitting(true);
     setShowModal(false);
     setIsHoldingSlot(maLop);
 
@@ -1038,6 +1061,8 @@ useEffect(() => {
       console.error("Lỗi kết nối:", error);
       alert("Lỗi kết nối khi giữ slot!");
     } finally {
+      // [TỐI ƯU V3] Tắt trạng thái khóa nút
+      setIsSubmitting(false);
       setIsHoldingSlot(null);
       setSelectedRowForSlot(null);
     }
@@ -1321,7 +1346,7 @@ useEffect(() => {
                         <option value="Lead QuyenPT" className="bg-[#151a28] text-white">Lead QuyenPT</option>
                         <option value="Lead ChiNQ" className="bg-[#151a28] text-white">Lead ChiNQ</option>
                         <option value="Lead ChungMB" className="bg-[#151a28] text-white">Lead ChungMB</option>
-                        <option value="Lead ChungMB" className="bg-[#151a28] text-white">Lead XuanNT14</option>
+                        <option value="Lead XuanNT14" className="bg-[#151a28] text-white">Lead XuanNT14</option>
                         <option value="Khác" className="bg-[#151a28] text-white">Khác / QLL chung</option>
                       </select>
                     </div>
@@ -2087,7 +2112,14 @@ useEffect(() => {
                               <td className={`px-6 py-4 text-[13px] font-medium transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-500'}`}>{row["Loại lớp"]}</td>
                               <td className={`px-6 py-4 text-center font-bold transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-600'}`}>{row["Khối"]}</td>
                               <td className={`px-6 py-4 font-semibold transition-colors duration-0 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-600'}`}>{row["Trình độ"]}</td>
-                              <td className={`px-6 py-4 text-[13px] truncate max-w-[120px] transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}>{row["Giáo trình"]}</td>
+                              
+                              {/* [TỐI ƯU V3] Bổ sung thẻ title để khi hover hiển thị đủ nội dung bị truncate */}
+                              <td 
+                                className={`px-6 py-4 text-[13px] truncate max-w-[120px] transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}
+                                title={row["Giáo trình"]}
+                              >
+                                {row["Giáo trình"]}
+                              </td>
 
                               {activeNav !== "Giữ Slot" && (
                                 <td className="px-6 py-4 font-semibold text-sky-400 text-[13px]">
@@ -2254,12 +2286,16 @@ useEffect(() => {
               >
                 Hủy bỏ
               </button>
+              {/* [TỐI ƯU V3] Khóa nút bấm khi đang Submitting */}
               <button 
                 type="button"
                 onClick={handleConfirmKeepSlot}
-                className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-orange-500/30 transition-colors duration-0 cursor-pointer active:scale-95"
+                disabled={isSubmitting}
+                className={`px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-orange-500/30 transition-colors duration-0 cursor-pointer active:scale-95 ${
+                  isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
-                Xác nhận Giữ Slot
+                {isSubmitting ? "Đang xử lý..." : "Xác nhận Giữ Slot"}
               </button>
             </div>
           </div>
