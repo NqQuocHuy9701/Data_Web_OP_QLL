@@ -1756,37 +1756,36 @@ const filteredData = useMemo(() => {
                   <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
                   📋 Danh sách lịch sử giữ slot 
                 </h3>
-<div className="flex items-center gap-2.5 flex-wrap justify-end">
-                  {/* BỘ LỌC THEO TEAM LEAD */}
-<div className="flex items-center gap-2.5 flex-wrap justify-end">
-                  {/* Ô CHỌN TEAM LEAD DẠNG XỔ XUỐNG (DROPDOWN) */}
+
+                <div className="flex items-center gap-2.5 flex-wrap justify-end">
+                  {/* Ô CHỌN TEAM LEAD DẠNG XỔ XUỐNG ĐÃ FIX CSS BẢO ĐẢM BO TRÒN SANG TRỌNG */}
                   <div className="relative">
                     <select
                       value={filterTeam}
                       onChange={(e) => setFilterTeam(e.target.value)}
-                      className={`appearance-none px-4 py-2.5 pr-10 border rounded-2xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 ${
+                      className={`appearance-none px-4 py-2.5 pr-10 border rounded-2xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 shadow-sm ${
                         theme === 'dark' 
-                          ? 'bg-[#0a0f1c] border-white/10 text-slate-200 hover:border-orange-500/50 focus:border-orange-500' 
+                          ? 'bg-[#0a0f1c] border-white/20 text-slate-200 hover:border-orange-500/50 focus:border-orange-500' 
                           : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-orange-400 focus:border-orange-500'
                       }`}
                     >
-                      <option value="Tất cả" className={theme === 'dark' ? 'bg-[#0a0f1c] text-white' : 'bg-white text-slate-800'}>
+                      <option value="Tất cả" className={theme === 'dark' ? 'bg-[#0a0f1c] text-white py-2' : 'bg-white text-slate-800 py-2'}>
                         👑 Tất cả Team Lead
                       </option>
-                      {Array.from(new Set(currentHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
-                        <option key={idx} value={t} className={theme === 'dark' ? 'bg-[#0a0f1c] text-white' : 'bg-white text-slate-800'}>
+                      {Array.from(new Set(slotHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
+                        <option key={idx} value={t} className={theme === 'dark' ? 'bg-[#0a0f1c] text-white py-2' : 'bg-white text-slate-800 py-2'}>
                           {t}
                         </option>
                       ))}
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-orange-500">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
                   </div>
 
-                  {/* BỘ LỌC TRẠNG THÁI CŨ (ĐÃ ĐƯỢC KHÔI PHỤC ĐẦY ĐỦ) */}
+                  {/* BỘ LỌC TRẠNG THÁI */}
                   <div className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
                     theme === 'dark' ? 'bg-[#0a0f1c] border-white/10' : 'bg-slate-50 border-slate-200'
                   }`}>
@@ -1817,7 +1816,7 @@ const filteredData = useMemo(() => {
                     })}
                   </div>
 
-                  {/* TỔNG SỐ BẢN GHI */}
+                  {/* TỔNG SỐ BẢN GHI SAU KHI LỌC (ĐÃ XÓA BỎ BẢN BỊ NHÂN ĐÔI) */}
                   <span className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
                     theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 border-orange-600 border-orange-100'
                   }`}>
@@ -1825,38 +1824,6 @@ const filteredData = useMemo(() => {
                       const teamVal = row.team || row["Team"] || "";
                       if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
 
-                      if (filterHistoryStatus === "Tất cả") return true;
-                      let timeStr = "";
-                      if (row.timestamp) {
-                        const d = new Date(Number(row.timestamp));
-                        const pad = (n: number) => n.toString().padStart(2, '0');
-                        timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                      } else {
-                        timeStr = row["Thời gian"] || "";
-                      }
-                      const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
-                      const rowKey = `${timeStr}-${maLop}-${index}`;
-                      const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Trạng thái xếp"] === "Đã xếp xong"; 
-                      const isExpired = checkIsExpired(timeStr);
-
-                      if (filterHistoryStatus === "Đã xử lý") return isDone;
-                      if (filterHistoryStatus === "Quá hạn") return !isDone && isExpired;
-                      if (filterHistoryStatus === "Chưa xử lý") return !isDone && !isExpired;
-                      return true;
-                    }).length}
-                  </span>
-                </div>
-
-                  {/* HIỂN THỊ TỔNG SỐ BẢN GHI SAU KHI LỌC */}
-                  <span className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
-                    theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 border-orange-600 border-orange-100'
-                  }`}>
-                    Tổng: {currentHistoryData.filter((row, index) => {
-                      // 1. Điều kiện lọc theo Team Lead
-                      const teamVal = row.team || row["Team"] || "";
-                      if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
-
-                      // 2. Điều kiện lọc theo Trạng thái
                       if (filterHistoryStatus === "Tất cả") return true;
                       let timeStr = "";
                       if (row.timestamp) {
