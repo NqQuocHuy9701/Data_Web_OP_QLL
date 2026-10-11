@@ -128,6 +128,20 @@ export default function Home() {
     }
   };
 
+  // Hàm tính toán thời gian online tự động nhảy số
+  const formatOnlineDuration = (timestamp: number) => {
+    const now = Date.now();
+    const diffMinutes = Math.floor((now - timestamp) / 60000);
+
+    if (diffMinutes < 1) return "Vừa xong";
+    if (diffMinutes < 60) return `${diffMinutes} phút`;
+
+    // Nếu online quá 60 phút thì hiển thị theo giờ và phút
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    return `${hours} giờ ${minutes} phút`;
+  };
+
   useEffect(() => {
     fetchAdminsFromSupabase();
   }, []);
@@ -187,15 +201,13 @@ export default function Home() {
           }
         } else {
           // Phút mới -> Tạo bản ghi mới
-          await supabase
-            .from("system_traffic_logs")
-            .insert([
-              {
-                date_str: dateStr,
-                time_slot: timeSlot,
-                request_count: currentOnlineCount,
-              },
-            ]);
+          await supabase.from("system_traffic_logs").insert([
+            {
+              date_str: dateStr,
+              time_slot: timeSlot,
+              request_count: currentOnlineCount,
+            },
+          ]);
         }
       } catch (error) {
         console.error("Lỗi đồng bộ CCU lên Supabase:", error);
@@ -3136,7 +3148,7 @@ export default function Home() {
                             {user.teamLead || "Admin hệ thống"}
                           </td>
                           <td className="py-3.5 px-6 text-right pr-8 text-slate-400 text-xs">
-                            Vừa xong
+                            {formatOnlineDuration(user.onlineAt)}
                           </td>
                         </tr>
                       ))
