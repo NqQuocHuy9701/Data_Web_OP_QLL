@@ -180,28 +180,31 @@ body {
 }
 
 /* --- HIỆU ỨNG CHỮ Z Z Z BAN ĐÊM --- */
+/* --- HIỆU ỨNG CHỮ Z Z Z BAN ĐÊM --- */
 .theme-switch__zzz {
   position: absolute;
-  top: -2px;
-  right: 2px;
+  top: 4px;
+  right: -12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   opacity: 0;
   transform: scale(0);
   transition: all 0.4s ease-in-out;
+  z-index: 10;
 }
 
 .theme-switch__zzz span {
-  font-family: monospace;
-  font-weight: bold;
-  color: #c4c9d1;
-  line-height: 0.8;
+  font-family: sans-serif;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  line-height: 0.7;
 }
 
-.theme-switch__zzz span:nth-child(1) { font-size: 8px; transform: translateX(4px); }
-.theme-switch__zzz span:nth-child(2) { font-size: 10px; transform: translateX(0px); }
-.theme-switch__zzz span:nth-child(3) { font-size: 13px; transform: translateX(-4px); }
+.theme-switch__zzz span:nth-child(1) { font-size: 7px; transform: translateX(6px); }
+.theme-switch__zzz span:nth-child(2) { font-size: 9px; transform: translateX(2px); }
+.theme-switch__zzz span:nth-child(3) { font-size: 12px; transform: translateX(-2px); }
 
 /* Khi bật chế độ tối (checkbox được chọn), chữ Z z z hiện lên và bay nhún nhảy */
 .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__zzz {
