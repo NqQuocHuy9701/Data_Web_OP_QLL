@@ -1796,37 +1796,6 @@ const filteredData = useMemo(() => {
                   })}
                 </div>
 
-                  {/* CÁC NÚT BẤM TRẠNG THÁI */}
-                  <div className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
-                    theme === 'dark' ? 'bg-[#0a0f1c] border-white/10' : 'bg-slate-50 border-slate-200'
-                  }`}>
-                    {[
-                      { id: "Tất cả", label: "Tất cả", icon: "📌" },
-                      { id: "Chưa xử lý", label: "Chưa xử lý", icon: "⏳" },
-                      { id: "Đã xử lý", label: "Đã xử lý", icon: "✅" },
-                      { id: "Quá hạn", label: "Quá hạn", icon: "❌" }
-                    ].map((tab) => {
-                      const isActive = filterHistoryStatus === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => setFilterHistoryStatus(tab.id)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 focus:outline-none active:scale-95 ${
-                            isActive
-                              ? "bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.35)] scale-105"
-                              : theme === 'dark'
-                                ? "text-slate-400 hover:text-white hover:bg-white/5"
-                                : "text-slate-600 hover:text-orange-600 hover:bg-white shadow-xs"
-                          }`}
-                        >
-                          <span className="text-[11px]">{tab.icon}</span>
-                          <span>{tab.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
                   {/* HIỂN THỊ TỔNG SỐ BẢN GHI SAU KHI LỌC */}
                   <span className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
                     theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 border-orange-600 border-orange-100'
