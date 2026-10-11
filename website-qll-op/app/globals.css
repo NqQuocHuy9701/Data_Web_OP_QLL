@@ -179,53 +179,51 @@ body {
   transform: translateY(-50%);
 }
 
-/* --- LỚP HIỆU ỨNG Z Z Z BAY LƠ LỬNG BÊN NGOÀI --- */
-.theme-switch__zzz-container {
+/* --- HIỆU ỨNG Z Z Z TỪ UIVERSE (Chỉ chạy khi mở Dark Mode) --- */
+.theme-switch-zzz-wrapper {
   position: absolute;
-  top: -8px;
-  right: 12px;
+  top: 10px;
+  right: 25px;
+  width: 0;
+  height: 0;
   display: none;
-  pointer-events: none;
   z-index: 100;
+  pointer-events: none;
 }
 
-.theme-switch__zzz-container span {
-  position: absolute;
-  font-weight: 900;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-  opacity: 0;
-}
-
-.zzz-1 { font-size: 8px; top: 0px; right: 0px; }
-.zzz-2 { font-size: 11px; top: -6px; right: 6px; }
-.zzz-3 { font-size: 14px; top: -13px; right: 13px; }
-
-/* Khi bật chế độ tối (Night mode), kích hoạt hiệu ứng hiển thị và bay nhảy */
-.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__zzz-container {
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch-zzz-wrapper {
   display: block;
 }
 
-.theme-switch__checkbox:checked + .theme-switch__container .zzz-1 {
-  animation: zzzAnim 2s infinite ease-in-out;
-}
-.theme-switch__checkbox:checked + .theme-switch__container .zzz-2 {
-  animation: zzzAnim 2s infinite ease-in-out 0.4s;
-}
-.theme-switch__checkbox:checked + .theme-switch__container .zzz-3 {
-  animation: zzzAnim 2s infinite ease-in-out 0.8s;
+.z {
+  position: absolute;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  opacity: 0;
 }
 
-@keyframes zzzAnim {
+.z-1 {
+  animation: swayUpToRight 2s ease-out infinite;
+}
+.z-2 {
+  animation: swayUpToRight 2s ease-out 0.5s infinite;
+}
+.z-3 {
+  animation: swayUpToRight 2s ease-out 1s infinite;
+}
+.z-4 {
+  animation: swayUpToRight 2s ease-out 1.5s infinite;
+}
+
+@keyframes swayUpToRight {
   0% {
-    transform: translateY(0px) scale(0.8);
-    opacity: 0;
-  }
-  50% {
+    transform: translate(0, 0) rotate(0deg);
     opacity: 1;
   }
   100% {
-    transform: translateY(-10px) scale(1.2);
+    transform: translate(30px, -35px) rotate(20deg);
     opacity: 0;
   }
 }

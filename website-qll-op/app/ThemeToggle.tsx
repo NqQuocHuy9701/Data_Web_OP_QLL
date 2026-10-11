@@ -32,11 +32,13 @@ export default function ThemeToggle({ theme, toggleTheme }: ThemeToggleProps) {
             </div>
           </div>
         </div>
-        {/* Đưa hẳn hiệu ứng Z z z ra ngoài khung chuyển động chung để đóng vai trò lớp phủ tuyệt đối */}
-        <div className="theme-switch__zzz-container">
-          <span className="zzz-1">Z</span>
-          <span className="zzz-2">z</span>
-          <span className="zzz-3">z</span>
+
+        {/* Thêm hiệu ứng Z z z từ Uiverse */}
+        <div className="theme-switch-zzz-wrapper">
+          <div className="z z-1">Z</div>
+          <div className="z z-2">Z</div>
+          <div className="z z-3">Z</div>
+          <div className="z z-4">Z</div>
         </div>
       </div>
     </label>
