@@ -1758,42 +1758,93 @@ const filteredData = useMemo(() => {
                 </h3>
 <div className="flex items-center gap-2.5 flex-wrap justify-end">
                   {/* BỘ LỌC THEO TEAM LEAD */}
-<div className="flex items-center gap-1.5 p-1 border rounded-2xl transition-colors duration-0 overflow-x-auto custom-scrollbar max-w-md">
-                  <button
-                    type="button"
-                    onClick={() => setFilterTeam("Tất cả")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap focus:outline-none active:scale-95 ${
-                      filterTeam === "Tất cả"
-                        ? "bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.35)] scale-105"
-                        : theme === 'dark'
-                          ? "text-slate-400 hover:text-white hover:bg-white/5"
-                          : "text-slate-600 hover:text-orange-600 hover:bg-white shadow-xs"
-                    }`}
-                  >
-                    <span>👑</span>
-                    <span>Tất cả Team</span>
-                  </button>
+<div className="flex items-center gap-2.5 flex-wrap justify-end">
+                  {/* Ô CHỌN TEAM LEAD DẠNG XỔ XUỐNG (DROPDOWN) */}
+                  <div className="relative">
+                    <select
+                      value={filterTeam}
+                      onChange={(e) => setFilterTeam(e.target.value)}
+                      className={`appearance-none px-4 py-2.5 pr-10 border rounded-2xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 ${
+                        theme === 'dark' 
+                          ? 'bg-[#0a0f1c] border-white/10 text-slate-200 hover:border-orange-500/50 focus:border-orange-500' 
+                          : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-orange-400 focus:border-orange-500'
+                      }`}
+                    >
+                      <option value="Tất cả" className={theme === 'dark' ? 'bg-[#0a0f1c] text-white' : 'bg-white text-slate-800'}>
+                        👑 Tất cả Team Lead
+                      </option>
+                      {Array.from(new Set(currentHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
+                        <option key={idx} value={t} className={theme === 'dark' ? 'bg-[#0a0f1c] text-white' : 'bg-white text-slate-800'}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
 
-                  {Array.from(new Set(currentHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t) => {
-                    const isActive = filterTeam === t;
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setFilterTeam(t)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap focus:outline-none active:scale-95 ${
-                          isActive
-                            ? "bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.35)] scale-105"
-                            : theme === 'dark'
-                              ? "text-slate-400 hover:text-white hover:bg-white/5"
-                              : "text-slate-600 hover:text-orange-600 hover:bg-white shadow-xs"
-                        }`}
-                      >
-                        <span>🛡️</span>
-                        <span>{t}</span>
-                      </button>
-                    );
-                  })}
+                  {/* BỘ LỌC TRẠNG THÁI CŨ (ĐÃ ĐƯỢC KHÔI PHỤC ĐẦY ĐỦ) */}
+                  <div className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
+                    theme === 'dark' ? 'bg-[#0a0f1c] border-white/10' : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    {[
+                      { id: "Tất cả", label: "Tất cả", icon: "📌" },
+                      { id: "Chưa xử lý", label: "Chưa xử lý", icon: "⏳" },
+                      { id: "Đã xử lý", label: "Đã xử lý", icon: "✅" },
+                      { id: "Quá hạn", label: "Quá hạn", icon: "❌" }
+                    ].map((tab) => {
+                      const isActive = filterHistoryStatus === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setFilterHistoryStatus(tab.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 focus:outline-none active:scale-95 ${
+                            isActive
+                              ? "bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.35)] scale-105"
+                              : theme === 'dark'
+                                ? "text-slate-400 hover:text-white hover:bg-white/5"
+                                : "text-slate-600 hover:text-orange-600 hover:bg-white shadow-xs"
+                          }`}
+                        >
+                          <span className="text-[11px]">{tab.icon}</span>
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* TỔNG SỐ BẢN GHI */}
+                  <span className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
+                    theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 border-orange-600 border-orange-100'
+                  }`}>
+                    Tổng: {currentHistoryData.filter((row, index) => {
+                      const teamVal = row.team || row["Team"] || "";
+                      if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
+
+                      if (filterHistoryStatus === "Tất cả") return true;
+                      let timeStr = "";
+                      if (row.timestamp) {
+                        const d = new Date(Number(row.timestamp));
+                        const pad = (n: number) => n.toString().padStart(2, '0');
+                        timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                      } else {
+                        timeStr = row["Thời gian"] || "";
+                      }
+                      const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                      const rowKey = `${timeStr}-${maLop}-${index}`;
+                      const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Trạng thái xếp"] === "Đã xếp xong"; 
+                      const isExpired = checkIsExpired(timeStr);
+
+                      if (filterHistoryStatus === "Đã xử lý") return isDone;
+                      if (filterHistoryStatus === "Quá hạn") return !isDone && isExpired;
+                      if (filterHistoryStatus === "Chưa xử lý") return !isDone && !isExpired;
+                      return true;
+                    }).length}
+                  </span>
                 </div>
 
                   {/* HIỂN THỊ TỔNG SỐ BẢN GHI SAU KHI LỌC */}
