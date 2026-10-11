@@ -2472,7 +2472,13 @@ const renderCustomDropdown = (
         key={currentWordIndex}
         className="text-orange-500 font-handwriting text-[20px] font-bold tracking-normal leading-none animate-smooth-signature"
       >
-        {currentWordIndex === 0 ? `✨ Chào mừng ${displayName} đến với website Vận hành! Chúc bạn một ngày làm việc thật hiệu quả nhé.` : words[currentWordIndex - 1]}
+        {currentWordIndex === 0 ? (
+          <>
+            ✨ Chào mừng <span className="text-sky-400 font-extrabold underline decoration-orange-400/50 decoration-2 underline-offset-4">{displayName}</span> đến với website Vận hành! Chúc bạn một ngày làm việc thật hiệu quả nhé.
+          </>
+        ) : (
+          words[currentWordIndex - 1]
+        )}
       </span>
     </div>
   </h2>
