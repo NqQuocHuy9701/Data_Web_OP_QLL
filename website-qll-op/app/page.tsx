@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Papa from "papaparse";
+import ThemeToggle from "./ThemeToggle";
 import { createClient } from "@supabase/supabase-js";
 import {
   LineChart,
@@ -2165,16 +2166,9 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button
-              onClick={toggleTheme}
-              className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all duration-0 border flex items-center gap-2 active:scale-95 ${
-                theme === "dark"
-                  ? "bg-[#151b2b] border-white/10 text-amber-400 hover:bg-white/5 shadow-inner"
-                  : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 shadow-sm"
-              }`}
-            >
-              {theme === "dark" ? "☀️ Giao diện Sáng" : "🌙 Giao diện Tối"}
-            </button>
+            <div className="flex items-center scale-[0.6] transform origin-right">
+              <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+            </div>
 
             {lastUpdated && (
               <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline-block">
