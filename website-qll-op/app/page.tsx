@@ -99,7 +99,7 @@ export default function Home() {
       }
     }
   }, []);
-
+  const [filterTeam, setFilterTeam] = useState("Tất cả");
   useEffect(() => {
     const savedTheme = localStorage.getItem("qll_theme") as "light" | "dark";
     if (savedTheme) setTheme(savedTheme);
@@ -1756,7 +1756,22 @@ const filteredData = useMemo(() => {
                   <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
                   📋 Danh sách lịch sử giữ slot 
                 </h3>
-<div className="flex items-center gap-2.5">
+<div className="flex items-center gap-2.5 flex-wrap justify-end">
+                  {/* BỘ LỌC THEO TEAM LEAD */}
+                  <select
+                    value={filterTeam}
+                    onChange={(e) => setFilterTeam(e.target.value)}
+                    className={`px-3.5 py-2.5 border rounded-xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 ${
+                      theme === 'dark' ? 'bg-[#0a0f1c] border-white/15 text-slate-300 focus:border-orange-500/50' : 'bg-slate-50 border-slate-200 text-slate-700 focus:border-orange-400'
+                    }`}
+                  >
+                    <option value="Tất cả">👑 Tất cả Team Lead</option>
+                    {Array.from(new Set(slotHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
+                      <option key={idx} value={t}>{t}</option>
+                    ))}
+                  </select>
+
+                  {/* CÁC NÚT BẤM TRẠNG THÁI */}
                   <div className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
                     theme === 'dark' ? 'bg-[#0a0f1c] border-white/10' : 'bg-slate-50 border-slate-200'
                   }`}>
@@ -1787,10 +1802,16 @@ const filteredData = useMemo(() => {
                     })}
                   </div>
 
+                  {/* HIỂN THỊ TỔNG SỐ BẢN GHI SAU KHI LỌC */}
                   <span className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
                     theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 border-orange-600 border-orange-100'
                   }`}>
-                    Tổng: {slotHistoryData.filter((row, index) => {
+                    Tổng: {currentHistoryData.filter((row, index) => {
+                      // 1. Điều kiện lọc theo Team Lead
+                      const teamVal = row.team || row["Team"] || "";
+                      if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
+
+                      // 2. Điều kiện lọc theo Trạng thái
                       if (filterHistoryStatus === "Tất cả") return true;
                       let timeStr = "";
                       if (row.timestamp) {
