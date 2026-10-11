@@ -69,7 +69,7 @@ const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginRole, setLoginRole] = useState<"QLL" | "Admin">("QLL");
-  
+  const [filterHistoryStatus, setFilterHistoryStatus] = useState("Tất cả");
   const [namecode, setNamecode] = useState("");
   const [teamLead, setTeamLead] = useState("Lead LienDT");
   
@@ -1756,11 +1756,62 @@ const filteredData = useMemo(() => {
                   <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
                   📋 Danh sách lịch sử giữ slot (Tab: LichSuGiuSlot)
                 </h3>
-                <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
-                  theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-100'
-                }`}>
-                  Tổng số bản ghi: {slotHistoryData.length}
-                </span>
+<div className="flex items-center gap-2.5">
+                  <div className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
+                    theme === 'dark' ? 'bg-[#0a0f1c] border-white/10' : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    {[
+                      { id: "Tất cả", label: "Tất cả", icon: "📌" },
+                      { id: "Chưa xử lý", label: "Chưa xử lý", icon: "⏳" },
+                      { id: "Đã xử lý", label: "Đã xử lý", icon: "✅" },
+                      { id: "Quá hạn", label: "Quá hạn", icon: "❌" }
+                    ].map((tab) => {
+                      const isActive = filterHistoryStatus === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setFilterHistoryStatus(tab.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 focus:outline-none active:scale-95 ${
+                            isActive
+                              ? "bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.35)] scale-105"
+                              : theme === 'dark'
+                                ? "text-slate-400 hover:text-white hover:bg-white/5"
+                                : "text-slate-600 hover:text-orange-600 hover:bg-white shadow-xs"
+                          }`}
+                        >
+                          <span className="text-[11px]">{tab.icon}</span>
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <span className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
+                    theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 border-orange-600 border-orange-100'
+                  }`}>
+                    Tổng: {slotHistoryData.filter((row, index) => {
+                      if (filterHistoryStatus === "Tất cả") return true;
+                      let timeStr = "";
+                      if (row.timestamp) {
+                        const d = new Date(Number(row.timestamp));
+                        const pad = (n: number) => n.toString().padStart(2, '0');
+                        timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                      } else {
+                        timeStr = row["Thời gian"] || "";
+                      }
+                      const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                      const rowKey = `${timeStr}-${maLop}-${index}`;
+                      const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Trạng thái xếp"] === "Đã xếp xong"; 
+                      const isExpired = checkIsExpired(timeStr);
+
+                      if (filterHistoryStatus === "Đã xử lý") return isDone;
+                      if (filterHistoryStatus === "Quá hạn") return !isDone && isExpired;
+                      if (filterHistoryStatus === "Chưa xử lý") return !isDone && !isExpired;
+                      return true;
+                    }).length}
+                  </span>
+                </div>
               </div>
 
               <div className="flex-1 overflow-auto custom-scrollbar relative">
