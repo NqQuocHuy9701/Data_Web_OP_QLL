@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Papa from "papaparse";
 import ThemeToggle from "./ThemeToggle";
+import ActionButton from "./ActionButton";
 import { createClient } from "@supabase/supabase-js";
 import {
   LineChart,
@@ -3888,47 +3889,21 @@ export default function Home() {
                                   </td>
 
                                   <td className="px-6 py-4 text-right pr-6 min-w-[130px]">
-                                    <button
+                                    <div
                                       onClick={() =>
+                                        !isFull &&
+                                        !isLoading &&
                                         handleOpenPopup(row, availableSlots)
                                       }
-                                      disabled={isFull || isLoading}
-                                      className={`px-4 py-1.5 border font-bold rounded-lg focus:outline-none transition-colors duration-0 text-xs w-full max-w-[110px] text-center shadow-sm
-                                        ${
-                                          isFull
-                                            ? theme === "dark"
-                                              ? "bg-white/10 border-white/5 text-slate-500 cursor-not-allowed shadow-none"
-                                              : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-                                            : "bg-orange-500 border-orange-500 text-white hover:bg-orange-600 active:scale-95"
-                                        }`}
+                                      className={`inline-block ${isFull || isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}
                                     >
-                                      {isLoading ? (
-                                        <svg
-                                          className="animate-spin h-3.5 w-3.5 mx-auto text-white"
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                          ></circle>
-                                          <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                          ></path>
-                                        </svg>
-                                      ) : isFull ? (
-                                        "Hết Slot"
-                                      ) : (
-                                        "Giữ Slot"
-                                      )}
-                                    </button>
+                                      <div className="scale-[0.45] transform -translate-y-2">
+                                        <ActionButton
+                                          isFull={isFull}
+                                          isLoading={isLoading}
+                                        />
+                                      </div>
+                                    </div>
                                   </td>
                                 </>
                               )}
