@@ -1858,8 +1858,15 @@ const filteredData = useMemo(() => {
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Vui lòng chờ dữ liệu từ Database !!</td>
                       </tr>
                     ) : currentHistoryData.length > 0 ? (
-                     currentHistoryData
+currentHistoryData
                       .filter((row, index) => {
+                        // 👇 1. BỔ SUNG ĐOÀN LỌC NÀY ĐỂ KÍCH HOẠT BỘ LỌC TEAM LEAD
+                        const teamVal = row.team || row["Team"] || "";
+                        if (filterTeam !== "Tất cả" && teamVal !== filterTeam) {
+                          return false;
+                        }
+
+                        // 2. LỌC THEO TRẠNG THÁI
                         if (filterHistoryStatus === "Tất cả") return true;
 
                         let timeStr = "";
