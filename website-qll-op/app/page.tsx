@@ -1194,7 +1194,7 @@ const renderCustomDropdown = (
 
         {isOpen && (
           <>
-            {/* MÀN HÌNH TRONG SUỐT BẮT SỰ KIỆN CLICK BÊN NGOÀI ĐỂ TỰ ĐỘNG ĐÓNG MENU */}
+            {/* 👉 BƯỚC 1: THÊM LỚP NỀN TRONG SUỐT ĐỂ TỰ ĐỘNG ĐÓNG KHI BẤM RA NGOÀI */}
             <div 
               className="fixed inset-0 z-40 bg-transparent" 
               onClick={() => setOpenDropdown(null)} 
@@ -1753,16 +1753,15 @@ const renderCustomDropdown = (
             </button>
           </div>
         </header>
-
-{loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
+        {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div key="LichSuSlotAdmin" className="flex-1 px-8 pt-4 pb-5 min-h-0 flex flex-col animate-fade-slide-up">
             
-            {/* 4 THẺ THỐNG KÊ NHANH (ĐÃ THU GỌN CÂN ĐỐI, KHÔNG ĐÈ BẢNG) */}
+            {/* 4 THẺ THỐNG KÊ NHANH (MINI KPI CARDS) CHO ADMIN */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-3 shrink-0">
               <div className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
                 theme === 'dark' ? 'bg-[#151b2b] border-white/10 shadow-sm' : 'bg-white border-slate-200 shadow-xs'
               }`}>
-                <p className="text-sky-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Tổng Slots</p>
+                <p className="text-sky-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Tổng Số Đơn</p>
                 <div className="flex items-baseline gap-2">
                   <span className={`text-xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                     {currentHistoryData.filter(row => {
@@ -2029,13 +2028,11 @@ const renderCustomDropdown = (
                     ) : currentHistoryData.length > 0 ? (
                        currentHistoryData
                       .filter((row, index) => {
-                        // 👇 1. BỔ SUNG ĐOÀN LỌC NÀY ĐỂ KÍCH HOẠT BỘ LỌC TEAM LEAD
                         const teamVal = row.team || row["Team"] || "";
                         if (filterTeam !== "Tất cả" && teamVal !== filterTeam) {
                           return false;
                         }
 
-                        // 2. LỌC THEO TRẠNG THÁI
                         if (filterHistoryStatus === "Tất cả") return true;
 
                         let timeStr = "";
@@ -2460,24 +2457,22 @@ const renderCustomDropdown = (
         ) : (
           <div key={activeNav} className="flex-1 flex flex-col min-h-0 animate-fade-slide-up">
             <div className="px-8 pt-4 pb-3 shrink-0">
-              <div className="flex items-center gap-4 mb-3">
-                <img 
-                  src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
-                  alt="Bitu Mascot" 
-                  className="h-12 w-auto object-contain drop-shadow-md animate-bounce-bitu"
-                />
-                
-                <h2 className="text-[24px] font-greeting tracking-wide flex items-center gap-2 pt-1 h-[36px]">
-                  <span className={`font-extrabold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-sky-600'}`}>Vận hành,</span>
-                  <div className="flex items-center overflow-hidden">
-                    <span 
-                      key={currentWordIndex}
-                      className="text-orange-500 font-handwriting text-[30px] font-bold tracking-normal leading-none animate-smooth-signature"
-                    >
-                      {words[currentWordIndex]}
-                    </span>
+{/* BƯỚC 2: BANNER CHÀO MỪNG CÁ NHÂN HÓA CHO QLL */}
+              <div className="flex items-center justify-between gap-4 mb-3 bg-gradient-to-r from-orange-500/10 via-sky-500/5 to-transparent p-4 rounded-3xl border border-orange-500/20 shadow-sm animate-fade-slide-down">
+                <div className="flex items-center gap-4">
+                  <img 
+                    src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
+                    alt="Bitu Mascot" 
+                    className="h-12 w-auto object-contain drop-shadow-md animate-bounce-bitu"
+                  />
+                  <div>
+                    <h2 className="text-[15px] lg:text-[17px] font-bold tracking-wide flex items-center gap-2 text-slate-200">
+                      <span className={theme === 'dark' ? 'text-white' : 'text-slate-800'}>
+                        ✨ Chào mừng <strong className="text-orange-500">{displayName}</strong> đến với website Vận hành! Chúc bạn một ngày làm việc thật hiệu quả nhé. 🚀
+                      </span>
+                    </h2>
                   </div>
-                </h2>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
