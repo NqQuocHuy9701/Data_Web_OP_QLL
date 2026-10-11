@@ -1762,7 +1762,7 @@ const renderCustomDropdown = (
               <div className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
                 theme === 'dark' ? 'bg-[#151b2b] border-white/10 shadow-sm' : 'bg-white border-slate-200 shadow-xs'
               }`}>
-                <p className="text-sky-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Tổng Số Đơn</p>
+                <p className="text-sky-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Tổng Slots</p>
                 <div className="flex items-baseline gap-2">
                   <span className={`text-xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                     {currentHistoryData.filter(row => {
