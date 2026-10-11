@@ -1754,7 +1754,7 @@ const filteredData = useMemo(() => {
               <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === 'dark' ? 'bg-transparent border-white/5' : 'bg-white border-slate-100'}`}>
                 <h3 className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                   <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
-                  📋 Danh sách lịch sử giữ slot (Tab: LichSuGiuSlot)
+                  📋 Danh sách lịch sử giữ slot 
                 </h3>
 <div className="flex items-center gap-2.5">
                   <div className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
@@ -1836,7 +1836,32 @@ const filteredData = useMemo(() => {
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Vui lòng chờ dữ liệu từ Database !!</td>
                       </tr>
                     ) : currentHistoryData.length > 0 ? (
-                      currentHistoryData.map((row, index) => {
+                     currentHistoryData
+                      .filter((row, index) => {
+                        if (filterHistoryStatus === "Tất cả") return true;
+
+                        let timeStr = "";
+                        if (row.timestamp) {
+                          const d = new Date(Number(row.timestamp));
+                          const pad = (n: number) => n.toString().padStart(2, '0');
+                          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                        } else {
+                          timeStr = row["Thời gian"] || "";
+                        }
+
+                        const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                        const rowKey = `${timeStr}-${maLop}-${index}`;
+                        
+                        const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Trạng thái xếp"] === "Đã xếp xong"; 
+                        const isExpired = checkIsExpired(timeStr);
+
+                        if (filterHistoryStatus === "Đã xử lý") return isDone;
+                        if (filterHistoryStatus === "Quá hạn") return !isDone && isExpired;
+                        if (filterHistoryStatus === "Chưa xử lý") return !isDone && !isExpired;
+                        
+                        return true;
+                      })
+                      .map((row, index) => {
                         let timeStr = "";
                         if (row.timestamp) {
                           const d = new Date(Number(row.timestamp));
