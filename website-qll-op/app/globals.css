@@ -265,164 +265,103 @@ body {
   }
 }
 
-/* --- NÚT ACTION TINH GỌN (KHÔNG ĐỔ BÓNG LỚN TRÀN DÒNG) --- */
-.custom-action-btn {
-  --white: #e6f3ff;
-  --blue-100: #b1d4fd;
-  --blue-200: #90c2ff;
-  --blue-300: #89b8f2;
-  --blue-400: #2668e2;
-  --blue-500: #2b4583;
-  --radius: 12px;
-
-  border-radius: var(--radius);
-  outline: none;
+/* --- NÚT ACTION MỚI (itay1313) --- */
+.custom-btn {
+  --transition: all 0.55s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --yellow-bg: transparent linear-gradient(114deg, #fdc100 0%, #dd7d00 100%) 0% 0% no-repeat padding-box;
+  
+  border-radius: 23px;
+  letter-spacing: 0.8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: white;
+  white-space: nowrap;
+  width: 125px;
+  height: 38px;
   cursor: pointer;
-  font-size: 18px;
-  font-family: Arial, sans-serif;
+  position: relative;
+  border: 1px solid #dd7d00;
   background: transparent;
-  border: 0;
-  position: relative;
-  width: 130px;
-  height: 42px;
-}
-
-.custom-wrap {
-  border-radius: inherit;
   overflow: hidden;
-  height: 100%;
-  width: 100%;
-  padding: 2px;
-  background: linear-gradient(to bottom, var(--blue-100) 0%, var(--blue-400) 100%);
-  position: relative;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(38, 104, 226, 0.25);
-}
-
-.custom-outline {
-  position: absolute;
-  overflow: hidden;
-  inset: 0;
-  opacity: 0;
-  border-radius: inherit;
-  transition: all 0.4s ease;
-}
-
-.custom-content {
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  position: relative;
-  height: 100%;
-  gap: 10px;
-  border-radius: calc(var(--radius) * 0.85);
-  font-weight: 600;
-  transition: all 0.3s ease;
-  background: linear-gradient(to bottom, var(--blue-300) 0%, var(--blue-400) 100%);
-  box-shadow: inset 0px 2px 5px rgba(255, 255, 255, 0.4), inset 0px -2px 5px rgba(0, 0, 0, 0.3);
-}
-
-.custom-char {
-  transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
-.custom-char span {
-  display: block;
-  color: transparent;
-  position: relative;
-}
-.custom-char.state-1 span {
-  animation: customCharAppear 1.2s ease backwards calc(var(--i) * 0.03s);
-}
-.custom-char.state-1 span::before,
-.custom-char span::after {
-  content: attr(data-label);
-  position: absolute;
-  color: var(--white);
-  text-shadow: -1px 1px 2px var(--blue-500);
-  left: 0;
-}
-.custom-char span::before {
-  opacity: 0;
-  transform: translateY(-100%);
-}
-.custom-char.state-2 {
-  position: absolute;
-}
-.custom-char.state-2 span::after {
-  opacity: 1;
-}
 
-.custom-icon {
-  animation: customResetArrow 0.8s cubic-bezier(0.7, -0.5, 0.3, 1.2) forwards;
-  z-index: 10;
-}
-.custom-icon div,
-.custom-icon div::before,
-.custom-icon div::after {
-  height: 2px;
-  border-radius: 1px;
-  background-color: var(--white);
-}
-.custom-icon div::before,
-.custom-icon div::after {
+.custom-btn::before {
+  transition: var(--transition);
   content: "";
+  width: 50%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
   position: absolute;
+  top: 0;
   right: 0;
-  transform-origin: center right;
-  width: 10px;
+}
+
+.custom-btn:hover::before {
+  width: 100%;
+}
+
+.custom-btn.btn-hover {
+  border-radius: 50px;
+  position: relative;
+}
+
+.custom-btn.btn-hover .btn-text {
+  color: white;
+  transition: var(--transition);
+  mix-blend-mode: lighten;
+  width: 100%;
+  height: 100%;
+}
+
+.custom-btn.btn-hover::before {
+  border-radius: 50px;
+  width: 100%;
+  background: conic-gradient(
+    transparent 240deg, #ac633697 240deg,
+    #fff2af6a 300deg, transparent 300deg
+  )
+  100% / 64%
+  no-repeat, var(--yellow-bg);
+}
+
+.custom-btn.btn-hover:hover::before {
+  background-position: right;
+  border-radius: 23px;
+  width: 25%;
+}
+
+/* Hiệu ứng chuyển đổi chữ Giữ Slot -> Đồng ý khi hover */
+.btn-label-swap {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+}
+
+.btn-label-swap .hover-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  opacity: 0;
+  transform: translateY(10px);
   transition: all 0.3s ease;
 }
-.custom-icon div {
-  position: relative;
-  width: 16px;
-  background: linear-gradient(to bottom, var(--white), var(--blue-100));
-}
-.custom-icon div::before {
-  transform: rotate(44deg);
-  top: 1px;
-}
-.custom-icon div::after {
-  bottom: 1px;
-  transform: rotate(316deg);
+
+.btn-label-swap .default-text {
+  display: inline-block;
+  transition: all 0.3s ease;
 }
 
-/* HOVER STATES */
-.custom-action-btn:hover .custom-wrap {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(38, 104, 226, 0.35);
+.custom-btn:hover .btn-label-swap .default-text {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
-.custom-action-btn:hover .custom-char.state-1 span::before {
-  animation: customCharAppear 0.7s ease calc(var(--i) * 0.03s);
-}
-
-.custom-action-btn:hover .custom-char.state-1 span::after {
+.custom-btn:hover .btn-label-swap .hover-text {
   opacity: 1;
-  animation: customCharDisappear 0.7s ease calc(var(--i) * 0.03s);
-}
-
-.custom-action-btn:active .custom-wrap {
-  transform: translateY(0px);
-}
-
-/* ANIMATIONS */
-@keyframes customCharAppear {
-  0% { transform: translateY(50%); opacity: 0; filter: blur(10px); }
-  50% { transform: translateY(-10%); opacity: 1; filter: blur(0); }
-  100% { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes customCharDisappear {
-  0% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(-70%); opacity: 0; filter: blur(2px); }
-}
-
-@keyframes customResetArrow {
-  0% { transform: translateX(-80px); }
-  100% { transform: translateX(0); }
+  transform: translateY(0);
 }
