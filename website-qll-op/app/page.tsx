@@ -3897,7 +3897,14 @@ export default function Home() {
                                       }
                                       className={`inline-block ${isFull || isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}
                                     >
-                                      <div className="scale-[0.45] transform -translate-y-2">
+                                      <div
+                                        onClick={() =>
+                                          !isFull &&
+                                          !isLoading &&
+                                          handleOpenPopup(row, availableSlots)
+                                        }
+                                        className={`inline-block ${isFull || isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                      >
                                         <ActionButton
                                           isFull={isFull}
                                           isLoading={isLoading}
