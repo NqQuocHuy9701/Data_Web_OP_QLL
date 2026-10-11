@@ -1758,7 +1758,7 @@ const filteredData = useMemo(() => {
                 </h3>
 
 <div className="flex items-center gap-2.5 flex-wrap justify-end">
-                  {/* Ô CHỌN TEAM LEAD DẠNG DROPDOWN CUSTOM BO TRÒN SANG TRỌNG */}
+                  {/* Ô CHỌN TEAM LEAD DẠNG DROPDOWN CÓ TỰ ĐỘNG ĐÓNG KHI BẤM RA NGOÀI */}
                   <div className="relative">
                     <button
                       type="button"
@@ -1778,43 +1778,51 @@ const filteredData = useMemo(() => {
                       </svg>
                     </button>
 
+                    {/* MÀN HÌNH TRONG SUỐT BẮT SỰ KIỆN CLICK BÊN NGOÀI */}
                     {openDropdown === "teamLeadCustom" && (
-                      <div className={`absolute right-0 mt-2 w-56 border rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] py-2 z-50 animate-fade-slide-up overflow-hidden ${
-                        theme === 'dark' ? 'bg-[#151b2b] border-white/10 text-slate-200' : 'bg-white border-slate-100 text-slate-700'
-                      }`}>
-                        <div className="max-h-60 overflow-y-auto custom-scrollbar px-1.5 space-y-0.5">
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setFilterTeam("Tất cả");
-                              setOpenDropdown(null);
-                            }}
-                            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors flex items-center gap-2 ${
-                              filterTeam === "Tất cả" ? "bg-orange-500 text-white shadow-sm" : (theme === 'dark' ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700")
-                            }`}
-                          >
-                            👑 Tất cả Team Lead
+                      <>
+                        <div 
+                          className="fixed inset-0 z-40 bg-transparent" 
+                          onClick={() => setOpenDropdown(null)} 
+                        />
+                        
+                        <div className={`absolute right-0 mt-2 w-56 border rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] py-2 z-50 animate-fade-slide-up overflow-hidden ${
+                          theme === 'dark' ? 'bg-[#151b2b] border-white/10 text-slate-200' : 'bg-white border-slate-100 text-slate-700'
+                        }`}>
+                          <div className="max-h-60 overflow-y-auto custom-scrollbar px-1.5 space-y-0.5">
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFilterTeam("Tất cả");
+                                setOpenDropdown(null);
+                              }}
+                              className={`px-3.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors flex items-center gap-2 ${
+                                filterTeam === "Tất cả" ? "bg-orange-500 text-white shadow-sm" : (theme === 'dark' ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700")
+                              }`}
+                            >
+                              👑 Tất cả Team Lead
+                            </div>
+                            {Array.from(new Set(slotHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => {
+                              const isSelected = filterTeam === t;
+                              return (
+                                <div
+                                  key={idx}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFilterTeam(t as string);
+                                    setOpenDropdown(null);
+                                  }}
+                                  className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors truncate flex items-center gap-2 ${
+                                    isSelected ? "bg-orange-500 text-white shadow-sm" : (theme === 'dark' ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700")
+                                  }`}
+                                >
+                                  🛡️ {t}
+                                </div>
+                              );
+                            })}
                           </div>
-                          {Array.from(new Set(slotHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => {
-                            const isSelected = filterTeam === t;
-                            return (
-                              <div
-                                key={idx}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setFilterTeam(t as string);
-                                  setOpenDropdown(null);
-                                }}
-                                className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors truncate flex items-center gap-2 ${
-                                  isSelected ? "bg-orange-500 text-white shadow-sm" : (theme === 'dark' ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700")
-                                }`}
-                              >
-                                🛡️ {t}
-                              </div>
-                            );
-                          })}
                         </div>
-                      </div>
+                      </>
                     )}
                   </div>
 
