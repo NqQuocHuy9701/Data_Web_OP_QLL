@@ -31,7 +31,6 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
   const timerRef = React.useRef<HTMLSpanElement>(null);
 
-  // [TỐI ƯU V3] Đã di chuyển logSystemRequest và Notification.requestPermission
   // ra khỏi Component này để tránh bị gọi lặp lại hàng chục lần khi render bảng.
 
   useEffect(() => {
@@ -97,20 +96,18 @@ export default function Home() {
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
-
-// [TỐI ƯU V4] Hook chạy khi vào web để ghi log Supabase (Có chống Spam F5)
+  // [TỐI ƯU V4] Hook chạy khi vào web để ghi log Supabase (Có chống Spam F5)
   useEffect(() => {
     const logSystemRequest = async () => {
       try {
         const now = new Date();
         const pad = (n: number) => n.toString().padStart(2, "0");
-        
+
         // Lấy ngày hiện tại dạng DD/MM/YYYY
         const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
-        
-        // Gom nhóm theo khung 5 phút
+
         const h = pad(now.getHours());
-        const m = pad(Math.floor(now.getMinutes() / 5) * 5);
+        const m = pad(now.getMinutes()); // Lấy chính xác phút hiện tại (VD: 18:01, 18:02...)
         const timeSlot = `${h}:${m}`;
 
         // Kiểm tra xem khung giờ này đã tồn tại chưa
@@ -124,19 +121,19 @@ export default function Home() {
         if (existing) {
           await supabase
             .from("system_traffic_logs")
-            .update({ 
+            .update({
               request_count: existing.request_count + 1,
-              updated_at: new Date() 
+              updated_at: new Date(),
             })
             .eq("id", existing.id);
         } else {
-          await supabase
-            .from("system_traffic_logs")
-            .insert([{ 
-              date_str: dateStr, 
-              time_slot: timeSlot, 
-              request_count: 1 
-            }]);
+          await supabase.from("system_traffic_logs").insert([
+            {
+              date_str: dateStr,
+              time_slot: timeSlot,
+              request_count: 1,
+            },
+          ]);
         }
         console.log("🔥 Đã đồng bộ traffic lên Supabase cho mốc:", timeSlot);
       } catch (error) {
@@ -147,11 +144,11 @@ export default function Home() {
     if (isLoggedIn) {
       // 1. CHỐNG SPAM F5: Kiểm tra xem tab này đã từng log cho session hiện tại chưa
       const hasLogged = sessionStorage.getItem("logged_traffic_session");
-      
+
       if (!hasLogged) {
         logSystemRequest();
         // Đánh dấu là tab này đã ghi log, các lần F5 sau sẽ bị bỏ qua
-        sessionStorage.setItem("logged_traffic_session", "true"); 
+        sessionStorage.setItem("logged_traffic_session", "true");
       }
     }
 
@@ -298,10 +295,12 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // =====================================================================
-// =====================================================================
+  // =====================================================================
   // TẢI VÀ VẼ LƯU VẾT TRUY CẬP (TRAFFIC ANALYTICS) TỪ SUPABASE
   // =====================================================================
-  const [dailyTrafficStats, setDailyTrafficStats] = useState<Record<string, number>>({});
+  const [dailyTrafficStats, setDailyTrafficStats] = useState<
+    Record<string, number>
+  >({});
 
   // Hàm tải dữ liệu log từ DB
   const loadTrafficStatsFromSupabase = async () => {
@@ -341,15 +340,17 @@ export default function Home() {
     const chartData = [];
 
     // Tạo các mốc 5 phút từ 00:00 đến ĐÚNG phút hiện tại
-    for (let i = 0; i <= currentTotalMinutes; i += 5) {
-      const h = Math.floor(i / 60).toString().padStart(2, "0");
+    for (let i = 0; i <= currentTotalMinutes; i++) {
+      const h = Math.floor(i / 60)
+        .toString()
+        .padStart(2, "0");
       const m = (i % 60).toString().padStart(2, "0");
       const timeKey = `${h}:${m}`;
 
       // Nếu Supabase có dữ liệu (Ví dụ 18:15 có 2 lượt) -> Biểu đồ nhô lên
       // Nếu khung giờ đó không ai vào -> Trả về 0 (Biểu đồ hạ xuống sát đáy)
       const requests = dailyTrafficStats[timeKey] || 0;
-      
+
       chartData.push({ time: timeKey, requests: requests });
     }
 
@@ -800,7 +801,6 @@ export default function Home() {
     }
   };
   // =========================================================
-
 
   useEffect(() => {
     if (isLoggedIn) {
