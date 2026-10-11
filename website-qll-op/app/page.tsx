@@ -99,19 +99,55 @@ export default function Home() {
 
   // [TỐI ƯU V3] Hook chạy 1 lần duy nhất khi vào web để ghi log và xin quyền thông báo
   useEffect(() => {
-    // 1. Ghi log truy cập hệ thống
+    // 1. Ghi log truy cập hệ thống chuẩn UPSERT lên Supabase
     const logSystemRequest = async () => {
       try {
-        const currentTime = new Date().getTime();
-        console.log(
-          "🔥 Đã ghi nhận 1 lượt mở trang lúc:",
-          new Date(currentTime).toLocaleTimeString(),
-        );
+        const now = new Date();
+        const pad = (n: number) => n.toString().padStart(2, "0");
+
+        // Lấy ngày hiện tại dạng DD/MM/YYYY
+        const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+
+        // Gom nhóm theo khung 5 phút (ví dụ: 14:00, 14:05, ...)
+        const h = pad(now.getHours());
+        const m = pad(Math.floor(now.getMinutes() / 5) * 5);
+        const timeSlot = `${h}:${m}`;
+
+        // Kiểm tra xem khung giờ này đã tồn tại trong database chưa, nếu có thì tăng request_count lên 1, chưa có thì tạo mới
+        const { data: existing } = await supabase
+          .from("system_traffic_logs")
+          .select("id, request_count")
+          .eq("date_str", dateStr)
+          .eq("time_slot", timeSlot)
+          .single();
+
+        if (existing) {
+          await supabase
+            .from("system_traffic_logs")
+            .update({
+              request_count: existing.request_count + 1,
+              updated_at: new Date(),
+            })
+            .eq("id", existing.id);
+        } else {
+          await supabase.from("system_traffic_logs").insert([
+            {
+              date_str: dateStr,
+              time_slot: timeSlot,
+              request_count: 1,
+            },
+          ]);
+        }
+
+        console.log("🔥 Đã đồng bộ traffic lên Supabase cho mốc:", timeSlot);
       } catch (error) {
-        console.error("Lỗi ghi log truy cập:", error);
+        console.error("Lỗi ghi log traffic:", error);
       }
     };
-    logSystemRequest();
+
+    if (isLoggedIn) {
+      logSystemRequest();
+    }
 
     // 2. Yêu cầu quyền hiển thị thông báo popup trên máy tính (Web Push)
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -122,7 +158,8 @@ export default function Home() {
         Notification.requestPermission();
       }
     }
-  }, []);
+  }, [isLoggedIn]);
+
   const [filterTeam, setFilterTeam] = useState("Tất cả");
   useEffect(() => {
     const savedTheme = localStorage.getItem("qll_theme") as "light" | "dark";
@@ -780,7 +817,40 @@ export default function Home() {
       setAdminAddError("Lỗi kết nối khi thêm Admin!");
     }
   };
+  // =========================================================
+  // HÀM TẢI DỮ LIỆU TRAFFIC (THỐNG KÊ TRUY CẬP) TỪ SUPABASE
+  // =========================================================
+  const loadTrafficStatsFromSupabase = async () => {
+    try {
+      const now = new Date();
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
 
+      const { data, error } = await supabase
+        .from("system_traffic_logs")
+        .select("time_slot, request_count")
+        .eq("date_str", dateStr);
+
+      if (!error && data) {
+        const trafficMap: Record<string, number> = {};
+        data.forEach((row: any) => {
+          trafficMap[row.time_slot] = row.request_count;
+        });
+
+        // Cập nhật state để đổ vào biểu đồ
+        setDailyTrafficStats(trafficMap);
+      }
+    } catch (err) {
+      console.error("Lỗi tải traffic từ Supabase:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadTrafficStatsFromSupabase();
+    }
+  }, [isLoggedIn]);
+  // =========================================================
   const loadData = () => {
     setLoading(true);
     Papa.parse(SHEET_CSV_URL, {
