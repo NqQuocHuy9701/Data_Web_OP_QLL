@@ -95,74 +95,6 @@ export default function Home() {
   const [loginError, setLoginError] = useState("");
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  // [TỐI ƯU V4] Hook chạy khi vào web để ghi log Supabase (Có chống Spam F5)
-  useEffect(() => {
-    const logSystemRequest = async () => {
-      try {
-        const now = new Date();
-        const pad = (n: number) => n.toString().padStart(2, "0");
-
-        // Lấy ngày hiện tại dạng DD/MM/YYYY
-        const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
-
-        const h = pad(now.getHours());
-        const m = pad(Math.floor(now.getMinutes() / 3) * 3); // Gom nhóm mỗi 3 phút
-        const timeSlot = `${h}:${m}`;
-
-        // Kiểm tra xem khung giờ này đã tồn tại chưa
-        const { data: existing } = await supabase
-          .from("system_traffic_logs")
-          .select("id, request_count")
-          .eq("date_str", dateStr)
-          .eq("time_slot", timeSlot)
-          .single();
-
-        if (existing) {
-          await supabase
-            .from("system_traffic_logs")
-            .update({
-              request_count: existing.request_count + 1,
-              updated_at: new Date(),
-            })
-            .eq("id", existing.id);
-        } else {
-          await supabase.from("system_traffic_logs").insert([
-            {
-              date_str: dateStr,
-              time_slot: timeSlot,
-              request_count: 1,
-            },
-          ]);
-        }
-        console.log("🔥 Đã đồng bộ traffic lên Supabase cho mốc:", timeSlot);
-      } catch (error) {
-        console.error("Lỗi ghi log traffic:", error);
-      }
-    };
-
-    if (isLoggedIn) {
-      // 1. CHỐNG SPAM F5: Kiểm tra xem tab này đã từng log cho session hiện tại chưa
-      const hasLogged = sessionStorage.getItem("logged_traffic_session");
-
-      if (!hasLogged) {
-        logSystemRequest();
-        // Đánh dấu là tab này đã ghi log, các lần F5 sau sẽ bị bỏ qua
-        sessionStorage.setItem("logged_traffic_session", "true");
-      }
-    }
-
-    // 2. Yêu cầu quyền Web Push Notification
-    if (typeof window !== "undefined" && "Notification" in window) {
-      if (
-        Notification.permission !== "granted" &&
-        Notification.permission !== "denied"
-      ) {
-        Notification.requestPermission();
-      }
-    }
-  }, [isLoggedIn]);
-
   const [filterTeam, setFilterTeam] = useState("Tất cả");
   useEffect(() => {
     const savedTheme = localStorage.getItem("qll_theme") as "light" | "dark";
@@ -222,6 +154,72 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
+  // [TỐI ƯU V6] ĐỒNG BỘ REALTIME TỪNG PHÚT (CHỐNG KẸT BIỂU ĐỒ)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const syncRealtimePresence = async () => {
+      try {
+        const now = new Date();
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+        const timeSlot = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+        const currentOnlineCount = onlineUsers.length; // Lấy chính xác số người đang online (kể cả 0)
+
+        const { data: existing } = await supabase
+          .from("system_traffic_logs")
+          .select("id, request_count")
+          .eq("date_str", dateStr)
+          .eq("time_slot", timeSlot)
+          .single();
+
+        if (existing) {
+          // Luôn cập nhật nếu số lượng online có biến động
+          if (currentOnlineCount !== existing.request_count) {
+            await supabase
+              .from("system_traffic_logs")
+              .update({
+                request_count: currentOnlineCount,
+                updated_at: new Date(),
+              })
+              .eq("id", existing.id);
+          }
+        } else {
+          // Phút mới -> Tạo bản ghi mới
+          await supabase
+            .from("system_traffic_logs")
+            .insert([
+              {
+                date_str: dateStr,
+                time_slot: timeSlot,
+                request_count: currentOnlineCount,
+              },
+            ]);
+        }
+      } catch (error) {
+        console.error("Lỗi đồng bộ CCU lên Supabase:", error);
+      }
+    };
+
+    // 1. Kích hoạt ngay khi danh sách online thay đổi (Có người vào/ra)
+    syncRealtimePresence();
+
+    // 2. Chốt sổ định kỳ mỗi 60 giây
+    const interval = setInterval(syncRealtimePresence, 60000);
+
+    // Yêu cầu quyền thông báo (nếu có)
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (
+        Notification.permission !== "granted" &&
+        Notification.permission !== "denied"
+      ) {
+        Notification.requestPermission();
+      }
+    }
+
+    return () => clearInterval(interval);
+  }, [isLoggedIn, onlineUsers.length]);
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -344,39 +342,47 @@ export default function Home() {
   }, [isLoggedIn, activeNav]);
 
   // =======================================================================
-  // 2. ZOOM BIỂU ĐỒ ĐƯỜNG (CHỈ HIỂN THỊ 4 TIẾNG GẦN NHẤT ĐỂ THẤY SÓNG CHẠY)
+  // =======================================================================
+  // 2. ZOOM BIỂU ĐỒ ĐƯỜNG (THUẬT TOÁN ĐIỀN KHUYẾT CHỐNG ĐỨT GÃY)
   // =======================================================================
   const todayChartData = useMemo(() => {
     const now = new Date();
     const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
     const chartData = [];
 
-    // ZOOM IN: Trừ đi 240 phút (4 tiếng). Nếu muốn xem xa hơn thì đổi 240 thành 360 (6 tiếng)
-    const startMinutes = Math.max(0, currentTotalMinutes - 240);
+    // ZOOM IN: Xem 2 tiếng (120 phút) gần nhất để sóng hiển thị to và rõ
+    const startMinutes = Math.max(0, currentTotalMinutes - 120);
 
-    // Vòng lặp chỉ vẽ các mốc 3 phút trong khoảng 4 tiếng đổ lại đây
-    for (let i = startMinutes; i <= currentTotalMinutes; i += 3) {
+    let lastKnownValue = 0; // Bộ nhớ lưu số lượng online gần nhất
+    let minutesSinceLastData = 0; // Bộ đếm thời gian mất kết nối
+
+    // Quét chi tiết TỪNG PHÚT MỘT
+    for (let i = startMinutes; i <= currentTotalMinutes; i++) {
       const h = Math.floor(i / 60)
         .toString()
         .padStart(2, "0");
       const m = (i % 60).toString().padStart(2, "0");
       const timeKey = `${h}:${m}`;
 
-      const requests = dailyTrafficStats[timeKey] || 0;
+      // Nếu Supabase có ghi nhận phút này -> Cập nhật số mới nhất
+      if (dailyTrafficStats[timeKey] !== undefined) {
+        lastKnownValue = dailyTrafficStats[timeKey];
+        minutesSinceLastData = 0; // Reset bộ đếm
+      } else {
+        // Nếu phút này Database chưa kịp đồng bộ -> Giữ nguyên con số của phút trước
+        minutesSinceLastData++;
 
-      chartData.push({ time: timeKey, requests: requests });
+        // BẢO VỆ: Nếu quá 3 phút không có tín hiệu (Tất cả đã tắt máy) -> Ép về 0 để không bị ảo
+        if (minutesSinceLastData >= 3) {
+          lastKnownValue = 0;
+        }
+      }
+
+      chartData.push({ time: timeKey, requests: lastKnownValue });
     }
 
-    // Đẩy thêm 1-2 mốc thời gian TƯƠNG LAI (trống) để biểu đồ có khoảng thở phía trước
-    const next1 = currentTotalMinutes + 3;
-    const h1 = Math.floor(next1 / 60)
-      .toString()
-      .padStart(2, "0");
-    const m1 = (next1 % 60).toString().padStart(2, "0");
-    chartData.push({ time: `${h1}:${m1}`, requests: 0 });
-
     return chartData;
-  }, [dailyTrafficStats]); // Biểu đồ tự vẽ lại mỗi khi dailyTrafficStats được cập nhật
+  }, [dailyTrafficStats]);
 
   // 2. BIỂU ĐỒ CỘT: TỔNG HỢP 7 NGÀY GẦN NHẤT & ĐỒNG BỘ DỮ LIỆU
   const historicalChartData = useMemo(() => {
