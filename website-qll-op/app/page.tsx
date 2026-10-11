@@ -1757,32 +1757,65 @@ const filteredData = useMemo(() => {
                   📋 Danh sách lịch sử giữ slot 
                 </h3>
 
-                <div className="flex items-center gap-2.5 flex-wrap justify-end">
-                  {/* Ô CHỌN TEAM LEAD DẠNG XỔ XUỐNG ĐÃ FIX CSS BẢO ĐẢM BO TRÒN SANG TRỌNG */}
+<div className="flex items-center gap-2.5 flex-wrap justify-end">
+                  {/* Ô CHỌN TEAM LEAD DẠNG DROPDOWN CUSTOM BO TRÒN SANG TRỌNG */}
                   <div className="relative">
-                    <select
-                      value={filterTeam}
-                      onChange={(e) => setFilterTeam(e.target.value)}
-                      className={`appearance-none px-4 py-2.5 pr-10 border rounded-2xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 shadow-sm ${
-                        theme === 'dark' 
-                          ? 'bg-[#0a0f1c] border-white/20 text-slate-200 hover:border-orange-500/50 focus:border-orange-500' 
-                          : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-orange-400 focus:border-orange-500'
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdown(openDropdown === "teamLeadCustom" ? null : "teamLeadCustom")}
+                      className={`px-3.5 py-2.5 border rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer focus:outline-none shadow-sm ${
+                        openDropdown === "teamLeadCustom" || filterTeam !== "Tất cả" 
+                          ? (theme === 'dark' ? 'bg-[#0a0f1c] border-orange-500/50 text-orange-400' : 'bg-orange-50/50 border-orange-400 text-orange-600') 
+                          : (theme === 'dark' ? 'bg-[#0a0f1c] border-white/20 text-slate-200 hover:border-orange-500/30' : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-orange-300')
                       }`}
                     >
-                      <option value="Tất cả" className={theme === 'dark' ? 'bg-[#0a0f1c] text-white py-2' : 'bg-white text-slate-800 py-2'}>
-                        👑 Tất cả Team Lead
-                      </option>
-                      {Array.from(new Set(slotHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
-                        <option key={idx} value={t} className={theme === 'dark' ? 'bg-[#0a0f1c] text-white py-2' : 'bg-white text-slate-800 py-2'}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-orange-500">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <span className="flex items-center gap-1.5">
+                        <span>👑</span>
+                        <span>{filterTeam === "Tất cả" ? "Tất cả Team Lead" : filterTeam}</span>
+                      </span>
+                      <svg className={`w-3.5 h-3.5 text-orange-500 transition-transform duration-200 ${openDropdown === "teamLeadCustom" ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
                       </svg>
-                    </div>
+                    </button>
+
+                    {openDropdown === "teamLeadCustom" && (
+                      <div className={`absolute right-0 mt-2 w-56 border rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] py-2 z-50 animate-fade-slide-up overflow-hidden ${
+                        theme === 'dark' ? 'bg-[#151b2b] border-white/10 text-slate-200' : 'bg-white border-slate-100 text-slate-700'
+                      }`}>
+                        <div className="max-h-60 overflow-y-auto custom-scrollbar px-1.5 space-y-0.5">
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilterTeam("Tất cả");
+                              setOpenDropdown(null);
+                            }}
+                            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors flex items-center gap-2 ${
+                              filterTeam === "Tất cả" ? "bg-orange-500 text-white shadow-sm" : (theme === 'dark' ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700")
+                            }`}
+                          >
+                            👑 Tất cả Team Lead
+                          </div>
+                          {Array.from(new Set(slotHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => {
+                            const isSelected = filterTeam === t;
+                            return (
+                              <div
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFilterTeam(t as string);
+                                  setOpenDropdown(null);
+                                }}
+                                className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors truncate flex items-center gap-2 ${
+                                  isSelected ? "bg-orange-500 text-white shadow-sm" : (theme === 'dark' ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700")
+                                }`}
+                              >
+                                🛡️ {t}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* BỘ LỌC TRẠNG THÁI */}
@@ -1816,7 +1849,7 @@ const filteredData = useMemo(() => {
                     })}
                   </div>
 
-                  {/* TỔNG SỐ BẢN GHI SAU KHI LỌC (ĐÃ XÓA BỎ BẢN BỊ NHÂN ĐÔI) */}
+                  {/* TỔNG SỐ BẢN GHI SAU KHI LỌC */}
                   <span className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
                     theme === 'dark' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 border-orange-600 border-orange-100'
                   }`}>
@@ -1835,7 +1868,7 @@ const filteredData = useMemo(() => {
                       }
                       const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
                       const rowKey = `${timeStr}-${maLop}-${index}`;
-                      const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Trạng thái xếp"] === "Đã xếp xong"; 
+                      const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Status"] === "Đã xếp xong"; 
                       const isExpired = checkIsExpired(timeStr);
 
                       if (filterHistoryStatus === "Đã xử lý") return isDone;
@@ -2204,7 +2237,7 @@ currentHistoryData
                                 </span>
                               ) : (
                                 <span className="text-xs font-bold text-amber-500 flex items-center justify-end gap-1 animate-pulse">
-                                  <span>⏳</span> Chờ Admin xếp...
+                                  <span>⏳</span> Vận hành đang xử lý !
                                 </span>
                               )}
                             </td>
