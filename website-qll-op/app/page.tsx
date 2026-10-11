@@ -1758,18 +1758,19 @@ const filteredData = useMemo(() => {
                 </h3>
 <div className="flex items-center gap-2.5 flex-wrap justify-end">
                   {/* BỘ LỌC THEO TEAM LEAD */}
-                  <select
-                    value={filterTeam}
-                    onChange={(e) => setFilterTeam(e.target.value)}
-                    className={`px-3.5 py-2.5 border rounded-xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 ${
-                      theme === 'dark' ? 'bg-[#0a0f1c] border-white/15 text-slate-300 focus:border-orange-500/50' : 'bg-slate-50 border-slate-200 text-slate-700 focus:border-orange-400'
-                    }`}
-                  >
-                    <option value="Tất cả">👑 Tất cả Team Lead</option>
-                    {Array.from(new Set(slotHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
-                      <option key={idx} value={t}>{t}</option>
-                    ))}
-                  </select>
+<select
+  value={filterTeam}
+  onChange={(e) => setFilterTeam(e.target.value)}
+  className={`px-3.5 py-2.5 border rounded-xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 ${
+    theme === 'dark' ? 'bg-[#0a0f1c] border-white/15 text-slate-300 focus:border-orange-500/50' : 'bg-slate-50 border-slate-200 text-slate-700 focus:border-orange-400'
+  }`}
+>
+  <option value="Tất cả">👑 Tất cả Team Lead</option>
+  {/* Quét trực tiếp các Team từ danh sách hiện tại */}
+  {Array.from(new Set(currentHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
+    <option key={idx} value={t}>{t}</option>
+  ))}
+</select>
 
                   {/* CÁC NÚT BẤM TRẠNG THÁI */}
                   <div className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
