@@ -179,46 +179,53 @@ body {
   transform: translateY(-50%);
 }
 
-/* --- HIỆU ỨNG CHỮ Z Z Z BAN ĐÊM --- */
-/* --- HIỆU ỨNG CHỮ Z Z Z BAN ĐÊM --- */
-.theme-switch__moon {
-  overflow: visible !important; /* Cho phép chữ Z bay tràn ra ngoài vành trăng một chút */
-}
-
-.theme-switch__zzz {
+/* --- LỚP HIỆU ỨNG Z Z Z BAY LƠ LỬNG BÊN NGOÀI --- */
+.theme-switch__zzz-container {
   position: absolute;
-  top: -10px;
-  right: -12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  opacity: 0;
-  transform: scale(0);
-  transition: all 0.4s ease-in-out;
-  z-index: 50;
+  top: -8px;
+  right: 12px;
+  display: none;
   pointer-events: none;
+  z-index: 100;
 }
 
-.theme-switch__zzz span {
-  font-family: sans-serif;
+.theme-switch__zzz-container span {
+  position: absolute;
   font-weight: 900;
   color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-  line-height: 0.7;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  opacity: 0;
 }
 
-.theme-switch__zzz span:nth-child(1) { font-size: 7px; transform: translateX(6px); }
-.theme-switch__zzz span:nth-child(2) { font-size: 10px; transform: translateX(2px); }
-.theme-switch__zzz span:nth-child(3) { font-size: 13px; transform: translateX(-2px); }
+.zzz-1 { font-size: 8px; top: 0px; right: 0px; }
+.zzz-2 { font-size: 11px; top: -6px; right: 6px; }
+.zzz-3 { font-size: 14px; top: -13px; right: 13px; }
 
-/* Khi bật chế độ tối, chữ Z z z hiện lên và bay nhún nhảy */
-.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__zzz {
-  opacity: 1;
-  transform: scale(1);
-  animation: zzzFloat 2s infinite ease-in-out;
+/* Khi bật chế độ tối (Night mode), kích hoạt hiệu ứng hiển thị và bay nhảy */
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__zzz-container {
+  display: block;
 }
 
-@keyframes zzzFloat {
-  0%, 100% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-4px) scale(1.1); }
+.theme-switch__checkbox:checked + .theme-switch__container .zzz-1 {
+  animation: zzzAnim 2s infinite ease-in-out;
+}
+.theme-switch__checkbox:checked + .theme-switch__container .zzz-2 {
+  animation: zzzAnim 2s infinite ease-in-out 0.4s;
+}
+.theme-switch__checkbox:checked + .theme-switch__container .zzz-3 {
+  animation: zzzAnim 2s infinite ease-in-out 0.8s;
+}
+
+@keyframes zzzAnim {
+  0% {
+    transform: translateY(0px) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10px) scale(1.2);
+    opacity: 0;
+  }
 }
