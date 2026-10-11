@@ -814,6 +814,7 @@ useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterPhanMonKHTN, filterLichHoc, filterToday]);
 
+// TỐI ƯU V3: Danh sách thả xuống Lịch học phụ thuộc vào Môn học
   const dropdownOptions = useMemo(() => {
     const loaiLopSet = new Set<string>();
     const khoiSet = new Set<string>();
@@ -821,25 +822,51 @@ useEffect(() => {
     const daysOnlySet = new Set<string>();
 
     data.forEach(item => {
+      // 1. Quét Loai Lớp và Khối
       if (item["Loại lớp"]) loaiLopSet.add(item["Loại lớp"].trim());
       if (item["Khối"]) khoiSet.add(item["Khối"].trim());
       
-      // TỐI ƯU HIỆU NĂNG V3: Chỉ bóc tách chữ nếu môn học gốc là Toán
+      // 2. Quét Môn học (Áp dụng thuật toán ảo hóa TCLC)
       const rawSub = (item["Môn học"] || "").trim();
+      let isToanTCLC = false;
+      let isToanThuong = false;
+      let isKHTN = false;
+      
       if (rawSub.toLowerCase().includes("toán") || rawSub.toLowerCase().includes("toan")) {
         const maLop = (item["Mã lớp"] || "").trim().toUpperCase();
         if (maLop.startsWith("TCLC")) {
           monHocSet.add("Toán TCLC");
+          isToanTCLC = true;
         } else {
           monHocSet.add("Toán");
+          isToanThuong = true;
         }
       } else {
-        if (rawSub) monHocSet.add(rawSub); // Các môn khác bê nguyên xi vào menu
+        if (rawSub) {
+          monHocSet.add(rawSub);
+          if (rawSub.toLowerCase().includes("khtn") || rawSub.toLowerCase().includes("khoa học")) {
+             isKHTN = true;
+          }
+        }
       }
 
-      if (item["Lịch học"]) {
+      // 3. TỐI ƯU UX: Quét Lịch học dựa trên Ngữ cảnh Môn
+      // Chỉ add Lịch học vào danh sách xổ xuống NẾU dòng đó thỏa mãn bộ lọc Môn hiện tại
+      let shouldAddLich = true;
+      
+      if (filterMonHoc !== "Tất cả") {
+         if (filterMonHoc === "Toán TCLC" && !isToanTCLC) shouldAddLich = false;
+         else if (filterMonHoc === "Toán" && !isToanThuong) shouldAddLich = false;
+         else if (filterMonHoc === "KHTN" && !isKHTN) shouldAddLich = false;
+         else if (filterMonHoc !== "Toán" && filterMonHoc !== "Toán TCLC" && filterMonHoc !== "KHTN") {
+             if (rawSub !== filterMonHoc) shouldAddLich = false;
+         }
+      }
+
+      // Nếu dòng này nằm trong Môn đang chọn, ta mới trích xuất ngày học của nó
+      if (shouldAddLich && item["Lịch học"]) {
         const fullLich = item["Lịch học"].trim();
-        const daysPart = fullLich.split(" ")[0];
+        const daysPart = fullLich.split(" ")[0]; // Lấy phần "T2,T5"
         if (daysPart) daysOnlySet.add(daysPart);
       }
     });
@@ -854,9 +881,9 @@ useEffect(() => {
       loaiLop: Array.from(loaiLopSet).sort(),
       khoi: sortedKhoi,
       monHoc: Array.from(monHocSet).sort(),
-      lichHoc: Array.from(daysOnlySet).sort(),
+      lichHoc: Array.from(daysOnlySet).sort(), // Lúc này danh sách Lịch đã được lọc đúng
     };
-  }, [data]);
+  }, [data, filterMonHoc]); // Rất quan trọng: Thêm filterMonHoc vào để nó tự động tính lại khi đổi môn
 
   const stats = useMemo(() => {
     const currentTabBase = data.filter(item => {
