@@ -1754,8 +1754,117 @@ const renderCustomDropdown = (
           </div>
         </header>
 
-        {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
-          <div key="LichSuSlotAdmin" className="flex-1 px-8 pt-5 pb-6 min-h-0 flex flex-col animate-fade-slide-up">
+{loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
+          <div key="LichSuSlotAdmin" className="flex-1 px-8 pt-4 pb-5 min-h-0 flex flex-col animate-fade-slide-up">
+            
+            {/* 4 THẺ THỐNG KÊ NHANH (ĐÃ THU GỌN CÂN ĐỐI, KHÔNG ĐÈ BẢNG) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-3 shrink-0">
+              <div className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
+                theme === 'dark' ? 'bg-[#151b2b] border-white/10 shadow-sm' : 'bg-white border-slate-200 shadow-xs'
+              }`}>
+                <p className="text-sky-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Tổng Số Đơn</p>
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                    {currentHistoryData.filter(row => {
+                      const teamVal = row.team || row["Team"] || "";
+                      if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
+                      return true;
+                    }).length}
+                  </span>
+                  <span className="text-slate-400 text-[11px] font-medium">yêu cầu</span>
+                </div>
+              </div>
+
+              <div className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
+                theme === 'dark' ? 'bg-[#151b2b] border-white/10 shadow-sm' : 'bg-white border-slate-200 shadow-xs'
+              }`}>
+                <p className="text-amber-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Đang Chờ Xử Lý</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-extrabold text-amber-500">
+                    {currentHistoryData.filter((row, index) => {
+                      const teamVal = row.team || row["Team"] || "";
+                      if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
+
+                      let timeStr = "";
+                      if (row.timestamp) {
+                        const d = new Date(Number(row.timestamp));
+                        const pad = (n: number) => n.toString().padStart(2, '0');
+                        timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                      } else {
+                        timeStr = row["Thời gian"] || "";
+                      }
+                      const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                      const rowKey = `${timeStr}-${maLop}-${index}`;
+                      const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Status"] === "Đã xếp xong"; 
+                      const isExpired = checkIsExpired(timeStr);
+
+                      return !isDone && !isExpired;
+                    }).length}
+                  </span>
+                  <span className="text-slate-400 text-[11px] font-medium">chờ xếp</span>
+                </div>
+              </div>
+
+              <div className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
+                theme === 'dark' ? 'bg-[#151b2b] border-white/10 shadow-sm' : 'bg-white border-slate-200 shadow-xs'
+              }`}>
+                <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Đã Hoàn Thành</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-extrabold text-emerald-500">
+                    {currentHistoryData.filter((row, index) => {
+                      const teamVal = row.team || row["Team"] || "";
+                      if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
+
+                      let timeStr = "";
+                      if (row.timestamp) {
+                        const d = new Date(Number(row.timestamp));
+                        const pad = (n: number) => n.toString().padStart(2, '0');
+                        timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                      } else {
+                        timeStr = row["Thời gian"] || "";
+                      }
+                      const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                      const rowKey = `${timeStr}-${maLop}-${index}`;
+                      const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Status"] === "Đã xếp xong"; 
+
+                      return isDone;
+                    }).length}
+                  </span>
+                  <span className="text-slate-400 text-[11px] font-medium">đã xong</span>
+                </div>
+              </div>
+
+              <div className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
+                theme === 'dark' ? 'bg-[#151b2b] border-white/10 shadow-sm' : 'bg-white border-slate-200 shadow-xs'
+              }`}>
+                <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Quá Hạn (Nhả Slot)</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-extrabold text-red-500">
+                    {currentHistoryData.filter((row, index) => {
+                      const teamVal = row.team || row["Team"] || "";
+                      if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
+
+                      let timeStr = "";
+                      if (row.timestamp) {
+                        const d = new Date(Number(row.timestamp));
+                        const pad = (n: number) => n.toString().padStart(2, '0');
+                        timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                      } else {
+                        timeStr = row["Thời gian"] || "";
+                      }
+                      const maLop = row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+                      const rowKey = `${timeStr}-${maLop}-${index}`;
+                      const isDone = completedSlots[rowKey] || row.is_done || row["Trạng thái"] === "Done" || row["Status"] === "Đã xếp xong"; 
+                      const isExpired = checkIsExpired(timeStr);
+
+                      return !isDone && isExpired;
+                    }).length}
+                  </span>
+                  <span className="text-slate-400 text-[11px] font-medium">hết hạn</span>
+                </div>
+              </div>
+            </div>
+
             <div className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
               theme === 'dark' ? 'bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]' : 'bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100'
             }`}>
@@ -1765,7 +1874,7 @@ const renderCustomDropdown = (
                   📋 Danh sách lịch sử giữ slot 
                 </h3>
 
-<div className="flex items-center gap-2.5 flex-wrap justify-end">
+                <div className="flex items-center gap-2.5 flex-wrap justify-end">
                   {/* Ô CHỌN TEAM LEAD DẠNG DROPDOWN CÓ TỰ ĐỘNG ĐÓNG KHI BẤM RA NGOÀI */}
                   <div className="relative">
                     <button
@@ -1918,7 +2027,7 @@ const renderCustomDropdown = (
                         <td colSpan={8} className="px-6 py-20 text-center text-slate-400 font-semibold">Vui lòng chờ dữ liệu từ Database !!</td>
                       </tr>
                     ) : currentHistoryData.length > 0 ? (
-currentHistoryData
+                       currentHistoryData
                       .filter((row, index) => {
                         // 👇 1. BỔ SUNG ĐOÀN LỌC NÀY ĐỂ KÍCH HOẠT BỘ LỌC TEAM LEAD
                         const teamVal = row.team || row["Team"] || "";
