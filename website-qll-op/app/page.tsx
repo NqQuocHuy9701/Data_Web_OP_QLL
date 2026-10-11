@@ -171,6 +171,15 @@ export default function Home() {
   const [completedSlots, setCompletedSlots] = useState<Record<string, boolean>>({});
 
   const [filterMonHoc, setFilterMonHoc] = useState("Tất cả");
+// DÒNG BỊ THIẾU Ở ĐÂY NÀY BẠN: Khai báo State cho Phân môn KHTN
+  const [filterPhanMonKHTN, setFilterPhanMonKHTN] = useState("Tất cả");
+
+  // Tự động reset Phân môn nếu QLL chọn môn khác (không phải KHTN)
+  useEffect(() => {
+    if (filterMonHoc !== "KHTN") {
+      setFilterPhanMonKHTN("Tất cả");
+    }
+  }, [filterMonHoc]);
   const [filterKhoi, setFilterKhoi] = useState("Tất cả");
   const [filterLoaiLop, setFilterLoaiLop] = useState("Tất cả");
   const [filterLichHoc, setFilterLichHoc] = useState("Tất cả");
@@ -779,10 +788,10 @@ useEffect(() => {
     }
   }, [isLoggedIn, isUserAdmin]);
 
-  // [TỐI ƯU V3] Cập nhật mảng phụ thuộc cho Pagination từ searchTerm sang debouncedSearchTerm
+// [TỐI ƯU V3] Cập nhật mảng phụ thuộc cho Pagination
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
+  }, [debouncedSearchTerm, activeNav, filterLoaiLop, filterKhoi, filterMonHoc, filterPhanMonKHTN, filterLichHoc, filterToday]);
 
   const dropdownOptions = useMemo(() => {
     const loaiLopSet = new Set<string>();
@@ -2066,6 +2075,20 @@ useEffect(() => {
 
                   <div className="flex flex-wrap items-center gap-2.5">
                     {renderCustomDropdown("Môn", "mon", filterMonHoc, dropdownOptions.monHoc, setFilterMonHoc)}
+                    {/* BỘ LỌC TÀNG HÌNH: Chỉ trượt ra khi Môn = KHTN */}
+                    {filterMonHoc === "KHTN" && (
+                      <div className="animate-fade-slide-up">
+                        {renderCustomDropdown(
+                          "Phân môn", 
+                          "phanMonKHTN", 
+                          filterPhanMonKHTN, 
+                          ["Vật lí", "Hóa học", "Sinh học"], 
+                          setFilterPhanMonKHTN
+                        )}
+                      </div>
+                    )}
+
+                    {renderCustomDropdown("Khối", "khoi", filterKhoi, dropdownOptions.khoi, setFilterKhoi, (val) => `Khối ${val}`)}
                     {renderCustomDropdown("Khối", "khoi", filterKhoi, dropdownOptions.khoi, setFilterKhoi, (val) => `Khối ${val}`)}
                     {renderCustomDropdown("Loại lớp", "loai", filterLoaiLop, dropdownOptions.loaiLop, setFilterLoaiLop)}
                     {renderCustomDropdown("Lịch", "lich", filterLichHoc, dropdownOptions.lichHoc, setFilterLichHoc)}
