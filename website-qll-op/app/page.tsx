@@ -1165,7 +1165,7 @@ const filteredData = useMemo(() => {
     }
   };
 
-  const renderCustomDropdown = (
+const renderCustomDropdown = (
     label: string, 
     key: string, 
     currentValue: string, 
@@ -1193,41 +1193,49 @@ const filteredData = useMemo(() => {
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] py-2 z-50 animate-fade-slide-up">
-            <div className="max-h-60 overflow-y-auto custom-scrollbar px-1.5 space-y-0.5">
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChange("Tất cả");
-                  setOpenDropdown(null);
-                }}
-                className={`px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
-                  currentValue === "Tất cả" ? "bg-sky-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                {label}: Tất cả
+          <>
+            {/* MÀN HÌNH TRONG SUỐT BẮT SỰ KIỆN CLICK BÊN NGOÀI ĐỂ TỰ ĐỘNG ĐÓNG MENU */}
+            <div 
+              className="fixed inset-0 z-40 bg-transparent" 
+              onClick={() => setOpenDropdown(null)} 
+            />
+
+            <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] py-2 z-50 animate-fade-slide-up">
+              <div className="max-h-60 overflow-y-auto custom-scrollbar px-1.5 space-y-0.5">
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onChange("Tất cả");
+                    setOpenDropdown(null);
+                  }}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
+                    currentValue === "Tất cả" ? "bg-sky-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  {label}: Tất cả
+                </div>
+                {options.map((opt, idx) => {
+                  const displayVal = formatItem ? formatItem(opt) : opt;
+                  const isSelected = currentValue === opt;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onChange(opt);
+                        setOpenDropdown(null);
+                      }}
+                      className={`px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors truncate ${
+                        isSelected ? "bg-sky-500 text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      {displayVal}
+                    </div>
+                  );
+                })}
               </div>
-              {options.map((opt, idx) => {
-                const displayVal = formatItem ? formatItem(opt) : opt;
-                const isSelected = currentValue === opt;
-                return (
-                  <div
-                    key={idx}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onChange(opt);
-                      setOpenDropdown(null);
-                    }}
-                    className={`px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors truncate ${
-                      isSelected ? "bg-sky-500 text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    {displayVal}
-                  </div>
-                );
-              })}
             </div>
-          </div>
+          </>
         )}
       </div>
     );
