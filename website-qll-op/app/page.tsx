@@ -909,7 +909,7 @@ useEffect(() => {
     return { isLow: false, text: "" };
   };
 
-  const filteredData = useMemo(() => {
+const filteredData = useMemo(() => {
     const today = new Date().getDay();
     const todayStr = today === 0 ? "CN" : `T${today + 1}`;
 
@@ -947,23 +947,35 @@ useEffect(() => {
 
       if (filterLoaiLop !== "Tất cả" && (item["Loại lớp"] || "").trim() !== filterLoaiLop) return false;
       if (filterKhoi !== "Tất cả" && (item["Khối"] || "").trim() !== filterKhoi) return false;
-      // TỐI ƯU LỌC V3: Rẽ nhánh riêng biệt cho Toán để tránh lag 5000+ dòng
+      
+      // TỐI ƯU LỌC V3: Rẽ nhánh riêng biệt cho Toán và KHTN
       if (filterMonHoc !== "Tất cả") {
         if (filterMonHoc === "Toán" || filterMonHoc === "Toán TCLC") {
           const rawSub = (item["Môn học"] || "").toLowerCase().trim();
-          // Loại ngay lập tức nếu môn gốc ở Sheet không phải là Toán
           if (!rawSub.includes("toán") && !rawSub.includes("toan")) return false; 
           
           const isTCLC = (item["Mã lớp"] || "").toUpperCase().startsWith("TCLC");
-          
           if (filterMonHoc === "Toán TCLC" && !isTCLC) return false;
           if (filterMonHoc === "Toán" && isTCLC) return false;
+          
+        } else if (filterMonHoc === "KHTN") {
+          // XỬ LÝ KHTN & PHÂN MÔN TỪ KHUNG CHƯƠNG TRÌNH
+          const rawSub = (item["Môn học"] || "").toLowerCase().trim();
+          if (!rawSub.includes("khtn") && !rawSub.includes("khoa học")) return false;
+          
+          if (filterPhanMonKHTN !== "Tất cả") {
+            const khungCT = (item["M: Khung chương trình"] || item["Khung chương trình"] || "").toLowerCase();
+            // Lọc theo từ khóa của từng phân môn
+            if (filterPhanMonKHTN === "Vật lí" && !khungCT.includes("vật lí") && !khungCT.includes("vật lý")) return false;
+            if (filterPhanMonKHTN === "Hóa học" && !khungCT.includes("hóa học")) return false;
+            if (filterPhanMonKHTN === "Sinh học" && !khungCT.includes("sinh học")) return false;
+          }
         } else {
-          // Các môn khác (KHTN, Anh...): So sánh chuỗi tĩnh bình thường, tốc độ chớp mắt
+          // Các môn khác (Anh...): So sánh chuỗi tĩnh bình thường, tốc độ chớp mắt
           if ((item["Môn học"] || "").trim() !== filterMonHoc) return false;
         }
       }
-      
+
       const itemLich = (item["Lịch học"] || "").trim();
       
       if (filterLichHoc !== "Tất cả") {
