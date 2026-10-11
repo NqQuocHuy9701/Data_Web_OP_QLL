@@ -180,11 +180,32 @@ export default function Home() {
       setFilterPhanMonKHTN("Tất cả");
     }
   }, [filterMonHoc]);
+
   const [filterKhoi, setFilterKhoi] = useState("Tất cả");
   const [filterLoaiLop, setFilterLoaiLop] = useState("Tất cả");
   const [filterLichHoc, setFilterLichHoc] = useState("Tất cả");
   const [filterToday, setFilterToday] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // HÀM MỚI: Xóa tất cả bộ lọc
+  const handleClearFilters = () => {
+    setFilterMonHoc("Tất cả");
+    setFilterPhanMonKHTN("Tất cả");
+    setFilterKhoi("Tất cả");
+    setFilterLoaiLop("Tất cả");
+    setFilterLichHoc("Tất cả");
+    setFilterToday(false);
+    setSearchTerm(""); // Nếu bạn muốn xóa cả thanh tìm kiếm thì để dòng này
+    setCurrentPage(1);
+  };
+
+  // Xác định xem có bộ lọc nào đang được kích hoạt không
+  const isFiltering = filterMonHoc !== "Tất cả" || 
+                      filterPhanMonKHTN !== "Tất cả" || 
+                      filterKhoi !== "Tất cả" || 
+                      filterLoaiLop !== "Tất cả" || 
+                      filterLichHoc !== "Tất cả" || 
+                      filterToday !== false;
   
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
 
@@ -2106,7 +2127,7 @@ const filteredData = useMemo(() => {
                     {renderCustomDropdown("Loại lớp", "loai", filterLoaiLop, dropdownOptions.loaiLop, setFilterLoaiLop)}
                     {renderCustomDropdown("Lịch", "lich", filterLichHoc, dropdownOptions.lichHoc, setFilterLichHoc)}
                     
-                    <button
+                   <button
                       type="button"
                       onClick={() => setFilterToday(!filterToday)}
                       className={`px-4 py-2 border rounded-xl font-bold text-xs flex items-center gap-2 focus:outline-none transition-colors duration-0 active:scale-95 ${
@@ -2115,9 +2136,39 @@ const filteredData = useMemo(() => {
                           : (theme === 'dark' ? "bg-[#0a0f1c] border-white/10 text-slate-300 hover:border-orange-500/50 hover:text-orange-400" : "bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50/30 hover:text-orange-500")
                       }`}
                     >
-                      <span className="text-sm">{filterToday ? "📅" : "🗓️"}</span>
+                    <span className="text-sm">{filterToday ? "📅" : "🗓️"}</span>
                       {filterToday ? "Đang chọn: Hôm nay" : "Hôm nay"}
                     </button>
+                    {/* NÚT XÓA BỘ LỌC ĐỘNG (Chỉ hiện khi có lọc) */}
+                    {isFiltering && (
+                      <button
+                        type="button"
+                        onClick={handleClearFilters}
+                        className={`group px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 focus:outline-none transition-all duration-300 active:scale-95 animate-fade-slide-up border ${
+                          theme === 'dark' 
+                            ? "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-300 hover:shadow-[0_0_12px_rgba(239,68,68,0.3)]" 
+                            : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300 hover:text-red-700 hover:shadow-sm"
+                        }`}
+                        title="Xóa tất cả bộ lọc"
+                      >
+                        <svg 
+                          className="w-4 h-4 transition-transform duration-500 group-hover:rotate-180" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24" 
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        <span className="hidden sm:inline">Xóa lọc</span>
+                      </button>
+                    )}
+
+                    <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
+                      theme === 'dark' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' : 'bg-sky-50 text-sky-600 border-sky-100'
+                    }`}>
+                      {filteredData.length} kết quả
+                    </span>
 
                     <span className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
                       theme === 'dark' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' : 'bg-sky-50 text-sky-600 border-sky-100'
