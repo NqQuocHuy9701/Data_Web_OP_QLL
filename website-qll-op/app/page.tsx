@@ -326,100 +326,57 @@ export default function Home() {
     }
   };
 
-  // [TỐI ƯU V5] GHI NHẬN CONCURRENT USERS (CCU) - ĐỒNG BỘ REALTIME TỪNG PHÚT
+  // =======================================================================
+  // 1. TỰ ĐỘNG LÀM MỚI BIỂU ĐỒ MỖI 30 GIÂY (GIẢI QUYẾT LỖI LỆCH DATA)
+  // =======================================================================
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (isLoggedIn && activeNav === "ThongKeAdmin") {
+      loadTrafficStatsFromSupabase(); // Kéo data ngay lập tức khi mở tab
 
-    const syncRealtimePresence = async () => {
-      // Chỉ đồng bộ khi danh sách online đã được tải xong
-      if (onlineUsers.length === 0) return;
+      // Thiết lập tự động kéo data mới mỗi 30 giây (30000ms)
+      const interval = setInterval(() => {
+        loadTrafficStatsFromSupabase();
+      }, 30000);
 
-      try {
-        const now = new Date();
-        const pad = (n: number) => n.toString().padStart(2, "0");
-        const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
-        const timeSlot = `${pad(now.getHours())}:${pad(now.getMinutes())}`; // Bắt chuẩn xác từng 1 phút
-
-        const currentOnlineCount = onlineUsers.length;
-
-        // Kiểm tra xem mốc 1 phút này đã có dữ liệu chưa
-        const { data: existing } = await supabase
-          .from("system_traffic_logs")
-          .select("id, request_count")
-          .eq("date_str", dateStr)
-          .eq("time_slot", timeSlot)
-          .single();
-
-        if (existing) {
-          // Chỉ cập nhật nếu số người online thực tế CAO HƠN mức đỉnh đã lưu trong phút đó
-          if (currentOnlineCount > existing.request_count) {
-            await supabase
-              .from("system_traffic_logs")
-              .update({
-                request_count: currentOnlineCount,
-                updated_at: new Date(),
-              })
-              .eq("id", existing.id);
-          }
-        } else {
-          // Nếu bước sang phút mới chưa có ai ghi nhận -> Tạo mốc mới với số người online hiện tại
-          await supabase
-            .from("system_traffic_logs")
-            .insert([
-              {
-                date_str: dateStr,
-                time_slot: timeSlot,
-                request_count: currentOnlineCount,
-              },
-            ]);
-        }
-      } catch (error) {
-        console.error("Lỗi đồng bộ CCU lên Supabase:", error);
-      }
-    };
-
-    // 1. Kích hoạt ngay lập tức mỗi khi có người ĐĂNG NHẬP hoặc THOÁT RA
-    syncRealtimePresence();
-
-    // 2. Tự động ping "nhịp tim" đồng bộ mỗi 1 phút (60000ms) để chốt sổ dữ liệu liên tục
-    const interval = setInterval(syncRealtimePresence, 60000);
-
-    // Yêu cầu quyền Web Push (Giữ nguyên)
-    if (typeof window !== "undefined" && "Notification" in window) {
-      if (
-        Notification.permission !== "granted" &&
-        Notification.permission !== "denied"
-      ) {
-        Notification.requestPermission();
-      }
+      // Dọn dẹp interval khi chuyển sang tab khác
+      return () => clearInterval(interval);
     }
+  }, [isLoggedIn, activeNav]);
 
-    // Xóa interval khi unmount
-    return () => clearInterval(interval);
-  }, [isLoggedIn, onlineUsers.length]); // <-- Điểm mấu chốt: Hàm chạy lại mỗi khi số lượng người online thay đổi
-
-  // 1. BIỂU ĐỒ ĐƯỜNG: VẼ CHÍNH XÁC ĐỈNH TRUY CẬP (SPIKE) TỪ SUPABASE
+  // =======================================================================
+  // 2. ZOOM BIỂU ĐỒ ĐƯỜNG (CHỈ HIỂN THỊ 4 TIẾNG GẦN NHẤT ĐỂ THẤY SÓNG CHẠY)
+  // =======================================================================
   const todayChartData = useMemo(() => {
     const now = new Date();
     const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
     const chartData = [];
 
-    // Tạo các mốc 3 phút từ 00:00 đến hiện tại
-    for (let i = 0; i <= currentTotalMinutes; i += 3) {
+    // ZOOM IN: Trừ đi 240 phút (4 tiếng). Nếu muốn xem xa hơn thì đổi 240 thành 360 (6 tiếng)
+    const startMinutes = Math.max(0, currentTotalMinutes - 240);
+
+    // Vòng lặp chỉ vẽ các mốc 3 phút trong khoảng 4 tiếng đổ lại đây
+    for (let i = startMinutes; i <= currentTotalMinutes; i += 3) {
       const h = Math.floor(i / 60)
         .toString()
         .padStart(2, "0");
       const m = (i % 60).toString().padStart(2, "0");
       const timeKey = `${h}:${m}`;
 
-      // Lấy số requests từ Supabase, không có thì trả về 0
       const requests = dailyTrafficStats[timeKey] || 0;
 
       chartData.push({ time: timeKey, requests: requests });
     }
 
+    // Đẩy thêm 1-2 mốc thời gian TƯƠNG LAI (trống) để biểu đồ có khoảng thở phía trước
+    const next1 = currentTotalMinutes + 3;
+    const h1 = Math.floor(next1 / 60)
+      .toString()
+      .padStart(2, "0");
+    const m1 = (next1 % 60).toString().padStart(2, "0");
+    chartData.push({ time: `${h1}:${m1}`, requests: 0 });
+
     return chartData;
-  }, [dailyTrafficStats]);
+  }, [dailyTrafficStats]); // Biểu đồ tự vẽ lại mỗi khi dailyTrafficStats được cập nhật
 
   // 2. BIỂU ĐỒ CỘT: TỔNG HỢP 7 NGÀY GẦN NHẤT & ĐỒNG BỘ DỮ LIỆU
   const historicalChartData = useMemo(() => {
