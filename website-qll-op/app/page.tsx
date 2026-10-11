@@ -984,7 +984,7 @@ useEffect(() => {
 
       return true; 
     });
-  }, [data, activeNav, debouncedSearchTerm, filterLoaiLop, filterKhoi, filterMonHoc, filterLichHoc, filterToday]);
+  }, [data, activeNav, debouncedSearchTerm, filterLoaiLop, filterKhoi, filterMonHoc, filterPhanMonKHTN, filterLichHoc, filterToday]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   
