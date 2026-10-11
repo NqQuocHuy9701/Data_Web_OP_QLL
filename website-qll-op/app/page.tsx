@@ -2458,19 +2458,22 @@ const renderCustomDropdown = (
           <div key={activeNav} className="flex-1 flex flex-col min-h-0 animate-fade-slide-up">
             <div className="px-8 pt-4 pb-3 shrink-0">
 {/* BƯỚC 2: BANNER CHÀO MỪNG CÁ NHÂN HÓA CHO QLL */}
-<div className="flex items-center gap-3 mb-3">
+<div className="flex items-center gap-2.5 mb-3 flex-wrap">
   <img 
     src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
     alt="Bitu Mascot" 
-    className="h-10 w-auto object-contain drop-shadow-sm"
+    className="h-8 sm:h-10 w-auto object-contain shrink-0 drop-shadow-sm"
   />
   
-  <h2 className="text-[17px] font-greeting tracking-wide flex items-center gap-1.5 h-[28px]">
-    <span className={`font-bold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Vận hành,</span>
-    <div className="flex items-center overflow-hidden">
+  <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+    <span className={`font-bold tracking-tight text-sm sm:text-[17px] transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+      Vận hành,
+    </span>
+    
+    <div className="inline-block min-w-0">
       <span 
         key={currentWordIndex}
-        className="text-orange-500 font-handwriting text-[20px] font-bold tracking-normal leading-none animate-smooth-signature"
+        className="text-orange-500 font-handwriting text-base sm:text-[20px] font-bold tracking-normal leading-snug animate-smooth-signature block"
       >
         {currentWordIndex === 0 ? (
           <>
@@ -2481,7 +2484,7 @@ const renderCustomDropdown = (
         )}
       </span>
     </div>
-  </h2>
+  </div>
 </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
