@@ -107,7 +107,7 @@ export default function Home() {
         const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
 
         const h = pad(now.getHours());
-        const m = pad(now.getMinutes()); // Lấy chính xác phút hiện tại (VD: 18:01, 18:02...)
+        const m = pad(Math.floor(now.getMinutes() / 3) * 3); // Gom nhóm mỗi 3 phút
         const timeSlot = `${h}:${m}`;
 
         // Kiểm tra xem khung giờ này đã tồn tại chưa
@@ -339,16 +339,15 @@ export default function Home() {
     const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
     const chartData = [];
 
-    // Tạo các mốc 5 phút từ 00:00 đến ĐÚNG phút hiện tại
-    for (let i = 0; i <= currentTotalMinutes; i++) {
+    // Tạo các mốc 3 phút từ 00:00 đến hiện tại
+    for (let i = 0; i <= currentTotalMinutes; i += 3) {
       const h = Math.floor(i / 60)
         .toString()
         .padStart(2, "0");
       const m = (i % 60).toString().padStart(2, "0");
       const timeKey = `${h}:${m}`;
 
-      // Nếu Supabase có dữ liệu (Ví dụ 18:15 có 2 lượt) -> Biểu đồ nhô lên
-      // Nếu khung giờ đó không ai vào -> Trả về 0 (Biểu đồ hạ xuống sát đáy)
+      // Lấy số requests từ Supabase, không có thì trả về 0
       const requests = dailyTrafficStats[timeKey] || 0;
 
       chartData.push({ time: timeKey, requests: requests });
