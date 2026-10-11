@@ -153,13 +153,13 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // BỘ MÁY CHẠY CHỮ TỰ ĐỘNG TUẦN TỰ (1 -> 2 -> 3)
+// Mảng câu chữ chạy luân phiên (câu đầu tiên là câu chào dài cá nhân hóa)
   const words = useMemo(() => ["Dữ liệu đã sẵn sàng !", "Xin Chào", "Hello !"], []);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentWordIndex((prev) => (prev + 1) % words.length);
+      setCurrentWordIndex((prev) => (prev + 1) % (words.length + 1));
     }, 4000); 
 
     return () => clearInterval(timer);
@@ -2463,13 +2463,19 @@ const renderCustomDropdown = (
                 <img 
                   src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f" 
                   alt="Bitu Mascot" 
-                  className="h-7 w-auto object-contain shrink-0"
+                  className="h-7 w-auto object-contain"
                 />
                 
-                <h2 className="text-[13px] lg:text-[14px] font-medium tracking-wide flex items-center gap-1.5 truncate">
-                  <span className={theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}>
-                    ✨ Chào mừng <strong className="text-orange-500 font-bold">{displayName}</strong> đến với website Vận hành! Chúc bạn một ngày làm việc thật hiệu quả nhé. 🚀
-                  </span>
+                <h2 className="text-[17px] font-greeting tracking-wide flex items-center gap-1.5 h-[24px]">
+                  <span className={`font-bold tracking-tight transition-colors duration-0 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Vận hành,</span>
+                  <div className="flex items-center overflow-hidden">
+                    <span 
+                      key={currentWordIndex}
+                      className="text-orange-500 font-handwriting text-[20px] font-bold tracking-normal leading-none animate-smooth-signature"
+                    >
+                      {currentWordIndex === 0 ? `✨ Chào mừng ${displayName} đến với website Vận hành! Chúc bạn một ngày làm việc thật hiệu quả nhé.` : words[currentWordIndex - 1]}
+                    </span>
+                  </div>
                 </h2>
               </div>
               </div>
