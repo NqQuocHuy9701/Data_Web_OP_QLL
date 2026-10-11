@@ -29,12 +29,12 @@ export default function ThemeToggle({ theme, toggleTheme }: ThemeToggleProps) {
               <div className="theme-switch__spot"></div>
               <div className="theme-switch__spot"></div>
               <div className="theme-switch__spot"></div>
-            </div>
-            {/* Đưa Z z z ra ngoài khối moon để không bị cắt khuất */}
-            <div className="theme-switch__zzz">
-              <span>Z</span>
-              <span>z</span>
-              <span>z</span>
+              {/* Đặt Z z z ngay bên trong khối moon để đi theo chuyển động của mặt trăng */}
+              <div className="theme-switch__zzz">
+                <span>Z</span>
+                <span>z</span>
+                <span>z</span>
+              </div>
             </div>
           </div>
         </div>

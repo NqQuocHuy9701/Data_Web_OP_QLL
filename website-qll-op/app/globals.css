@@ -181,17 +181,21 @@ body {
 
 /* --- HIỆU ỨNG CHỮ Z Z Z BAN ĐÊM --- */
 /* --- HIỆU ỨNG CHỮ Z Z Z BAN ĐÊM --- */
+.theme-switch__moon {
+  overflow: visible !important; /* Cho phép chữ Z bay tràn ra ngoài vành trăng một chút */
+}
+
 .theme-switch__zzz {
   position: absolute;
-  top: -12px;
-  right: -8px;
+  top: -10px;
+  right: -12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   opacity: 0;
   transform: scale(0);
   transition: all 0.4s ease-in-out;
-  z-index: 20;
+  z-index: 50;
   pointer-events: none;
 }
 
@@ -199,13 +203,13 @@ body {
   font-family: sans-serif;
   font-weight: 900;
   color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
   line-height: 0.7;
 }
 
 .theme-switch__zzz span:nth-child(1) { font-size: 7px; transform: translateX(6px); }
 .theme-switch__zzz span:nth-child(2) { font-size: 10px; transform: translateX(2px); }
-.theme-switch__zzz span:nth-child(3) { font-size: 13px; transform: translateX(-3px); }
+.theme-switch__zzz span:nth-child(3) { font-size: 13px; transform: translateX(-2px); }
 
 /* Khi bật chế độ tối, chữ Z z z hiện lên và bay nhún nhảy */
 .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__zzz {
@@ -216,5 +220,5 @@ body {
 
 @keyframes zzzFloat {
   0%, 100% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-4px) scale(1.08); }
+  50% { transform: translateY(-4px) scale(1.1); }
 }
