@@ -29,16 +29,16 @@ export default function ThemeToggle({ theme, toggleTheme }: ThemeToggleProps) {
               <div className="theme-switch__spot"></div>
               <div className="theme-switch__spot"></div>
               <div className="theme-switch__spot"></div>
+              
+              {/* Chữ Z nằm trực tiếp bên trong mặt trăng */}
+              <div className="theme-switch-zzz-wrapper">
+                <div className="z z-1">Z</div>
+                <div className="z z-2">Z</div>
+                <div className="z z-3">Z</div>
+                <div className="z z-4">Z</div>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Thêm hiệu ứng Z z z từ Uiverse */}
-        <div className="theme-switch-zzz-wrapper">
-          <div className="z z-1">Z</div>
-          <div className="z z-2">Z</div>
-          <div className="z z-3">Z</div>
-          <div className="z z-4">Z</div>
         </div>
       </div>
     </label>
