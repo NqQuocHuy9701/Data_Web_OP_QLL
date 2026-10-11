@@ -1758,19 +1758,43 @@ const filteredData = useMemo(() => {
                 </h3>
 <div className="flex items-center gap-2.5 flex-wrap justify-end">
                   {/* BỘ LỌC THEO TEAM LEAD */}
-<select
-  value={filterTeam}
-  onChange={(e) => setFilterTeam(e.target.value)}
-  className={`px-3.5 py-2.5 border rounded-xl font-bold text-xs focus:outline-none cursor-pointer transition-colors duration-0 ${
-    theme === 'dark' ? 'bg-[#0a0f1c] border-white/15 text-slate-300 focus:border-orange-500/50' : 'bg-slate-50 border-slate-200 text-slate-700 focus:border-orange-400'
-  }`}
->
-  <option value="Tất cả">👑 Tất cả Team Lead</option>
-  {/* Quét trực tiếp các Team từ danh sách hiện tại */}
-  {Array.from(new Set(currentHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t, idx) => (
-    <option key={idx} value={t}>{t}</option>
-  ))}
-</select>
+<div className="flex items-center gap-1.5 p-1 border rounded-2xl transition-colors duration-0 overflow-x-auto custom-scrollbar max-w-md">
+                  <button
+                    type="button"
+                    onClick={() => setFilterTeam("Tất cả")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap focus:outline-none active:scale-95 ${
+                      filterTeam === "Tất cả"
+                        ? "bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.35)] scale-105"
+                        : theme === 'dark'
+                          ? "text-slate-400 hover:text-white hover:bg-white/5"
+                          : "text-slate-600 hover:text-orange-600 hover:bg-white shadow-xs"
+                    }`}
+                  >
+                    <span>👑</span>
+                    <span>Tất cả Team</span>
+                  </button>
+
+                  {Array.from(new Set(currentHistoryData.map(r => r.team || r["Team"]).filter(Boolean))).map((t) => {
+                    const isActive = filterTeam === t;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setFilterTeam(t)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap focus:outline-none active:scale-95 ${
+                          isActive
+                            ? "bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.35)] scale-105"
+                            : theme === 'dark'
+                              ? "text-slate-400 hover:text-white hover:bg-white/5"
+                              : "text-slate-600 hover:text-orange-600 hover:bg-white shadow-xs"
+                        }`}
+                      >
+                        <span>🛡️</span>
+                        <span>{t}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
                   {/* CÁC NÚT BẤM TRẠNG THÁI */}
                   <div className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
