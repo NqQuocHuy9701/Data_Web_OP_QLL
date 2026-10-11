@@ -265,38 +265,41 @@ body {
   }
 }
 
-/* --- NÚT ACTION MỚI (itay1313) --- */
+/* --- NÚT ACTION TỐI ƯU ĐỘ TƯƠNG PHẢN (KHÔNG BỊ MẤT CHỮ) --- */
 .custom-btn {
-  --transition: all 0.55s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  --yellow-bg: transparent linear-gradient(114deg, #fdc100 0%, #dd7d00 100%) 0% 0% no-repeat padding-box;
+  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --yellow-bg: linear-gradient(114deg, #fdc100 0%, #dd7d00 100%);
   
   border-radius: 23px;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   font-size: 13px;
-  font-weight: 400;
-  color: white;
+  font-weight: 600;
+  color: #ffffff;
   white-space: nowrap;
   width: 125px;
   height: 38px;
   cursor: pointer;
   position: relative;
   border: 1px solid #dd7d00;
-  background: transparent;
+  background: var(--yellow-bg);
   overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(221, 125, 0, 0.3);
 }
 
+/* Lớp nền trượt khi hover */
 .custom-btn::before {
   transition: var(--transition);
   content: "";
-  width: 50%;
+  width: 0%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: #1a1a1a; /* Nền tối khi hover */
   position: absolute;
   top: 0;
   right: 0;
+  z-index: 1;
 }
 
 .custom-btn:hover::before {
@@ -304,36 +307,23 @@ body {
 }
 
 .custom-btn.btn-hover {
-  border-radius: 50px;
+  border-radius: 23px;
   position: relative;
 }
 
 .custom-btn.btn-hover .btn-text {
-  color: white;
-  transition: var(--transition);
-  mix-blend-mode: lighten;
+  color: #ffffff;
+  position: relative;
+  z-index: 2; /* Đảm bảo chữ luôn nằm trên lớp nền trượt */
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* Thêm bóng chữ giúp nổi bật trên mọi nền */
 }
 
-.custom-btn.btn-hover::before {
-  border-radius: 50px;
-  width: 100%;
-  background: conic-gradient(
-    transparent 240deg, #ac633697 240deg,
-    #fff2af6a 300deg, transparent 300deg
-  )
-  100% / 64%
-  no-repeat, var(--yellow-bg);
-}
-
-.custom-btn.btn-hover:hover::before {
-  background-position: right;
-  border-radius: 23px;
-  width: 25%;
-}
-
-/* Hiệu ứng chuyển đổi chữ Giữ Slot -> Đồng ý khi hover */
+/* Hiệu ứng chuyển đổi chữ Giữ Slot -> Đồng ý mượt mà */
 .btn-label-swap {
   position: relative;
   display: inline-block;
@@ -345,23 +335,25 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  top: 0;
+  top: 50%;
+  transform: translateY(-50%) translateY(12px);
   opacity: 0;
-  transform: translateY(10px);
   transition: all 0.3s ease;
+  color: #ffffff;
 }
 
 .btn-label-swap .default-text {
   display: inline-block;
   transition: all 0.3s ease;
+  transform: translateY(0);
 }
 
 .custom-btn:hover .btn-label-swap .default-text {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translateY(-12px);
 }
 
 .custom-btn:hover .btn-label-swap .hover-text {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(-50%);
 }
