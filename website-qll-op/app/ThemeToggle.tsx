@@ -29,6 +29,12 @@ export default function ThemeToggle({ theme, toggleTheme }: ThemeToggleProps) {
               <div className="theme-switch__spot"></div>
               <div className="theme-switch__spot"></div>
               <div className="theme-switch__spot"></div>
+              {/* Thêm hiệu ứng Z z z ở đây */}
+              <div className="theme-switch__zzz">
+                <span>Z</span>
+                <span>z</span>
+                <span>z</span>
+              </div>
             </div>
           </div>
         </div>

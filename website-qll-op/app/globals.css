@@ -178,3 +178,39 @@ body {
   top: 50%;
   transform: translateY(-50%);
 }
+
+/* --- HIỆU ỨNG CHỮ Z Z Z BAN ĐÊM --- */
+.theme-switch__zzz {
+  position: absolute;
+  top: -2px;
+  right: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.4s ease-in-out;
+}
+
+.theme-switch__zzz span {
+  font-family: monospace;
+  font-weight: bold;
+  color: #c4c9d1;
+  line-height: 0.8;
+}
+
+.theme-switch__zzz span:nth-child(1) { font-size: 8px; transform: translateX(4px); }
+.theme-switch__zzz span:nth-child(2) { font-size: 10px; transform: translateX(0px); }
+.theme-switch__zzz span:nth-child(3) { font-size: 13px; transform: translateX(-4px); }
+
+/* Khi bật chế độ tối (checkbox được chọn), chữ Z z z hiện lên và bay nhún nhảy */
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__zzz {
+  opacity: 1;
+  transform: scale(1);
+  animation: zzzFloat 2s infinite ease-in-out;
+}
+
+@keyframes zzzFloat {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-3px) scale(1.05); }
+}
