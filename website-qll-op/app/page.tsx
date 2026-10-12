@@ -1025,10 +1025,6 @@ export default function Home() {
     const trinhDoSet = new Set<string>(); // <--- THÊM DÒNG NÀY VÀO ĐÂY
 
     data.forEach((item) => {
-      // 1. Quét Loai Lớp và Khối
-      if (item["Loại lớp"]) loaiLopSet.add(item["Loại lớp"].trim());
-      if (item["Khối"]) khoiSet.add(item["Khối"].trim());
-
       // 2. Quét Môn học (Áp dụng thuật toán ảo hóa TCLC)
       const rawSub = (item["Môn học"] || "").trim();
       let isToanTCLC = false;
@@ -1078,19 +1074,27 @@ export default function Home() {
       }
 
       if (shouldAddLich) {
-        // Chỉ thêm lịch học nếu có
+        // 1. Quét Loại Lớp và Khối của những môn thỏa mãn
+        if (item["Loại lớp"]) {
+          loaiLopSet.add(item["Loại lớp"].trim());
+        }
+        if (item["Khối"]) {
+          khoiSet.add(item["Khối"].trim());
+        }
+
+        // 2. Chỉ thêm lịch học nếu có
         if (item["Lịch học"]) {
           const fullLich = item["Lịch học"].trim();
           const daysPart = fullLich.split(" ")[0]; // Lấy phần "T2,T5"
           if (daysPart) daysOnlySet.add(daysPart);
         }
 
-        // CHỈ thêm Trình độ của những môn thoả mãn (tức là nằm TRONG khối shouldAddLich)
+        // 3. CHỈ thêm Trình độ của những môn thoả mãn (tức là nằm TRONG khối shouldAddLich)
         if (item["Trình độ"]) {
           trinhDoSet.add(item["Trình độ"].trim());
         }
       } // <-- Đây là dấu đóng của if(shouldAddLich)
-    }); // <-- Dòng 1090: Đây là dấu đóng của data.forEach
+    }); // <-- Dấu đóng của vòng lặp data.forEach
 
     const sortedKhoi = Array.from(khoiSet).sort((a, b) => {
       const numA = parseInt(a.replace(/[^0-9]/g, "")) || 0;
