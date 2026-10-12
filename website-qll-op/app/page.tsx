@@ -98,6 +98,8 @@ export default function Home() {
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [filterTeam, setFilterTeam] = useState("Tất cả");
+  const [filterTrinhDo, setFilterTrinhDo] = useState("Tất cả");
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("qll_theme") as "light" | "dark";
     if (savedTheme) setTheme(savedTheme);
@@ -1018,6 +1020,7 @@ export default function Home() {
     const khoiSet = new Set<string>();
     const monHocSet = new Set<string>();
     const daysOnlySet = new Set<string>();
+    const trinhDoSet = new Set<string>(); // <--- THÊM DÒNG NÀY VÀO ĐÂY
 
     data.forEach((item) => {
       // 1. Quét Loai Lớp và Khối
@@ -1078,6 +1081,11 @@ export default function Home() {
         const daysPart = fullLich.split(" ")[0]; // Lấy phần "T2,T5"
         if (daysPart) daysOnlySet.add(daysPart);
       }
+
+      // <--- THÊM ĐOẠN NÀY ĐỂ BẮT TRÌNH ĐỘ THEO MÔN
+      if (item["Trình độ"]) {
+        trinhDoSet.add(item["Trình độ"].trim());
+      }
     });
 
     const sortedKhoi = Array.from(khoiSet).sort((a, b) => {
@@ -1091,6 +1099,7 @@ export default function Home() {
       khoi: sortedKhoi,
       monHoc: Array.from(monHocSet).sort(),
       lichHoc: Array.from(daysOnlySet).sort(), // Lúc này danh sách Lịch đã được lọc đúng
+      trinhDo: Array.from(trinhDoSet).sort(), // <--- THÊM DÒNG NÀY
     };
   }, [data, filterMonHoc]); // Rất quan trọng: Thêm filterMonHoc vào để nó tự động tính lại khi đổi môn
 
@@ -1301,6 +1310,9 @@ export default function Home() {
       if (filterToday) {
         if (!itemLich.includes(todayStr)) return false;
       }
+      if (filterTrinhDo !== "Tất cả" && (item["Trình độ"] || "").trim() !== filterTrinhDo) {
+        return false;
+      }
 
       // [TỐI ƯU V3] Đã đổi thành debouncedSearchTerm để thanh tìm kiếm mượt mà
       if (debouncedSearchTerm) {
@@ -1322,6 +1334,7 @@ export default function Home() {
     filterMonHoc,
     filterPhanMonKHTN,
     filterLichHoc,
+    filterTrinhDo, // <--- THÊM VÀO ĐÂY NHÉ
     filterToday,
   ]);
 
@@ -3620,6 +3633,13 @@ export default function Home() {
                           setFilterPhanMonKHTN,
                         )}
                       </div>
+                    )}
+                    {renderCustomDropdown(
+                      "Trình độ",
+                      "trinhDo",
+                      filterTrinhDo,
+                      dropdownOptions.trinhDo, // <--- ĐỔI CHỖ NÀY LẠI THÀNH dropdownOptions.trinhDo
+                      setFilterTrinhDo,
                     )}
 
                     {/* Chỉ giữ lại đúng 1 dòng của bộ lọc Khối */}
