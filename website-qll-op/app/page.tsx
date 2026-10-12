@@ -91,10 +91,13 @@ export default function Home() {
   const [filterHistoryStatus, setFilterHistoryStatus] = useState("Tất cả");
   const [namecode, setNamecode] = useState("");
   const [teamLead, setTeamLead] = useState("Lead LienDT");
+  // State quản lý popup lỗi khi load Sheet
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
 
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [filterTeam, setFilterTeam] = useState("Tất cả");
@@ -852,9 +855,10 @@ export default function Home() {
       loadTrafficStatsFromSupabase();
     }
   }, [isLoggedIn]);
-  // =========================================================
-  const loadData = () => {
+const loadData = () => {
     setLoading(true);
+    setErrorMessage(""); // 1. Reset lỗi (ẩn popup) mỗi khi bắt đầu tải lại
+
     Papa.parse(SHEET_CSV_URL, {
       download: true,
       header: true,
@@ -863,7 +867,12 @@ export default function Home() {
       complete: (results) => {
         if (results.data && results.data.length > 0) {
           setData(results.data);
+          setErrorMessage(""); // 2. Có dữ liệu -> Tắt popup
+        } else {
+          // 3. File tải về thành công nhưng mảng trống (Sheet N/A hoặc bị xóa trắng)
+          setErrorMessage("Dữ liệu từ Google Sheet đang trống (File trắng hoặc N/A). Vui lòng kiểm tra lại file gốc.");
         }
+        
         setLoading(false);
         const now = new Date();
         const timeStr = now.toLocaleTimeString("vi-VN", {
@@ -877,6 +886,8 @@ export default function Home() {
       error: (err) => {
         console.error("Lỗi:", err);
         setLoading(false);
+        // 4. Lỗi mạng, sai link URL, bị chặn CORS hoặc file bị khóa
+        setErrorMessage(`Lỗi kết nối: ${err.message || "Không thể tải file CSV. Vui lòng kiểm tra lại kết nối mạng hoặc URL."}`);
       },
     });
   };
