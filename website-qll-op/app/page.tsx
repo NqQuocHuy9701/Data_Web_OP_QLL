@@ -880,7 +880,7 @@ const loadData = () => {
         } 
         else {
           // 👉 ĐỔI LỜI NHẮN KHI DATA TRỐNG (Hoặc bạn có thể giữ nguyên câu cũ tuỳ ý)
-          setErrorMessage("Dữ liệu Sheet đang trống! Hệ thống đang có sự cố ! Liên hệ huynq5 Vận hành !");
+          setErrorMessage("Hệ thống đang có sự cố ! Liên hệ HuyNQ5 - Vận hành !");
         }
 
         setLoading(false);
