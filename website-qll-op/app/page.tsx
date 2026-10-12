@@ -289,6 +289,7 @@ export default function Home() {
     setFilterKhoi("Tất cả");
     setFilterLoaiLop("Tất cả");
     setFilterLichHoc("Tất cả");
+    setFilterTrinhDo("Tất cả"); // <--- THÊM DÒNG NÀY ĐỂ RESET TRÌNH ĐỘ
     setFilterToday(false);
     setSearchTerm(""); // Nếu bạn muốn xóa cả thanh tìm kiếm thì để dòng này
     setCurrentPage(1);
@@ -301,6 +302,7 @@ export default function Home() {
     filterKhoi !== "Tất cả" ||
     filterLoaiLop !== "Tất cả" ||
     filterLichHoc !== "Tất cả" ||
+    filterTrinhDo !== "Tất cả" || // <--- THÊM ĐIỀU KIỆN NÀY ĐỂ HIỆN NÚT XÓA LỌC
     filterToday !== false;
 
   const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
