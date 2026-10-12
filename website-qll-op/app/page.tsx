@@ -855,7 +855,7 @@ export default function Home() {
       loadTrafficStatsFromSupabase();
     }
   }, [isLoggedIn]);
-const loadData = () => {
+  const loadData = () => {
     setLoading(true);
     setErrorMessage(""); // 1. Reset lỗi (ẩn popup) mỗi khi bắt đầu tải lại
 
@@ -870,9 +870,11 @@ const loadData = () => {
           setErrorMessage(""); // 2. Có dữ liệu -> Tắt popup
         } else {
           // 3. File tải về thành công nhưng mảng trống (Sheet N/A hoặc bị xóa trắng)
-          setErrorMessage("Dữ liệu từ Google Sheet đang trống (File trắng hoặc N/A). Vui lòng kiểm tra lại file gốc.");
+          setErrorMessage(
+            "Dữ liệu từ Google Sheet đang trống (File trắng hoặc N/A). Vui lòng kiểm tra lại file gốc.",
+          );
         }
-        
+
         setLoading(false);
         const now = new Date();
         const timeStr = now.toLocaleTimeString("vi-VN", {
@@ -887,7 +889,9 @@ const loadData = () => {
         console.error("Lỗi:", err);
         setLoading(false);
         // 4. Lỗi mạng, sai link URL, bị chặn CORS hoặc file bị khóa
-        setErrorMessage(`Lỗi kết nối: ${err.message || "Không thể tải file CSV. Vui lòng kiểm tra lại kết nối mạng hoặc URL."}`);
+        setErrorMessage(
+          `Lỗi kết nối: ${err.message || "Không thể tải file CSV. Vui lòng kiểm tra lại kết nối mạng hoặc URL."}`,
+        );
       },
     });
   };
