@@ -1075,18 +1075,20 @@ export default function Home() {
         }
       }
 
-      // Nếu dòng này nằm trong Môn đang chọn, ta mới trích xuất ngày học của nó
-      if (shouldAddLich && item["Lịch học"]) {
-        const fullLich = item["Lịch học"].trim();
-        const daysPart = fullLich.split(" ")[0]; // Lấy phần "T2,T5"
-        if (daysPart) daysOnlySet.add(daysPart);
-      }
+      if (shouldAddLich) {
+        // Chỉ thêm lịch học nếu có
+        if (item["Lịch học"]) {
+          const fullLich = item["Lịch học"].trim();
+          const daysPart = fullLich.split(" ")[0]; // Lấy phần "T2,T5"
+          if (daysPart) daysOnlySet.add(daysPart);
+        }
 
-      // <--- THÊM ĐOẠN NÀY ĐỂ BẮT TRÌNH ĐỘ THEO MÔN
-      if (item["Trình độ"]) {
-        trinhDoSet.add(item["Trình độ"].trim());
-      }
-    });
+        // CHỈ thêm Trình độ của những môn thoả mãn (tức là nằm TRONG khối shouldAddLich)
+        if (item["Trình độ"]) {
+          trinhDoSet.add(item["Trình độ"].trim());
+        }
+      } // <-- Đây là dấu đóng của if(shouldAddLich)
+    }); // <-- Dòng 1090: Đây là dấu đóng của data.forEach
 
     const sortedKhoi = Array.from(khoiSet).sort((a, b) => {
       const numA = parseInt(a.replace(/[^0-9]/g, "")) || 0;
@@ -1310,7 +1312,10 @@ export default function Home() {
       if (filterToday) {
         if (!itemLich.includes(todayStr)) return false;
       }
-      if (filterTrinhDo !== "Tất cả" && (item["Trình độ"] || "").trim() !== filterTrinhDo) {
+      if (
+        filterTrinhDo !== "Tất cả" &&
+        (item["Trình độ"] || "").trim() !== filterTrinhDo
+      ) {
         return false;
       }
 
