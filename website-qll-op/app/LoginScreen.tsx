@@ -143,7 +143,7 @@ export default function LoginScreen({
         <div className="hidden lg:flex flex-col items-start relative animate-float-bitu z-20 pointer-events-none select-none pl-6 xl:pl-12">
           <div className="mb-4 ml-6 bg-[#1a1f33]/90 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl shadow-2xl relative">
             <p className="text-white font-medium text-base tracking-wide">
-              <span className="typing-effect">Xin chào bạn! ✨</span>
+              <span className="typing-effect">Vận hành xin chào! ✨</span>
             </p>
             <div className="absolute -bottom-2 left-8 w-4 h-4 bg-[#1a1f33]/90 border-r border-b border-white/10 rotate-45 backdrop-blur-md"></div>
           </div>

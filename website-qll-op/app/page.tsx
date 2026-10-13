@@ -18,6 +18,7 @@ import SlotModal from "./SlotModal";
 import ErrorPopup from "./ErrorPopup";
 import MainDataTable from "./MainDataTable";
 import Dashboard from "./Dashboard";
+import MyDashboard from "./MyDashboard";
 import ConfirmDialog from "./ConfirmDialog";
 import { createClient } from "@supabase/supabase-js";
 
@@ -111,6 +112,7 @@ export default function Home() {
     | "LichSuSlotAdmin"
     | "ThongKeAdmin"
     | "Dashboard"
+    | "TrangCuaToi"
   >("Giữ Slot");
   const [onlineUsers, setOnlineUsers] = useState<
     { namecode: string; teamLead: string; onlineAt: number }[]
@@ -507,6 +509,7 @@ export default function Home() {
           setNamecode(parsed.namecode);
           setTeamLead(parsed.teamLead || "Lead LienDT");
           setLoginRole("QLL");
+          setActiveNav("TrangCuaToi"); // QLL vào thẳng Trang của tôi
         }
         setIsLoggedIn(true);
       } catch (e) {
@@ -798,6 +801,7 @@ export default function Home() {
         role: "QLL",
       };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
+      setActiveNav("TrangCuaToi"); // QLL vào thẳng Trang của tôi
       setIsLoggedIn(true);
     } else {
       if (!adminUsername.trim() || !adminPassword.trim()) {
@@ -1682,7 +1686,17 @@ const loadData = () => {
           loadSlotHistory={loadSlotHistory}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
-        {loginRole === "Admin" && activeNav === "Dashboard" ? (
+        {loginRole === "QLL" && activeNav === "TrangCuaToi" ? (
+          <MyDashboard
+            slotHistoryData={slotHistoryData}
+            displayName={displayName}
+            completedSlots={completedSlots}
+            checkIsExpired={checkIsExpired}
+            onRequestRecall={(row) => setRecallTarget(row)}
+            onGoKeepSlot={() => setActiveNav("Giữ Slot")}
+            theme={theme}
+          />
+        ) : loginRole === "Admin" && activeNav === "Dashboard" ? (
           <Dashboard
             qllStats={qllStats}
             slotHistoryData={slotHistoryData}

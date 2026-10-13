@@ -10,7 +10,8 @@ type NavKey =
   | "QuanTriAdmin"
   | "LichSuSlotAdmin"
   | "ThongKeAdmin"
-  | "Dashboard";
+  | "Dashboard"
+  | "TrangCuaToi";
 
 interface SidebarProps {
   theme: "light" | "dark";
@@ -80,6 +81,28 @@ export default function Sidebar({
       </div>
 
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+        {/* Trang chủ cá nhân — chỉ QLL */}
+        {loginRole === "QLL" && (
+          <button
+            onClick={() => setActiveNav("TrangCuaToi")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
+              activeNav === "TrangCuaToi"
+                ? theme === "dark"
+                  ? "bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20"
+                  : "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]"
+                : theme === "dark"
+                  ? "text-slate-400 hover:bg-white/5 hover:text-sky-400 font-medium"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
+            }`}
+          >
+            <div
+              className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-0 ${activeNav === "TrangCuaToi" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
+            ></div>
+            <span className="text-lg">🏠</span>
+            <span className="text-xs truncate">Trang của tôi</span>
+          </button>
+        )}
+
         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2 px-2">
           Quản lý báo cáo
         </div>
