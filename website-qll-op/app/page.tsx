@@ -31,6 +31,24 @@ const supabaseAnonKey =
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Lấy ngày (DD/MM/YYYY) + phút (HH:MM) theo giờ Việt Nam, độc lập múi giờ máy.
+function getVNDateTime() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (t: string) => parts.find((p) => p.type === t)?.value || "00";
+  return {
+    dateStr: `${get("day")}/${get("month")}/${get("year")}`,
+    timeSlot: `${get("hour")}:${get("minute")}`,
+  };
+}
+
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginRole, setLoginRole] = useState<"QLL" | "Admin">("QLL");
@@ -163,12 +181,9 @@ export default function Home() {
 
     const syncRealtimePresence = async () => {
       try {
-        const now = new Date();
-        const pad = (n: number) => n.toString().padStart(2, "0");
-        const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
-        const timeSlot = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        const { dateStr, timeSlot } = getVNDateTime();
 
-        const currentOnlineCount = onlineUsers.length; // Lấy chính xác số người đang online (kể cả 0)
+        const currentOnlineCount = onlineUsers.length; // Số người đang online (kể cả 0)
 
         const { data: existing } = await supabase
           .from("system_traffic_logs")
@@ -178,7 +193,6 @@ export default function Home() {
           .single();
 
         if (existing) {
-          // Luôn cập nhật nếu số lượng online có biến động
           if (currentOnlineCount !== existing.request_count) {
             await supabase
               .from("system_traffic_logs")
@@ -189,7 +203,6 @@ export default function Home() {
               .eq("id", existing.id);
           }
         } else {
-          // Phút mới -> Tạo bản ghi mới
           await supabase.from("system_traffic_logs").insert([
             {
               date_str: dateStr,
@@ -303,17 +316,20 @@ export default function Home() {
     Record<string, number>
   >({});
 
-  // Hàm tải dữ liệu log từ DB
+  // Hàm tải dữ liệu log từ DB (client SDK như bản gốc, chỉ chuẩn hóa ngày theo giờ VN).
   const loadTrafficStatsFromSupabase = async () => {
     try {
-      const now = new Date();
-      const pad = (n: number) => n.toString().padStart(2, "0");
-      const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+      const { dateStr } = getVNDateTime();
 
+      // QUAN TRỌNG: order time_slot GIẢM DẦN để 1000 dòng mặc định PostgREST trả về
+      // là các phút GẦN NHẤT (khoảng biểu đồ đang xem), tránh bị cắt mất buổi tối
+      // khi dữ liệu trong ngày vượt 1000 bản ghi.
       const { data, error } = await supabase
         .from("system_traffic_logs")
         .select("time_slot, request_count")
-        .eq("date_str", dateStr);
+        .eq("date_str", dateStr)
+        .order("time_slot", { ascending: false })
+        .limit(1000);
 
       if (!error && data) {
         const trafficMap: Record<string, number> = {};
@@ -349,8 +365,20 @@ export default function Home() {
   // 2. ZOOM BIỂU ĐỒ ĐƯỜNG (THUẬT TOÁN ĐIỀN KHUYẾT CHỐNG ĐỨT GÃY)
   // =======================================================================
   const todayChartData = useMemo(() => {
-    const now = new Date();
-    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+    // Giờ hiện tại theo múi giờ VN (trùng với key time_slot do server ghi).
+    const vnParts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date());
+    const vnHour = parseInt(
+      vnParts.find((p) => p.type === "hour")?.value || "0",
+    );
+    const vnMinute = parseInt(
+      vnParts.find((p) => p.type === "minute")?.value || "0",
+    );
+    const currentTotalMinutes = vnHour * 60 + vnMinute;
     const chartData = [];
 
     // ZOOM IN: Xem 2 tiếng (120 phút) gần nhất để sóng hiển thị to và rõ
