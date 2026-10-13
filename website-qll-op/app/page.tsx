@@ -1574,40 +1574,73 @@ const loadData = () => {
     return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredData, currentPage]);
 
-  // 1. TẠO BỘ LỌC TÌM KIẾM CHO LỊCH SỬ
-  const filteredHistoryData = useMemo(() => {
-    // [TỐI ƯU V3] Áp dụng luôn debounce cho bảng lịch sử Admin
-    if (!debouncedSearchTerm) return slotHistoryData;
-    const lowerSearch = debouncedSearchTerm.toLowerCase().trim();
+  // BASE: lọc theo tìm kiếm + team (KHÔNG lọc trạng thái).
+  // Dùng cho 4 thẻ KPI (AdminStats) để luôn đếm đúng TỔNG theo team đang chọn.
+  const historyBaseData = useMemo(() => {
+    const lowerSearch = debouncedSearchTerm
+      ? debouncedSearchTerm.toLowerCase().trim()
+      : "";
 
     return slotHistoryData.filter((item) => {
-      const maLop = (
-        item.ma_lop ||
-        item["Mã lớp giữ"] ||
-        item["Mã lớp"] ||
-        ""
-      ).toLowerCase();
-      const monHoc = (item.mon_hoc || item["Môn học"] || "").toLowerCase();
-      const nguoiGiu = (
-        item.nguoi_giu ||
-        item["Người giữ"] ||
-        ""
-      ).toLowerCase();
-      const note = (
-        item.note ||
-        item["lưu ý ( mục note của QLL )"] ||
-        item["lưu ý"] ||
-        ""
-      ).toLowerCase();
+      const teamVal = item.team || item["Team"] || "";
+      if (filterTeam !== "Tất cả" && teamVal !== filterTeam) return false;
 
-      return (
-        maLop.includes(lowerSearch) ||
-        monHoc.includes(lowerSearch) ||
-        nguoiGiu.includes(lowerSearch) ||
-        note.includes(lowerSearch)
-      );
+      if (lowerSearch) {
+        const maLop = (
+          item.ma_lop ||
+          item["Mã lớp giữ"] ||
+          item["Mã lớp"] ||
+          ""
+        ).toLowerCase();
+        const monHoc = (item.mon_hoc || item["Môn học"] || "").toLowerCase();
+        const nguoiGiu = (
+          item.nguoi_giu ||
+          item["Người giữ"] ||
+          ""
+        ).toLowerCase();
+        const note = (
+          item.note ||
+          item["lưu ý ( mục note của QLL )"] ||
+          item["lưu ý"] ||
+          ""
+        ).toLowerCase();
+        const matchSearch =
+          maLop.includes(lowerSearch) ||
+          monHoc.includes(lowerSearch) ||
+          nguoiGiu.includes(lowerSearch) ||
+          note.includes(lowerSearch);
+        if (!matchSearch) return false;
+      }
+      return true;
     });
-  }, [slotHistoryData, debouncedSearchTerm]);
+  }, [slotHistoryData, debouncedSearchTerm, filterTeam]);
+
+  // BẢNG + PHÂN TRANG: thêm lọc theo trạng thái lên historyBaseData.
+  // Lọc ĐỦ trước khi phân trang -> mỗi trang luôn đủ 50 dòng, historyTotalPages đúng.
+  const filteredHistoryData = useMemo(() => {
+    if (filterHistoryStatus === "Tất cả") return historyBaseData;
+
+    return historyBaseData.filter((item) => {
+      let timeStr = "";
+      if (item.timestamp) {
+        const d = new Date(Number(item.timestamp));
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      } else {
+        timeStr = item["Thời gian"] || "";
+      }
+      const isDone =
+        item.is_done ||
+        item["Trạng thái"] === "Done" ||
+        item["Status"] === "Đã xếp xong";
+      const isExpired = checkIsExpired(timeStr);
+
+      if (filterHistoryStatus === "Đã xử lý") return isDone;
+      if (filterHistoryStatus === "Quá hạn") return !isDone && isExpired;
+      if (filterHistoryStatus === "Chưa xử lý") return !isDone && !isExpired;
+      return true;
+    });
+  }, [historyBaseData, filterHistoryStatus, checkIsExpired]);
 
   // 2. CẬP NHẬT LẠI PHÂN TRANG DỰA TRÊN DỮ LIỆU ĐÃ LỌC
   const historyTotalPages = Math.ceil(
@@ -1901,8 +1934,7 @@ const loadData = () => {
           >
             {/* 4 THẺ THỐNG KÊ NHANH (MINI KPI CARDS) CHO ADMIN */}
             <AdminStats
-              currentHistoryData={filteredHistoryData}
-
+              currentHistoryData={historyBaseData}
               filterTeam={filterTeam}
               completedSlots={completedSlots}
               checkIsExpired={checkIsExpired}
