@@ -1,21 +1,24 @@
+﻿"use client";
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Papa from "papaparse";
-import ThemeToggle from "./ThemeToggle";
-import ActionButton from "./ActionButton";
+import LoginScreen from "./LoginScreen";
+import Sidebar from "./Sidebar";
+import Header from "./Header";
+import AdminStats from "./AdminStats";
+import TrafficCharts from "./TrafficCharts";
+import FilterDropdown from "./FilterDropdown";
+import OnlineUsersTable from "./OnlineUsersTable";
+import CountdownTimer from "./CountdownTimer";
+import SlotHeldTable from "./SlotHeldTable";
+import AdminManagement from "./AdminManagement";
+import HistoryTable from "./HistoryTable";
+import SlotModal from "./SlotModal";
+import ErrorPopup from "./ErrorPopup";
+import MainDataTable from "./MainDataTable";
+import Dashboard from "./Dashboard";
 import { createClient } from "@supabase/supabase-js";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -25,65 +28,6 @@ const supabaseAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// ==========================================
-// TỐI ƯU: ĐẾM TỪNG GIÂY (BYPASS REACT DOM)
-// Đảm bảo chuẩn 24h, nhảy từng giây nhưng không tốn CPU Render
-// ==========================================
-const CountdownTimer = React.memo(({ timeString }: { timeString: string }) => {
-  const timerRef = React.useRef<HTMLSpanElement>(null);
-
-  // ra khỏi Component này để tránh bị gọi lặp lại hàng chục lần khi render bảng.
-
-  useEffect(() => {
-    let targetTime = 0;
-    try {
-      const parts = timeString.split(" ");
-      if (parts.length >= 2) {
-        const dateParts = parts[0].split("/");
-        const timeParts = parts[1].split(":");
-        const logDate = new Date(
-          parseInt(dateParts[2]),
-          parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[0]),
-          parseInt(timeParts[0]),
-          parseInt(timeParts[1]),
-          parseInt(timeParts[2] || "0"),
-        );
-        targetTime = logDate.getTime() + 24 * 60 * 60 * 1000;
-      }
-    } catch {
-      if (timerRef.current) timerRef.current.innerText = "Lỗi dữ liệu";
-      return;
-    }
-
-    if (!targetTime) return;
-
-    const updateTimer = () => {
-      if (!timerRef.current) return;
-
-      const diff = targetTime - Date.now();
-      if (diff <= 0) {
-        timerRef.current.innerText = "⏰ Quá hạn";
-        return;
-      }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      timerRef.current.innerText = `⏳ ${hours}h ${minutes}m ${seconds}s`;
-    };
-
-    updateTimer();
-    const timer = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeString]);
-
-  return <span ref={timerRef}>Đang tính...</span>;
-});
-// ==========================================
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -165,11 +109,43 @@ export default function Home() {
     | "QuanTriAdmin"
     | "LichSuSlotAdmin"
     | "ThongKeAdmin"
+    | "Dashboard"
   >("Giữ Slot");
   const [onlineUsers, setOnlineUsers] = useState<
     { namecode: string; teamLead: string; onlineAt: number }[]
   >([]);
   const [onlineCount, setOnlineCount] = useState(0);
+
+  // [MOBILE] Mở/đóng sidebar dạng drawer trên màn hình nhỏ (desktop luôn hiện).
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Ref giữ channel realtime để nút "Làm mới" có thể đọc lại presence thủ công.
+  const presenceChannelRef = useRef<any>(null);
+
+  // Đọc lại danh sách online hiện tại từ channel (không đụng luồng subscribe/track).
+  const refreshOnlineUsers = () => {
+    const channel = presenceChannelRef.current;
+    if (!channel) return;
+    const newState = channel.presenceState();
+    const usersList: {
+      namecode: string;
+      teamLead: string;
+      onlineAt: number;
+    }[] = [];
+    Object.keys(newState).forEach((key) => {
+      const presences = newState[key] as any[];
+      if (presences && presences.length > 0) {
+        const info = presences[0];
+        usersList.push({
+          namecode: info.user_name || key,
+          teamLead: info.team_lead || "Vận hành chung",
+          onlineAt: info.online_at || Date.now(),
+        });
+      }
+    });
+    setOnlineUsers(usersList);
+    setOnlineCount(usersList.length);
+  };
 
   // [TỐI ƯU V3] State Debounce để xử lý chống lag khi gõ tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
@@ -571,8 +547,9 @@ export default function Home() {
         item["Mã lớp"] === maLop;
       const notDone = item.is_done === false;
       const notExpired = now - Number(item.timestamp) < TWENTY_FOUR_HOURS;
+      const notCancelled = item.is_cancelled !== true; // Slot đã thu hồi → nhả lại
 
-      return matchMaLop && notDone && notExpired;
+      return matchMaLop && notDone && notExpired && notCancelled;
     });
 
     return activeHolds.length;
@@ -618,6 +595,46 @@ export default function Home() {
     }
   };
 
+  // THU HỒI SLOT: QLL thu hồi slot CÒN HẠN (chưa done, chưa quá hạn).
+  // Đánh dấu is_cancelled = true (không xóa, giữ lịch sử). Slot được nhả lại
+  // vì getActiveHeldCount sẽ bỏ qua bản ghi đã hủy. Realtime tới mọi máy.
+  const handleRecallSlot = async (dbId: string) => {
+    if (!dbId) {
+      alert("Lỗi: Không tìm thấy ID bản ghi trong cơ sở dữ liệu!");
+      return;
+    }
+
+    // 1. Cập nhật UI của chính mình ngay lập tức (optimistic).
+    setSlotHistoryData((prevData) =>
+      prevData.map((item) =>
+        item.id === dbId ? { ...item, is_cancelled: true } : item,
+      ),
+    );
+
+    try {
+      // 2. Bắn tín hiệu realtime sang mọi máy khác (Admin + QLL khác).
+      await supabase.channel("qll-room").send({
+        type: "broadcast",
+        event: "slot_cancelled",
+        payload: { id: dbId },
+      });
+
+      // 3. Lưu vào Database.
+      const { error } = await supabase
+        .from("slot_holds")
+        .update({ is_cancelled: true })
+        .eq("id", dbId);
+
+      if (error) {
+        console.error("Lỗi thu hồi slot:", error);
+        alert("Lỗi thu hồi slot: " + error.message);
+        loadSlotHistory(true);
+      }
+    } catch (error) {
+      console.error("Lỗi mạng khi thu hồi slot:", error);
+    }
+  };
+
   const isUserAdmin = loginRole === "Admin";
   const displayName = isUserAdmin ? adminUsername : namecode;
   const displayTeamOrRole = isUserAdmin ? "Admin hệ thống" : teamLead;
@@ -631,6 +648,7 @@ export default function Home() {
           broadcast: { self: false }, // QUAN TRỌNG: Mở cổng để nhận "tin nhắn ngầm" từ máy khác
         },
       });
+      presenceChannelRef.current = channel;
 
       channel.on("presence", { event: "sync" }, () => {
         const newState = channel.presenceState();
@@ -676,6 +694,16 @@ export default function Home() {
         );
       });
 
+      // Lắng nghe khi có QLL thu hồi slot → cập nhật mọi máy ngay (nhả slot).
+      channel.on("broadcast", { event: "slot_cancelled" }, (payload) => {
+        const cancelledId = payload.payload.id;
+        setSlotHistoryData((prevData) =>
+          prevData.map((item) =>
+            item.id === cancelledId ? { ...item, is_cancelled: true } : item,
+          ),
+        );
+      });
+
       channel.subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           await channel.track({
@@ -687,6 +715,7 @@ export default function Home() {
       });
 
       return () => {
+        presenceChannelRef.current = null;
         supabase.removeChannel(channel);
       };
     }
@@ -773,21 +802,25 @@ export default function Home() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from("admins")
-          .select("username, pass")
-          .eq("username", adminUsername.trim())
-          .eq("pass", adminPassword.trim())
-          .single();
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: adminUsername.trim(),
+            password: adminPassword.trim(),
+          }),
+        });
 
-        if (error || !data) {
+        const result = await res.json();
+
+        if (!result.success) {
           setLoginError("Tên đăng nhập hoặc mật khẩu Admin không chính xác!");
           return;
         }
 
         setNamecode("");
         const userData = {
-          namecode: data.username,
+          namecode: result.username,
           teamLead: "Admin hệ thống",
           role: "Admin",
         };
@@ -830,12 +863,16 @@ export default function Home() {
     }
 
     try {
-      const { error } = await supabase
-        .from("admins")
-        .insert([{ username: cleanUser, pass: cleanPass }]);
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: cleanUser, password: cleanPass }),
+      });
 
-      if (error) {
-        setAdminAddError("Lỗi lưu vào Supabase: " + error.message);
+      const result = await res.json();
+
+      if (!result.success) {
+        setAdminAddError(result.error || "Lỗi lưu vào Supabase!");
         return;
       }
 
@@ -1516,87 +1553,17 @@ const loadData = () => {
     onChange: (val: string) => void,
     formatItem?: (val: string) => string,
   ) => {
-    const isOpen = openDropdown === key;
-
     return (
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setOpenDropdown(isOpen ? null : key)}
-          className={`px-3.5 py-2 bg-white border rounded-xl font-semibold text-slate-700 shadow-sm text-xs flex items-center gap-2 transition-all cursor-pointer focus:outline-none ${
-            isOpen || currentValue !== "Tất cả"
-              ? "border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/30 text-sky-700"
-              : "border-slate-200 hover:border-sky-300"
-          }`}
-        >
-          <span>
-            {label}: <strong className="font-bold">{currentValue}</strong>
-          </span>
-          <svg
-            className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.5"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
-
-        {isOpen && (
-          <>
-            {/* 👉 BƯỚC 1: THÊM LỚP NỀN TRONG SUỐT ĐỂ TỰ ĐỘNG ĐÓNG KHI BẤM RA NGOÀI */}
-            <div
-              className="fixed inset-0 z-40 bg-transparent"
-              onClick={() => setOpenDropdown(null)}
-            />
-
-            <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] py-2 z-50 animate-fade-slide-up">
-              <div className="max-h-60 overflow-y-auto custom-scrollbar px-1.5 space-y-0.5">
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onChange("Tất cả");
-                    setOpenDropdown(null);
-                  }}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
-                    currentValue === "Tất cả"
-                      ? "bg-sky-500 text-white shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  {label}: Tất cả
-                </div>
-                {options.map((opt, idx) => {
-                  const displayVal = formatItem ? formatItem(opt) : opt;
-                  const isSelected = currentValue === opt;
-                  return (
-                    <div
-                      key={idx}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onChange(opt);
-                        setOpenDropdown(null);
-                      }}
-                      className={`px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors truncate ${
-                        isSelected
-                          ? "bg-sky-500 text-white shadow-sm"
-                          : "text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      {displayVal}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      <FilterDropdown
+        label={label}
+        dropdownKey={key}
+        currentValue={currentValue}
+        options={options}
+        onChange={onChange}
+        formatItem={formatItem}
+        openDropdown={openDropdown}
+        setOpenDropdown={setOpenDropdown}
+      />
     );
   };
 
@@ -1629,305 +1596,21 @@ const loadData = () => {
 
   if (!isLoggedIn) {
     return (
-      <div className="relative h-screen w-screen overflow-hidden font-sora bg-[#0f172a] flex items-center justify-center">
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-          @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
-          .font-sora { font-family: 'Sora', sans-serif !important; }
-
-          @keyframes floatBitu {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-12px) rotate(2deg); }
-          }
-          .animate-float-bitu {
-            animation: floatBitu 4s ease-in-out infinite;
-          }
-
-          @keyframes typing {
-            from { width: 0; }
-            to { width: 100%; }
-          }
-          @keyframes blink {
-            from, to { border-color: transparent; }
-            50% { border-color: #f97316; }
-          }
-          .typing-effect {
-            display: inline-block;
-            overflow: hidden;
-            white-space: nowrap;
-            border-right: 3px solid #f97316;
-            animation: typing 3s steps(16, end) infinite alternate, blink 0.75s step-end infinite;
-          }
-
-          @keyframes spin-glow {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-
-          .animated-border-box {
-            position: relative;
-            border-radius: 40px; 
-            padding: 4px; 
-            overflow: hidden;
-            background: rgba(255, 255, 255, 0.05); 
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
-          }
-
-          .animated-border-box::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(
-              transparent 70%, 
-              #00f2fe 85%, 
-              #4facfe 100%
-            );
-            animation: spin-glow 4s linear infinite;
-            z-index: 0;
-          }
-
-          .animated-border-box::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(
-              transparent 70%, 
-              #f97316 85%, 
-              #f59e0b 100%
-            );
-            animation: spin-glow 4s linear infinite;
-            animation-delay: -2s;
-            z-index: 0;
-          }
-
-          .animated-border-inner {
-            position: relative;
-            background: #0d111a; 
-            border-radius: 36px; 
-            z-index: 1;
-            width: 100%;
-            height: 100%;
-          }
-
-          input:-webkit-autofill,
-          input:-webkit-autofill:hover, 
-          input:-webkit-autofill:focus, 
-          input:-webkit-autofill:active {
-            -webkit-box-shadow: 0 0 0 30px #151a28 inset !important;
-            -webkit-text-fill-color: white !important;
-            transition: background-color 5000s ease-in-out 0s;
-          }
-        `,
-          }}
-        />
-
-        <div className="absolute inset-0 bg-[#070b19] -z-40"></div>
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 mix-blend-screen -z-30"
-          style={{ backgroundImage: `url('/backdrop.jpg')` }}
-        ></div>
-
-        <div className="w-full max-w-[1400px] px-6 lg:px-16 flex items-center justify-between">
-          <div className="hidden lg:flex flex-col items-start relative animate-float-bitu z-20 pointer-events-none select-none pl-6 xl:pl-12">
-            <div className="mb-4 ml-6 bg-[#1a1f33]/90 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl shadow-2xl relative">
-              <p className="text-white font-medium text-base tracking-wide">
-                <span className="typing-effect">Xin chào bạn! ✨</span>
-              </p>
-              <div className="absolute -bottom-2 left-8 w-4 h-4 bg-[#1a1f33]/90 border-r border-b border-white/10 rotate-45 backdrop-blur-md"></div>
-            </div>
-
-            <img
-              src="/Chào hỏi_2.png"
-              alt="Nhân vật Bitu Vuihoc"
-              className="w-[360px] xl:w-[420px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "/Ch%C3%A0o%20h%E1%BB%8Fi_2.png";
-              }}
-            />
-          </div>
-
-          <div className="animated-border-box w-full max-w-[540px] mx-auto lg:mx-0">
-            <div className="animated-border-inner p-10 lg:p-12">
-              <div className="flex items-center gap-3 mb-6">
-                <img
-                  src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png"
-                  alt="Vuihoc Logo"
-                  className="h-6 w-auto object-contain drop-shadow-sm"
-                />
-                <div className="border-l-[1.5px] border-white/10 pl-3">
-                  <p className="text-[9px] text-sky-400 font-bold uppercase tracking-widest mt-1">
-                    Vận Hành
-                  </p>
-                </div>
-              </div>
-
-              <h2 className="text-3xl lg:text-4xl font-semibold text-white mb-7">
-                Đăng nhập
-              </h2>
-
-              <div className="grid grid-cols-2 gap-2.5 p-1.5 bg-[#070a14] rounded-2xl mb-7 border border-white/5 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginRole("QLL");
-                    setLoginError("");
-                  }}
-                  className={`py-3.5 text-xs font-medium rounded-xl transition-all ${
-                    loginRole === "QLL"
-                      ? "bg-white/10 text-white shadow-md border border-white/10"
-                      : "text-slate-500 hover:text-white"
-                  }`}
-                >
-                  👩‍💻 Quản Lý Lớp (QLL)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginRole("Admin");
-                    setLoginError("");
-                  }}
-                  className={`py-3.5 text-xs font-medium rounded-xl transition-all ${
-                    loginRole === "Admin"
-                      ? "bg-white/10 text-white shadow-md border border-white/10"
-                      : "text-slate-500 hover:text-white"
-                  }`}
-                >
-                  🔐 Quản Trị (Admin)
-                </button>
-              </div>
-
-              <form onSubmit={handleLoginSubmit}>
-                {loginRole === "QLL" ? (
-                  <>
-                    <div className="mb-5">
-                      <label className="text-slate-300 text-sm font-medium mb-2 block">
-                        Namecode <span className="text-cyan-400">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder=""
-                        value={namecode}
-                        onChange={(e) => {
-                          setNamecode(e.target.value);
-                          setLoginError("");
-                        }}
-                        className="w-full min-h-[54px] px-4.5 py-3.5 bg-[#151a28] border border-white/10 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-cyan-500/50 focus:bg-[#1a2133] transition-all shadow-inner"
-                        autoFocus
-                      />
-                    </div>
-
-                    <div className="mb-7">
-                      <label className="text-slate-300 text-sm font-medium mb-2 block">
-                        Team Lead <span className="text-cyan-400">*</span>
-                      </label>
-                      <select
-                        value={teamLead}
-                        onChange={(e) => setTeamLead(e.target.value)}
-                        className="w-full min-h-[54px] px-4.5 py-3.5 bg-[#151a28] border border-white/10 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-cyan-500/50 focus:bg-[#1a2133] transition-all cursor-pointer shadow-inner"
-                      >
-                        <option
-                          value="Lead LienDT"
-                          className="bg-[#151a28] text-white"
-                        >
-                          Lead LienDT
-                        </option>
-                        <option
-                          value="Lead QuyenPT"
-                          className="bg-[#151a28] text-white"
-                        >
-                          Lead QuyenPT
-                        </option>
-                        <option
-                          value="Lead ChiNQ"
-                          className="bg-[#151a28] text-white"
-                        >
-                          Lead ChiNQ
-                        </option>
-                        <option
-                          value="Lead ChungMB"
-                          className="bg-[#151a28] text-white"
-                        >
-                          Lead ChungMB
-                        </option>
-                        <option
-                          value="Lead XuanNT14"
-                          className="bg-[#151a28] text-white"
-                        >
-                          Lead XuanNT14
-                        </option>
-                        <option
-                          value="Khác"
-                          className="bg-[#151a28] text-white"
-                        >
-                          Khác / QLL chung
-                        </option>
-                      </select>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="mb-5">
-                      <label className="text-slate-300 text-sm font-medium mb-2 block">
-                        Tên đăng nhập Admin{" "}
-                        <span className="text-cyan-400">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder=""
-                        value={adminUsername}
-                        onChange={(e) => {
-                          setAdminUsername(e.target.value);
-                          setLoginError("");
-                        }}
-                        className="w-full min-h-[54px] px-4.5 py-3.5 bg-[#151a28] border border-white/10 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-cyan-500/50 focus:bg-[#1a2133] transition-all shadow-inner"
-                        autoFocus
-                      />
-                    </div>
-                    <div className="mb-7">
-                      <label className="text-slate-300 text-sm font-medium mb-2 block">
-                        Mật khẩu Admin <span className="text-cyan-400">*</span>
-                      </label>
-                      <input
-                        type="password"
-                        placeholder=""
-                        value={adminPassword}
-                        onChange={(e) => {
-                          setAdminPassword(e.target.value);
-                          setLoginError("");
-                        }}
-                        className="w-full min-h-[54px] px-4.5 py-3.5 bg-[#151a28] border border-white/10 rounded-2xl text-white font-normal text-base focus:outline-none focus:border-cyan-500/50 focus:bg-[#1a2133] transition-all shadow-inner"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {loginError && (
-                  <p className="text-red-400 text-xs font-medium mb-4 text-center">
-                    {loginError}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  className="w-full min-h-[58px] rounded-2xl font-medium text-base transition-all cursor-pointer active:scale-95 shadow-xl flex items-center justify-center gap-2 bg-gradient-to-r from-[#00f2fe] to-[#4facfe] text-white hover:opacity-90 shadow-cyan-500/30 border border-cyan-400/30"
-                >
-                  {loginRole === "QLL"
-                    ? "Vào hệ thống QLL →"
-                    : "Đăng nhập Admin →"}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LoginScreen
+        loginRole={loginRole}
+        setLoginRole={setLoginRole}
+        loginError={loginError}
+        setLoginError={setLoginError}
+        namecode={namecode}
+        setNamecode={setNamecode}
+        teamLead={teamLead}
+        setTeamLead={setTeamLead}
+        adminUsername={adminUsername}
+        setAdminUsername={setAdminUsername}
+        adminPassword={adminPassword}
+        setAdminPassword={setAdminPassword}
+        handleLoginSubmit={handleLoginSubmit}
+      />
     );
   }
 
@@ -1967,2220 +1650,188 @@ const loadData = () => {
         </div>
       )}
 
-      <aside
-        className={`w-64 min-w-[16rem] max-w-[16rem] flex flex-col z-20 shrink-0 transition-colors duration-0 ${
-          theme === "dark"
-            ? "bg-[#0e1320] border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.5)]"
-            : "bg-white border-r border-slate-200/80 shadow-[4px_0_24px_rgba(0,0,0,0.02)]"
-        }`}
-      >
-        <div
-          className={`h-20 flex items-center px-6 border-b shrink-0 transition-colors duration-0 ${theme === "dark" ? "border-white/5" : "border-slate-100"}`}
-        >
-          <div className="flex items-center gap-3 cursor-pointer">
-            <img
-              src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png"
-              alt="Vuihoc Logo"
-              className="h-6 w-auto object-contain drop-shadow-sm"
-            />
-            <div
-              className={`border-l-[1.5px] pl-3 transition-colors duration-0 ${theme === "dark" ? "border-white/10" : "border-slate-200"}`}
-            >
-              <p className="text-[9px] text-sky-500 font-bold uppercase tracking-widest mt-1">
-                Vận Hành
-              </p>
-            </div>
-          </div>
-        </div>
+      <Sidebar
+        theme={theme}
+        activeNav={activeNav}
+        setActiveNav={setActiveNav}
+        loginRole={loginRole}
+        adminUsername={adminUsername}
+        namecode={namecode}
+        teamLead={teamLead}
+        loadSlotHistory={loadSlotHistory}
+        handleLogout={handleLogout}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2 px-2">
-            Quản lý báo cáo
-          </div>
-
-          <button
-            onClick={() => setActiveNav("Đang học")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
-              activeNav === "Đang học"
-                ? theme === "dark"
-                  ? "bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20"
-                  : "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]"
-                : theme === "dark"
-                  ? "text-slate-400 hover:bg-white/5 hover:text-sky-400 font-medium"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
-            }`}
-          >
-            <div
-              className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-0 ${activeNav === "Đang học" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
-            ></div>
-            <span className="text-lg">📚</span>
-            <span className="text-xs truncate">Lớp Đang Học</span>
-          </button>
-
-          <button
-            onClick={() => setActiveNav("Khai giảng")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
-              activeNav === "Khai giảng"
-                ? theme === "dark"
-                  ? "bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20"
-                  : "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]"
-                : theme === "dark"
-                  ? "text-slate-400 hover:bg-white/5 hover:text-sky-400 font-medium"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
-            }`}
-          >
-            <div
-              className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-0 ${activeNav === "Khai giảng" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
-            ></div>
-            <span className="text-lg">🚀</span>
-            <span className="text-xs truncate">Chờ Khai Giảng</span>
-          </button>
-
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-6 px-2">
-            Tác vụ chuyên biệt
-          </div>
-
-          <button
-            onClick={() => setActiveNav("Giữ Slot")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
-              activeNav === "Giữ Slot"
-                ? theme === "dark"
-                  ? "bg-orange-500/10 text-orange-400 font-bold border border-orange-500/20"
-                  : "bg-orange-50 text-orange-600 font-bold shadow-[0_2px_10px_rgba(249,115,22,0.1)]"
-                : theme === "dark"
-                  ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium"
-                  : "text-slate-500 hover:bg-orange-50/50 hover:text-orange-500 font-medium"
-            }`}
-          >
-            <div
-              className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-500 rounded-r-full transition-all duration-0 ${activeNav === "Giữ Slot" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
-            ></div>
-            <span className="text-lg">📌</span>
-            <span className="text-xs truncate">Giữ Slot Lớp</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveNav("SlotDaGiu");
-              loadSlotHistory();
-            }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
-              activeNav === "SlotDaGiu"
-                ? theme === "dark"
-                  ? "bg-amber-500/10 text-amber-400 font-bold border border-amber-500/20"
-                  : "bg-amber-50 text-amber-600 font-bold shadow-[0_2px_10px_rgba(251,191,36,0.1)]"
-                : theme === "dark"
-                  ? "text-slate-400 hover:bg-white/5 hover:text-amber-400 font-medium"
-                  : "text-slate-500 hover:bg-amber-50/50 hover:text-amber-500 font-medium"
-            }`}
-          >
-            <div
-              className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-amber-500 rounded-r-full transition-all duration-0 ${activeNav === "SlotDaGiu" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
-            ></div>
-            <span className="text-lg">🕒</span>
-            <span className="text-xs truncate">Slot Đã Giữ</span>
-          </button>
-
-          {loginRole === "Admin" && (
-            <>
-              <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
-                Hệ thống Quản trị
-              </div>
-
-              <button
-                onClick={() => {
-                  setActiveNav("LichSuSlotAdmin");
-                  loadSlotHistory();
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
-                  activeNav === "LichSuSlotAdmin"
-                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]"
-                    : theme === "dark"
-                      ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium"
-                      : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
-                }`}
-              >
-                <span className="text-lg">📋</span>
-                <span className="text-xs truncate">DS Giữ Slot</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveNav("ThongKeAdmin");
-                  loadSlotHistory();
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
-                  activeNav === "ThongKeAdmin"
-                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]"
-                    : theme === "dark"
-                      ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium"
-                      : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
-                }`}
-              >
-                <span className="text-lg">📊</span>
-                <span className="text-xs truncate">Theo dõi truy cập</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveNav("QuanTriAdmin");
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
-                  activeNav === "QuanTriAdmin"
-                    ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]"
-                    : theme === "dark"
-                      ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium"
-                      : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
-                }`}
-              >
-                <span className="text-lg">⚙️</span>
-                <span className="text-xs truncate">Quản Trị Admin</span>
-              </button>
-            </>
-          )}
-        </nav>
-
-        <div
-          className={`p-4 border-t shrink-0 flex items-center justify-between transition-colors duration-0 ${theme === "dark" ? "bg-[#0a0f1c] border-white/5" : "bg-slate-50/30 border-slate-100"}`}
-        >
-          <div className="flex items-center gap-3 px-1 cursor-pointer group">
-            <div
-              className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm transition-colors duration-0 ${
-                theme === "dark"
-                  ? loginRole === "Admin"
-                    ? "bg-orange-500/20 border-orange-500/30 text-orange-400"
-                    : "bg-sky-500/20 border-sky-500/30 text-sky-400"
-                  : loginRole === "Admin"
-                    ? "bg-orange-100 border-orange-200 text-orange-700"
-                    : "bg-sky-100 border-sky-200 text-sky-700"
-              }`}
-            >
-              {(loginRole === "Admin" ? adminUsername : namecode)
-                .substring(0, 2)
-                .toUpperCase()}
-            </div>
-            <div className="text-xs truncate max-w-[100px]">
-              <p
-                className={`font-bold truncate transition-colors duration-0 ${theme === "dark" ? "text-slate-200" : "text-slate-700"}`}
-                title={loginRole === "Admin" ? adminUsername : namecode}
-              >
-                {loginRole === "Admin" ? adminUsername : namecode}
-              </p>
-              <p
-                className="text-[10px] text-slate-400 truncate"
-                title={loginRole === "Admin" ? "Admin hệ thống" : teamLead}
-              >
-                {loginRole === "Admin" ? "Admin hệ thống" : teamLead}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            title="Đăng xuất"
-            className={`p-2 rounded-xl transition-colors duration-0 cursor-pointer ${theme === "dark" ? "text-slate-500 hover:text-red-400 hover:bg-red-500/10" : "text-slate-400 hover:text-red-500 hover:bg-red-50"}`}
-          >
-            🚪
-          </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
-        <header
-          className={`h-20 border-b flex items-center justify-between px-8 shrink-0 z-20 transition-colors duration-0 ${
-            theme === "dark"
-              ? "bg-[#0e1320] border-white/5 shadow-md"
-              : "bg-white/90 backdrop-blur-md border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.01)]"
-          }`}
-        >
-          <div className="flex-1 max-w-xl relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <span className="text-slate-400 group-focus-within:text-sky-500 transition-colors">
-                🔍
-              </span>
-            </div>
-            <input
-              type="text"
-              placeholder=""
-              className={`w-full pl-12 pr-4 py-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-colors duration-0 text-sm font-medium ${
-                theme === "dark"
-                  ? "bg-[#151b2b] border border-white/10 text-white placeholder-slate-500 focus:bg-[#1a2235]"
-                  : "bg-slate-50/80 border border-slate-200 text-slate-700 placeholder-slate-400 hover:bg-white focus:bg-white focus:shadow-sm"
-              }`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center scale-[0.6] transform origin-right">
-              <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
-            </div>
-
-            {lastUpdated && (
-              <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline-block">
-                Cập nhật lúc:{" "}
-                <strong
-                  className={`transition-colors duration-0 ${theme === "dark" ? "text-slate-300" : "text-slate-600"}`}
-                >
-                  {lastUpdated}
-                </strong>
-              </span>
-            )}
-
-            <button
-              onClick={() => {
-                loadData();
-                if (loginRole === "Admin") loadSlotHistory();
-              }}
-              disabled={loading || loadingHistory}
-              className={`px-6 py-2.5 text-sm font-bold rounded-full shadow-sm transition-colors duration-0 flex items-center gap-2.5 focus:outline-none active:scale-95
-                ${
-                  loading || loadingHistory
-                    ? theme === "dark"
-                      ? "bg-white/5 text-slate-500 cursor-not-allowed border border-white/5"
-                      : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
-                    : "bg-sky-500 text-white hover:bg-sky-600 border border-sky-500 hover:shadow-[0_4px_15px_rgba(14,165,233,0.3)]"
-                }`}
-            >
-              {loading || loadingHistory ? (
-                <>
-                  <svg
-                    className="animate-spin h-4 w-4 text-slate-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-                  </span>
-                  <span className="relative z-10">Update</span>
-                </>
-              )}
-            </button>
-          </div>
-        </header>
-        {loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
+      <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10 min-w-0">
+        <Header
+          theme={theme}
+          toggleTheme={toggleTheme}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          lastUpdated={lastUpdated}
+          loading={loading}
+          loadingHistory={loadingHistory}
+          loginRole={loginRole}
+          loadData={loadData}
+          loadSlotHistory={loadSlotHistory}
+          onOpenSidebar={() => setSidebarOpen(true)}
+        />
+        {loginRole === "Admin" && activeNav === "Dashboard" ? (
+          <Dashboard
+            qllStats={qllStats}
+            slotHistoryData={slotHistoryData}
+            theme={theme}
+          />
+        ) : loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div
             key="LichSuSlotAdmin"
             className="flex-1 px-8 pt-4 pb-5 min-h-0 flex flex-col animate-fade-slide-up"
           >
             {/* 4 THẺ THỐNG KÊ NHANH (MINI KPI CARDS) CHO ADMIN */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-3 shrink-0">
-              <div
-                className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
-                  theme === "dark"
-                    ? "bg-[#151b2b] border-white/10 shadow-sm"
-                    : "bg-white border-slate-200 shadow-xs"
-                }`}
-              >
-                <p className="text-sky-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
-                  Tổng Số Đơn
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span
-                    className={`text-xl font-extrabold ${theme === "dark" ? "text-white" : "text-slate-900"}`}
-                  >
-                    {
-                      currentHistoryData.filter((row) => {
-                        const teamVal = row.team || row["Team"] || "";
-                        if (filterTeam !== "Tất cả" && teamVal !== filterTeam)
-                          return false;
-                        return true;
-                      }).length
-                    }
-                  </span>
-                  <span className="text-slate-400 text-[11px] font-medium">
-                    yêu cầu
-                  </span>
-                </div>
-              </div>
+            <AdminStats
+              currentHistoryData={filteredHistoryData}
 
-              <div
-                className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
-                  theme === "dark"
-                    ? "bg-[#151b2b] border-white/10 shadow-sm"
-                    : "bg-white border-slate-200 shadow-xs"
-                }`}
-              >
-                <p className="text-amber-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
-                  Đang Chờ Xử Lý
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-extrabold text-amber-500">
-                    {
-                      currentHistoryData.filter((row, index) => {
-                        const teamVal = row.team || row["Team"] || "";
-                        if (filterTeam !== "Tất cả" && teamVal !== filterTeam)
-                          return false;
+              filterTeam={filterTeam}
+              completedSlots={completedSlots}
+              checkIsExpired={checkIsExpired}
+              theme={theme}
+            />
 
-                        let timeStr = "";
-                        if (row.timestamp) {
-                          const d = new Date(Number(row.timestamp));
-                          const pad = (n: number) =>
-                            n.toString().padStart(2, "0");
-                          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                        } else {
-                          timeStr = row["Thời gian"] || "";
-                        }
-                        const maLop =
-                          row.ma_lop ||
-                          row["Mã lớp giữ"] ||
-                          row["Mã lớp"] ||
-                          "";
-                        const rowKey = `${timeStr}-${maLop}-${index}`;
-                        const isDone =
-                          completedSlots[rowKey] ||
-                          row.is_done ||
-                          row["Trạng thái"] === "Done" ||
-                          row["Status"] === "Đã xếp xong";
-                        const isExpired = checkIsExpired(timeStr);
+            <HistoryTable
+              theme={theme}
+              openDropdown={openDropdown}
+              setOpenDropdown={setOpenDropdown}
+              filterTeam={filterTeam}
+              setFilterTeam={setFilterTeam}
+              filterHistoryStatus={filterHistoryStatus}
+              setFilterHistoryStatus={setFilterHistoryStatus}
+              slotHistoryData={slotHistoryData}
+              currentHistoryData={currentHistoryData}
+              completedSlots={completedSlots}
+              checkIsExpired={checkIsExpired}
+              handleMarkAsDone={handleMarkAsDone}
+              loadingHistory={loadingHistory}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              historyTotalPages={historyTotalPages}
+            />
 
-                        return !isDone && !isExpired;
-                      }).length
-                    }
-                  </span>
-                  <span className="text-slate-400 text-[11px] font-medium">
-                    chờ xếp
-                  </span>
-                </div>
-              </div>
-
-              <div
-                className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
-                  theme === "dark"
-                    ? "bg-[#151b2b] border-white/10 shadow-sm"
-                    : "bg-white border-slate-200 shadow-xs"
-                }`}
-              >
-                <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
-                  Đã Hoàn Thành
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-extrabold text-emerald-500">
-                    {
-                      currentHistoryData.filter((row, index) => {
-                        const teamVal = row.team || row["Team"] || "";
-                        if (filterTeam !== "Tất cả" && teamVal !== filterTeam)
-                          return false;
-
-                        let timeStr = "";
-                        if (row.timestamp) {
-                          const d = new Date(Number(row.timestamp));
-                          const pad = (n: number) =>
-                            n.toString().padStart(2, "0");
-                          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                        } else {
-                          timeStr = row["Thời gian"] || "";
-                        }
-                        const maLop =
-                          row.ma_lop ||
-                          row["Mã lớp giữ"] ||
-                          row["Mã lớp"] ||
-                          "";
-                        const rowKey = `${timeStr}-${maLop}-${index}`;
-                        const isDone =
-                          completedSlots[rowKey] ||
-                          row.is_done ||
-                          row["Trạng thái"] === "Done" ||
-                          row["Status"] === "Đã xếp xong";
-
-                        return isDone;
-                      }).length
-                    }
-                  </span>
-                  <span className="text-slate-400 text-[11px] font-medium">
-                    đã xong
-                  </span>
-                </div>
-              </div>
-
-              <div
-                className={`border rounded-2xl py-2.5 px-4 relative overflow-hidden transition-all duration-300 ${
-                  theme === "dark"
-                    ? "bg-[#151b2b] border-white/10 shadow-sm"
-                    : "bg-white border-slate-200 shadow-xs"
-                }`}
-              >
-                <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
-                  Quá Hạn (Nhả Slot)
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-extrabold text-red-500">
-                    {
-                      currentHistoryData.filter((row, index) => {
-                        const teamVal = row.team || row["Team"] || "";
-                        if (filterTeam !== "Tất cả" && teamVal !== filterTeam)
-                          return false;
-
-                        let timeStr = "";
-                        if (row.timestamp) {
-                          const d = new Date(Number(row.timestamp));
-                          const pad = (n: number) =>
-                            n.toString().padStart(2, "0");
-                          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                        } else {
-                          timeStr = row["Thời gian"] || "";
-                        }
-                        const maLop =
-                          row.ma_lop ||
-                          row["Mã lớp giữ"] ||
-                          row["Mã lớp"] ||
-                          "";
-                        const rowKey = `${timeStr}-${maLop}-${index}`;
-                        const isDone =
-                          completedSlots[rowKey] ||
-                          row.is_done ||
-                          row["Trạng thái"] === "Done" ||
-                          row["Status"] === "Đã xếp xong";
-                        const isExpired = checkIsExpired(timeStr);
-
-                        return !isDone && isExpired;
-                      }).length
-                    }
-                  </span>
-                  <span className="text-slate-400 text-[11px] font-medium">
-                    hết hạn
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
-                theme === "dark"
-                  ? "bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
-                  : "bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100"
-              }`}
-            >
-              <div
-                className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === "dark" ? "bg-transparent border-white/5" : "bg-white border-slate-100"}`}
-              >
-                <h3
-                  className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-                >
-                  <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
-                  📋 Danh sách lịch sử giữ slot
-                </h3>
-
-                <div className="flex items-center gap-2.5 flex-wrap justify-end">
-                  {/* Ô CHỌN TEAM LEAD DẠNG DROPDOWN CÓ TỰ ĐỘNG ĐÓNG KHI BẤM RA NGOÀI */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setOpenDropdown(
-                          openDropdown === "teamLeadCustom"
-                            ? null
-                            : "teamLeadCustom",
-                        )
-                      }
-                      className={`px-3.5 py-2.5 border rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer focus:outline-none shadow-sm ${
-                        openDropdown === "teamLeadCustom" ||
-                        filterTeam !== "Tất cả"
-                          ? theme === "dark"
-                            ? "bg-[#0a0f1c] border-orange-500/50 text-orange-400"
-                            : "bg-orange-50/50 border-orange-400 text-orange-600"
-                          : theme === "dark"
-                            ? "bg-[#0a0f1c] border-white/20 text-slate-200 hover:border-orange-500/30"
-                            : "bg-slate-50 border-slate-200 text-slate-800 hover:border-orange-300"
-                      }`}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <span>👑</span>
-                        <span>
-                          {filterTeam === "Tất cả"
-                            ? "Tất cả Team Lead"
-                            : filterTeam}
-                        </span>
-                      </span>
-                      <svg
-                        className={`w-3.5 h-3.5 text-orange-500 transition-transform duration-200 ${openDropdown === "teamLeadCustom" ? "rotate-180" : ""}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2.5"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-
-                    {/* MÀN HÌNH TRONG SUỐT BẮT SỰ KIỆN CLICK BÊN NGOÀI */}
-                    {openDropdown === "teamLeadCustom" && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-40 bg-transparent"
-                          onClick={() => setOpenDropdown(null)}
-                        />
-
-                        <div
-                          className={`absolute right-0 mt-2 w-56 border rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] py-2 z-50 animate-fade-slide-up overflow-hidden ${
-                            theme === "dark"
-                              ? "bg-[#151b2b] border-white/10 text-slate-200"
-                              : "bg-white border-slate-100 text-slate-700"
-                          }`}
-                        >
-                          <div className="max-h-60 overflow-y-auto custom-scrollbar px-1.5 space-y-0.5">
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFilterTeam("Tất cả");
-                                setOpenDropdown(null);
-                              }}
-                              className={`px-3.5 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors flex items-center gap-2 ${
-                                filterTeam === "Tất cả"
-                                  ? "bg-orange-500 text-white shadow-sm"
-                                  : theme === "dark"
-                                    ? "hover:bg-white/5 text-slate-300"
-                                    : "hover:bg-slate-100 text-slate-700"
-                              }`}
-                            >
-                              👑 Tất cả Team Lead
-                            </div>
-                            {Array.from(
-                              new Set(
-                                slotHistoryData
-                                  .map((r) => r.team || r["Team"])
-                                  .filter(Boolean),
-                              ),
-                            ).map((t, idx) => {
-                              const isSelected = filterTeam === t;
-                              return (
-                                <div
-                                  key={idx}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setFilterTeam(t as string);
-                                    setOpenDropdown(null);
-                                  }}
-                                  className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors truncate flex items-center gap-2 ${
-                                    isSelected
-                                      ? "bg-orange-500 text-white shadow-sm"
-                                      : theme === "dark"
-                                        ? "hover:bg-white/5 text-slate-300"
-                                        : "hover:bg-slate-100 text-slate-700"
-                                  }`}
-                                >
-                                  🛡️ {t}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* BỘ LỌC TRẠNG THÁI */}
-                  <div
-                    className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
-                      theme === "dark"
-                        ? "bg-[#0a0f1c] border-white/10"
-                        : "bg-slate-50 border-slate-200"
-                    }`}
-                  >
-                    {[
-                      { id: "Tất cả", label: "Tất cả", icon: "📌" },
-                      { id: "Chưa xử lý", label: "Chưa xử lý", icon: "⏳" },
-                      { id: "Đã xử lý", label: "Đã xử lý", icon: "✅" },
-                      { id: "Quá hạn", label: "Quá hạn", icon: "❌" },
-                    ].map((tab) => {
-                      const isActive = filterHistoryStatus === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => setFilterHistoryStatus(tab.id)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 focus:outline-none active:scale-95 ${
-                            isActive
-                              ? "bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.35)] scale-105"
-                              : theme === "dark"
-                                ? "text-slate-400 hover:text-white hover:bg-white/5"
-                                : "text-slate-600 hover:text-orange-600 hover:bg-white shadow-xs"
-                          }`}
-                        >
-                          <span className="text-[11px]">{tab.icon}</span>
-                          <span>{tab.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* TỔNG SỐ BẢN GHI SAU KHI LỌC */}
-                  <span
-                    className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
-                      theme === "dark"
-                        ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                        : "bg-orange-50 border-orange-600 border-orange-100"
-                    }`}
-                  >
-                    Tổng:{" "}
-                    {
-                      currentHistoryData.filter((row, index) => {
-                        const teamVal = row.team || row["Team"] || "";
-                        if (filterTeam !== "Tất cả" && teamVal !== filterTeam)
-                          return false;
-
-                        if (filterHistoryStatus === "Tất cả") return true;
-                        let timeStr = "";
-                        if (row.timestamp) {
-                          const d = new Date(Number(row.timestamp));
-                          const pad = (n: number) =>
-                            n.toString().padStart(2, "0");
-                          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                        } else {
-                          timeStr = row["Thời gian"] || "";
-                        }
-                        const maLop =
-                          row.ma_lop ||
-                          row["Mã lớp giữ"] ||
-                          row["Mã lớp"] ||
-                          "";
-                        const rowKey = `${timeStr}-${maLop}-${index}`;
-                        const isDone =
-                          completedSlots[rowKey] ||
-                          row.is_done ||
-                          row["Trạng thái"] === "Done" ||
-                          row["Status"] === "Đã xếp xong";
-                        const isExpired = checkIsExpired(timeStr);
-
-                        if (filterHistoryStatus === "Đã xử lý") return isDone;
-                        if (filterHistoryStatus === "Quá hạn")
-                          return !isDone && isExpired;
-                        if (filterHistoryStatus === "Chưa xử lý")
-                          return !isDone && !isExpired;
-                        return true;
-                      }).length
-                    }
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-auto custom-scrollbar relative">
-                <table className="w-full text-sm text-left whitespace-nowrap">
-                  <thead
-                    className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors duration-0 ${
-                      theme === "dark"
-                        ? "bg-[#1a2235] text-slate-400 border-white/5"
-                        : "bg-slate-50 text-slate-400 border-slate-100"
-                    }`}
-                  >
-                    <tr>
-                      <th className="px-6 py-4">Thời gian</th>
-                      <th className="px-6 py-4">Mã lớp giữ</th>
-                      <th className="px-6 py-4">Môn học</th>
-                      <th className="px-6 py-4">Người giữ</th>
-                      <th className="px-6 py-4">Team</th>
-                      <th className="px-6 py-4">Time còn lại (24h)</th>
-                      <th className="px-6 py-4">Lưu ý (Note)</th>
-                      <th className="px-6 py-4 text-right pr-6">
-                        Thao tác xếp
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody
-                    className={`divide-y transition-colors duration-0 ${theme === "dark" ? "divide-white/5" : "divide-slate-50"}`}
-                  >
-                    {loadingHistory ? (
-                      <tr>
-                        <td
-                          colSpan={8}
-                          className="px-6 py-20 text-center text-slate-400 font-semibold"
-                        >
-                          Vui lòng chờ dữ liệu từ Database !!
-                        </td>
-                      </tr>
-                    ) : currentHistoryData.length > 0 ? (
-                      currentHistoryData
-                        .filter((row, index) => {
-                          const teamVal = row.team || row["Team"] || "";
-                          if (
-                            filterTeam !== "Tất cả" &&
-                            teamVal !== filterTeam
-                          ) {
-                            return false;
-                          }
-
-                          if (filterHistoryStatus === "Tất cả") return true;
-
-                          let timeStr = "";
-                          if (row.timestamp) {
-                            const d = new Date(Number(row.timestamp));
-                            const pad = (n: number) =>
-                              n.toString().padStart(2, "0");
-                            timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                          } else {
-                            timeStr = row["Thời gian"] || "";
-                          }
-
-                          const maLop =
-                            row.ma_lop ||
-                            row["Mã lớp giữ"] ||
-                            row["Mã lớp"] ||
-                            "";
-                          const rowKey = `${timeStr}-${maLop}-${index}`;
-
-                          const isDone =
-                            completedSlots[rowKey] ||
-                            row.is_done ||
-                            row["Trạng thái"] === "Done" ||
-                            row["Trạng thái xếp"] === "Đã xếp xong";
-                          const isExpired = checkIsExpired(timeStr);
-
-                          if (filterHistoryStatus === "Đã xử lý") return isDone;
-                          if (filterHistoryStatus === "Quá hạn")
-                            return !isDone && isExpired;
-                          if (filterHistoryStatus === "Chưa xử lý")
-                            return !isDone && !isExpired;
-
-                          return true;
-                        })
-                        .map((row, index) => {
-                          let timeStr = "";
-                          if (row.timestamp) {
-                            const d = new Date(Number(row.timestamp));
-                            const pad = (n: number) =>
-                              n.toString().padStart(2, "0");
-                            timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                          } else {
-                            timeStr = row["Thời gian"] || "";
-                          }
-
-                          const maLop =
-                            row.ma_lop ||
-                            row["Mã lớp giữ"] ||
-                            row["Mã lớp"] ||
-                            "";
-                          const monHoc = row.mon_hoc || row["Môn học"] || "-";
-                          const nguoiGiu =
-                            row.nguoi_giu || row["Người giữ"] || "-";
-                          const team = row.team || row["Team"] || "-";
-                          const note =
-                            row.note ||
-                            row["lưu ý ( mục note của QLL )"] ||
-                            row["lưu ý"] ||
-                            "-";
-
-                          const rowKey = `${timeStr}-${maLop}-${index}`;
-                          const isDone = completedSlots[rowKey] || row.is_done;
-                          const isExpired = checkIsExpired(timeStr);
-
-                          return (
-                            <tr
-                              key={row.id || index}
-                              className={`transition-colors duration-0 ${
-                                isDone
-                                  ? theme === "dark"
-                                    ? "bg-emerald-900/20 opacity-75"
-                                    : "bg-emerald-50/40 opacity-75"
-                                  : isExpired
-                                    ? theme === "dark"
-                                      ? "bg-red-900/20 opacity-75"
-                                      : "bg-red-50/30 opacity-75"
-                                    : theme === "dark"
-                                      ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50"
-                                      : "hover:bg-orange-50/40 even:bg-slate-50/60"
-                              }`}
-                            >
-                              <td className="px-6 py-4 text-slate-500 text-xs">
-                                {timeStr || "-"}
-                              </td>
-                              <td className="px-6 py-4 font-bold text-sky-500">
-                                {maLop || "-"}
-                              </td>
-                              <td
-                                className={`px-6 py-4 font-medium transition-colors ${theme === "dark" ? "text-slate-300" : "text-slate-700"}`}
-                              >
-                                {monHoc}
-                              </td>
-                              <td className="px-6 py-4 font-bold text-orange-500">
-                                {nguoiGiu}
-                              </td>
-                              <td
-                                className={`px-6 py-4 transition-colors ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}
-                              >
-                                {team}
-                              </td>
-
-                              <td className="px-6 py-4">
-                                {isDone ? (
-                                  <span
-                                    className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === "dark" ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-100 text-emerald-700"}`}
-                                  >
-                                    Đã hoàn thành
-                                  </span>
-                                ) : isExpired ? (
-                                  <span
-                                    className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === "dark" ? "bg-red-500/10 text-red-400" : "bg-red-100 text-red-700"}`}
-                                  >
-                                    Quá hạn (Đã nhả slot)
-                                  </span>
-                                ) : (
-                                  <span
-                                    className={`px-2.5 py-1 border font-bold rounded-lg text-xs ${theme === "dark" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-amber-50 text-amber-700 border-amber-200"}`}
-                                  >
-                                    <CountdownTimer timeString={timeStr} />
-                                  </span>
-                                )}
-                              </td>
-
-                              <td
-                                className={`px-6 py-4 font-medium transition-colors ${theme === "dark" ? "text-slate-300" : "text-slate-700"}`}
-                              >
-                                {note}
-                              </td>
-
-                              <td className="px-6 py-4 text-right pr-6">
-                                {isDone ? (
-                                  <span className="text-xs font-bold text-emerald-500 flex items-center justify-end gap-1">
-                                    <span>✅</span> Đã xếp xong
-                                  </span>
-                                ) : isExpired ? (
-                                  <span
-                                    className={`px-3 py-1.5 font-bold rounded-xl text-xs inline-flex items-center gap-1 shadow-sm ${theme === "dark" ? "bg-red-500/10 text-red-400" : "bg-red-100 text-red-600"}`}
-                                  >
-                                    <span>❌</span> Quá hạn (Đã nhả slot)
-                                  </span>
-                                ) : (
-                                  <button
-                                    onClick={() => handleMarkAsDone(row.id)}
-                                    className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm transition-colors cursor-pointer active:scale-95"
-                                  >
-                                    Đã xếp (Done)
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={8}
-                          className="px-6 py-24 text-center text-slate-400 font-semibold"
-                        >
-                          Chưa có dữ liệu lịch sử giữ slot nào được ghi nhận.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {historyTotalPages > 1 && (
-                <div
-                  className={`flex items-center justify-between px-6 py-4 border-t shrink-0 z-10 transition-colors duration-0 ${theme === "dark" ? "bg-transparent border-white/5" : "bg-white border-slate-100"}`}
-                >
-                  <span className="text-[13px] text-slate-500 font-bold tracking-wide uppercase">
-                    Page{" "}
-                    <span className="text-sky-500 text-sm mx-1">
-                      {currentPage}
-                    </span>{" "}
-                    / {historyTotalPages}
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-0 active:scale-95 ${
-                        theme === "dark"
-                          ? "bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400"
-                          : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500"
-                      }`}
-                    >
-                      ← Back
-                    </button>
-                    <button
-                      onClick={() =>
-                        setCurrentPage((p) =>
-                          Math.min(historyTotalPages, p + 1),
-                        )
-                      }
-                      disabled={currentPage === historyTotalPages}
-                      className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-0 active:scale-95 ${
-                        theme === "dark"
-                          ? "bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400"
-                          : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500"
-                      }`}
-                    >
-                      Next →
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         ) : loginRole === "Admin" && activeNav === "ThongKeAdmin" ? (
           <div
             key="ThongKeAdmin"
             className="flex-1 px-8 pt-5 pb-6 min-h-0 flex flex-col animate-fade-slide-up"
           >
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 shrink-0">
-              <div
-                className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === "dark" ? "bg-[#151b2b] border-white/5" : "bg-white border-slate-100"}`}
-              >
-                <h3
-                  className={`font-bold flex items-center gap-3 text-base mb-6 transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-                >
-                  <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
-                  📈 Requests Trong Ngày (Hôm nay)
-                </h3>
-                <div className="h-[250px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={todayChartData}
-                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke={
-                          theme === "dark"
-                            ? "rgba(255,255,255,0.05)"
-                            : "rgba(0,0,0,0.05)"
-                        }
-                      />
-                      <XAxis
-                        dataKey="time"
-                        minTickGap={35}
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{
-                          fill: theme === "dark" ? "#94a3b8" : "#64748b",
-                          fontSize: 11,
-                          fontWeight: 600,
-                        }}
-                        dy={10}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{
-                          fill: theme === "dark" ? "#94a3b8" : "#64748b",
-                          fontSize: 11,
-                          fontWeight: 600,
-                        }}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor:
-                            theme === "dark" ? "#1e293b" : "#ffffff",
-                          borderColor:
-                            theme === "dark"
-                              ? "rgba(255,255,255,0.1)"
-                              : "rgba(0,0,0,0.1)",
-                          borderRadius: "12px",
-                        }}
-                        itemStyle={{ color: "#0ea5e9", fontWeight: "bold" }}
-                        labelStyle={{
-                          color: theme === "dark" ? "#cbd5e1" : "#475569",
-                          marginBottom: "4px",
-                        }}
-                      />
-                      <Line
-                        type="linear"
-                        dataKey="requests"
-                        name="Requests"
-                        stroke="#0ea5e9"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6, stroke: "#e0f2fe", strokeWidth: 3 }}
-                        animationDuration={1000}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+            <TrafficCharts
+              todayChartData={todayChartData}
+              historicalChartData={historicalChartData}
+              theme={theme}
+            />
 
-              <div
-                className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === "dark" ? "bg-[#151b2b] border-white/5" : "bg-white border-slate-100"}`}
-              >
-                <h3
-                  className={`font-bold flex items-center gap-3 text-base mb-6 transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-                >
-                  <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
-                  📊 Lịch sử truy cập (7 ngày qua)
-                </h3>
-                <div className="h-[250px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={historicalChartData}
-                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                      barSize={30}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke={
-                          theme === "dark"
-                            ? "rgba(255,255,255,0.05)"
-                            : "rgba(0,0,0,0.05)"
-                        }
-                      />
-                      <XAxis
-                        dataKey="date"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{
-                          fill: theme === "dark" ? "#94a3b8" : "#64748b",
-                          fontSize: 11,
-                          fontWeight: 600,
-                        }}
-                        dy={10}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{
-                          fill: theme === "dark" ? "#94a3b8" : "#64748b",
-                          fontSize: 11,
-                          fontWeight: 600,
-                        }}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor:
-                            theme === "dark" ? "#1e293b" : "#ffffff",
-                          borderColor:
-                            theme === "dark"
-                              ? "rgba(255,255,255,0.1)"
-                              : "rgba(0,0,0,0.1)",
-                          borderRadius: "12px",
-                        }}
-                        itemStyle={{ color: "#f97316", fontWeight: "bold" }}
-                        labelStyle={{
-                          color: theme === "dark" ? "#cbd5e1" : "#475569",
-                          marginBottom: "4px",
-                        }}
-                        cursor={{
-                          fill: theme === "dark" ? "#1e293b" : "#f1f5f9",
-                        }}
-                      />
-                      <Bar
-                        dataKey="total"
-                        name="Tổng Requests"
-                        fill="#f97316"
-                        radius={[6, 6, 0, 0]}
-                        animationDuration={1000}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`flex-1 rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
-                theme === "dark"
-                  ? "bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
-                  : "bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100"
-              }`}
-            >
-              <div
-                className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === "dark" ? "bg-transparent border-white/5" : "bg-white border-slate-100"}`}
-              >
-                <h3
-                  className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-                >
-                  <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                  </span>
-                  Danh sách nhân sự đang truy cập trực tuyến
-                </h3>
-
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs flex items-center gap-1.5 ${theme === "dark" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Đang online: {onlineUsers.length} người
-                  </span>
-
-                  {/* Nút Refresh thủ công */}
-                  <button
-                    onClick={() => {
-                      // Thêm hàm load lại dữ liệu online nếu có
-                    }}
-                    className={`p-2 rounded-xl border transition-all ${theme === "dark" ? "border-slate-700 hover:bg-slate-800 text-slate-300" : "border-slate-200 hover:bg-slate-100 text-slate-600"}`}
-                    title="Làm mới danh sách"
-                  >
-                    <svg
-                      className="w-4 h-4 hover:rotate-180 transition-transform duration-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      ></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-auto custom-scrollbar relative">
-                <table className="w-full text-sm text-left whitespace-nowrap">
-                  <thead
-                    className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors duration-0 ${
-                      theme === "dark"
-                        ? "bg-[#1a2235] text-slate-400 border-white/5"
-                        : "bg-slate-50 text-slate-400 border-slate-100"
-                    }`}
-                  >
-                    <tr>
-                      <th className="px-6 py-4 text-center w-24">STT</th>
-                      <th className="px-6 py-4">Tên Namecode (Đang Onl)</th>
-                      <th className="px-6 py-4">Team Lead</th>
-                      <th className="px-6 py-4 text-right pr-8">
-                        Thời gian Online
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/20 text-sm">
-                    {onlineUsers && onlineUsers.length > 0 ? (
-                      onlineUsers.map((user, index) => (
-                        <tr
-                          key={index}
-                          className={`transition-colors duration-200 ${theme === "dark" ? "hover:bg-slate-800/40 text-slate-300" : "hover:bg-slate-50 text-slate-700"}`}
-                        >
-                          <td className="py-3.5 px-6 font-medium text-slate-400 text-center w-24">
-                            #{index + 1}
-                          </td>
-                          <td className="py-3.5 px-6">
-                            <div className="flex items-center gap-2.5">
-                              <span className="relative flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                              </span>
-                              <span className="font-semibold text-orange-400">
-                                {user.namecode || "op_vanhanh"}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-6">
-                            {user.teamLead || "Admin hệ thống"}
-                          </td>
-                          <td className="py-3.5 px-6 text-right pr-8 text-slate-400 text-xs">
-                            {formatOnlineDuration(user.onlineAt)}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="py-6 text-center text-slate-400"
-                        >
-                          Không có nhân sự nào đang trực tuyến.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <OnlineUsersTable
+              onlineUsers={onlineUsers}
+              formatOnlineDuration={formatOnlineDuration}
+              onRefresh={refreshOnlineUsers}
+              theme={theme}
+            />
           </div>
         ) : activeNav === "SlotDaGiu" ? (
           <div
             key="SlotDaGiu"
             className="flex-1 px-8 pt-5 pb-6 min-h-0 flex flex-col animate-fade-slide-up"
           >
-            <div
-              className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
-                theme === "dark"
-                  ? "bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
-                  : "bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100"
-              }`}
-            >
-              <div
-                className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === "dark" ? "bg-transparent border-white/5" : "bg-white border-slate-100"}`}
-              >
-                <h3
-                  className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-                >
-                  <span className="w-1.5 h-6 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                  🕒 Danh sách Slot lớp bạn đã giữ
-                </h3>
-                <span
-                  className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
-                    theme === "dark"
-                      ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                      : "bg-amber-50 text-amber-600 border-amber-100"
-                  }`}
-                >
-                  Đã giữ:{" "}
-                  {
-                    slotHistoryData.filter(
-                      (item) =>
-                        (item.nguoi_giu || item["Người giữ"]) === displayName,
-                    ).length
-                  }{" "}
-                  slot
-                </span>
-              </div>
-
-              <div className="flex-1 overflow-auto custom-scrollbar relative">
-                <table className="w-full text-sm text-left whitespace-nowrap">
-                  <thead
-                    className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors duration-0 ${
-                      theme === "dark"
-                        ? "bg-[#1a2235] text-slate-400 border-white/5"
-                        : "bg-slate-50 text-slate-400 border-slate-100"
-                    }`}
-                  >
-                    <tr>
-                      <th className="px-6 py-4">Thời gian tạo</th>
-                      <th className="px-6 py-4">Mã lớp</th>
-                      <th className="px-6 py-4">Môn học</th>
-                      <th className="px-6 py-4">Lưu ý (SID/CID)</th>
-                      <th className="px-6 py-4 text-center">
-                        Time còn lại (24h)
-                      </th>
-                      <th className="px-6 py-4 text-right pr-6">
-                        Trạng thái xếp
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody
-                    className={`divide-y transition-colors duration-0 ${theme === "dark" ? "divide-white/5" : "divide-slate-50"}`}
-                  >
-                    {slotHistoryData.filter(
-                      (item) =>
-                        (item.nguoi_giu || item["Người giữ"]) === displayName,
-                    ).length > 0 ? (
-                      slotHistoryData
-                        .filter(
-                          (item) =>
-                            (item.nguoi_giu || item["Người giữ"]) ===
-                            displayName,
-                        )
-                        .map((row, index) => {
-                          let timeStr = "";
-                          if (row.timestamp) {
-                            const d = new Date(Number(row.timestamp));
-                            const pad = (n: number) =>
-                              n.toString().padStart(2, "0");
-                            timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-                          } else {
-                            timeStr = row["Thời gian"] || "";
-                          }
-
-                          const maLop =
-                            row.ma_lop ||
-                            row["Mã lớp giữ"] ||
-                            row["Mã lớp"] ||
-                            "";
-                          const monHoc = row.mon_hoc || row["Môn học"] || "-";
-                          const note =
-                            row.note ||
-                            row["lưu ý ( mục note của QLL )"] ||
-                            row["lưu ý"] ||
-                            "-";
-
-                          const rowKey = `${timeStr}-${maLop}-${index}`;
-                          const isDone = completedSlots[rowKey] || row.is_done;
-                          const isExpired = checkIsExpired(timeStr);
-
-                          return (
-                            <tr
-                              key={row.id || index}
-                              className={`transition-colors duration-0 ${
-                                isDone
-                                  ? theme === "dark"
-                                    ? "bg-emerald-900/20 opacity-75"
-                                    : "bg-emerald-50/40 opacity-75"
-                                  : isExpired
-                                    ? theme === "dark"
-                                      ? "bg-red-900/20 opacity-75"
-                                      : "bg-red-50/30 opacity-75"
-                                    : theme === "dark"
-                                      ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50"
-                                      : "hover:bg-amber-50/40 even:bg-slate-50/60"
-                              }`}
-                            >
-                              <td className="px-6 py-4 text-slate-500 text-xs">
-                                {timeStr || "-"}
-                              </td>
-                              <td className="px-6 py-4 font-bold text-sky-500">
-                                {maLop || "-"}
-                              </td>
-                              <td
-                                className={`px-6 py-4 font-medium transition-colors ${theme === "dark" ? "text-slate-300" : "text-slate-700"}`}
-                              >
-                                {monHoc}
-                              </td>
-                              <td
-                                className={`px-6 py-4 font-medium transition-colors ${theme === "dark" ? "text-slate-300" : "text-slate-700"}`}
-                              >
-                                {note}
-                              </td>
-
-                              <td className="px-6 py-4 text-center">
-                                {isDone ? (
-                                  <span className="text-slate-400 text-xs italic">
-                                    Đã xử lý xong
-                                  </span>
-                                ) : isExpired ? (
-                                  <span
-                                    className={`px-2.5 py-1 font-bold rounded-lg text-xs ${theme === "dark" ? "bg-red-500/10 text-red-400" : "bg-red-100 text-red-700"}`}
-                                  >
-                                    Hết hạn
-                                  </span>
-                                ) : (
-                                  <span
-                                    className={`px-3 py-1.5 border font-bold rounded-xl text-xs shadow-sm inline-flex justify-center min-w-[120px] ${theme === "dark" ? "bg-[#0a0f1c] text-amber-400 border-amber-500/30" : "bg-white text-amber-600 border-amber-200"}`}
-                                  >
-                                    <CountdownTimer timeString={timeStr} />
-                                  </span>
-                                )}
-                              </td>
-
-                              <td className="px-6 py-4 text-right pr-6">
-                                {isDone ? (
-                                  <span className="text-xs font-bold text-emerald-500 flex items-center justify-end gap-1">
-                                    <span>✅</span> Admin đã chốt xếp
-                                  </span>
-                                ) : isExpired ? (
-                                  <span
-                                    className={`text-xs font-bold ${theme === "dark" ? "text-red-400" : "text-red-500"} flex items-center justify-end gap-1`}
-                                  >
-                                    <span>❌</span> Đã nhả slot
-                                  </span>
-                                ) : (
-                                  <span className="text-xs font-bold text-amber-500 flex items-center justify-end gap-1 animate-pulse">
-                                    <span>⏳</span> Vận hành đang xử lý !
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="px-6 py-24 text-center text-slate-400 font-semibold"
-                        >
-                          <div className="text-3xl mb-3">🕒</div>
-                          Bạn chưa yêu cầu giữ slot nào.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <SlotHeldTable
+              slotHistoryData={slotHistoryData}
+              displayName={displayName}
+              completedSlots={completedSlots}
+              checkIsExpired={checkIsExpired}
+              handleRecallSlot={handleRecallSlot}
+              theme={theme}
+            />
           </div>
         ) : loginRole === "Admin" && activeNav === "QuanTriAdmin" ? (
           <div
             key="QuanTriAdmin"
             className="flex-1 p-6 overflow-y-auto animate-fade-slide-up"
           >
-            <div
-              className={`max-w-xl mx-auto rounded-3xl p-8 shadow-sm border transition-colors duration-0 ${theme === "dark" ? "bg-[#151b2b]" : "bg-white border-slate-100"}`}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors duration-0 ${theme === "dark" ? "bg-orange-500/20 text-orange-400" : "bg-orange-50 text-orange-500"}`}
-                >
-                  ⚙️
-                </div>
-                <div>
-                  <h2
-                    className={`text-xl font-bold transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-                  >
-                    Quản trị Tài khoản Admin
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Thêm tài khoản quản trị viên mới vào hệ thống
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleAddAdminSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Tên đăng nhập Admin mới{" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newAdminUser}
-                    onChange={(e) => {
-                      setNewAdminUser(e.target.value);
-                      setAdminAddError("");
-                    }}
-                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-colors duration-0 mb-3 ${
-                      theme === "dark"
-                        ? "bg-[#0a0f1c] border-white/10 text-white"
-                        : "bg-slate-50 border-slate-200 text-slate-800"
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Mật khẩu Admin mới <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    value={newAdminPass}
-                    onChange={(e) => {
-                      setNewAdminPass(e.target.value);
-                      setAdminAddError("");
-                    }}
-                    className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-colors duration-0 ${
-                      theme === "dark"
-                        ? "bg-[#0a0f1c] border-white/10 text-white"
-                        : "bg-slate-50 border-slate-200 text-slate-800"
-                    }`}
-                  />
-                  {adminAddError && (
-                    <p className="text-xs font-bold text-red-500 mt-1.5">
-                      {adminAddError}
-                    </p>
-                  )}
-                  {adminAddSuccess && (
-                    <p className="text-xs font-bold text-emerald-500 mt-1.5">
-                      {adminAddSuccess}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-colors cursor-pointer active:scale-95"
-                >
-                  Thêm Tài Khoản Admin
-                </button>
-              </form>
-
-              <div
-                className={`mt-8 pt-6 border-t transition-colors duration-0 ${theme === "dark" ? "border-white/5" : "border-slate-100"}`}
-              >
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-                  Danh sách tài khoản Admin ({adminList.length})
-                </h4>
-                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
-                  {adminList.map((acc, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex items-center justify-between px-4 py-2.5 border rounded-xl text-xs font-bold transition-colors duration-0 ${
-                        theme === "dark"
-                          ? "bg-[#0a0f1c] border-white/5 text-slate-300"
-                          : "bg-slate-50 border-slate-100 text-slate-700"
-                      }`}
-                    >
-                      <span>👤 {acc.username}</span>
-                      <span
-                        className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${theme === "dark" ? "text-emerald-400 bg-emerald-500/10" : "text-emerald-600 bg-emerald-50"}`}
-                      >
-                        Đang hoạt động
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <AdminManagement
+              theme={theme}
+              newAdminUser={newAdminUser}
+              setNewAdminUser={setNewAdminUser}
+              newAdminPass={newAdminPass}
+              setNewAdminPass={setNewAdminPass}
+              adminAddError={adminAddError}
+              setAdminAddError={setAdminAddError}
+              adminAddSuccess={adminAddSuccess}
+              adminList={adminList}
+              handleAddAdminSubmit={handleAddAdminSubmit}
+            />
           </div>
         ) : (
-          <div
-            key={activeNav}
-            className="flex-1 flex flex-col min-h-0 animate-fade-slide-up"
-          >
-            <div className="px-8 pt-4 pb-3 shrink-0">
-              {/* BƯỚC 2: BANNER CHÀO MỪNG CÁ NHÂN HÓA CHO QLL */}
-              <div className="flex items-center gap-2.5 mb-3 flex-wrap">
-                <img
-                  src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f"
-                  alt="Bitu Mascot"
-                  className="h-8 sm:h-10 w-auto object-contain shrink-0 drop-shadow-sm animate-bounce"
-                />
-
-                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                  <span
-                    className={`font-bold tracking-tight text-sm sm:text-[17px] transition-colors duration-0 ${theme === "dark" ? "text-slate-300" : "text-slate-600"}`}
-                  >
-                    Vận hành,
-                  </span>
-
-                  <div className="inline-block min-w-0">
-                    <span
-                      key={currentWordIndex}
-                      className="text-orange-500 font-handwriting text-base sm:text-[20px] font-bold tracking-normal leading-snug animate-smooth-signature block"
-                    >
-                      {currentWordIndex === 0 ? (
-                        <>
-                          ✨ Chào mừng{" "}
-                          <span className="text-sky-400 font-extrabold underline decoration-orange-400/50 decoration-2 underline-offset-4">
-                            {displayName}
-                          </span>{" "}
-                          đến với website Vận hành! Chúc bạn một ngày làm việc
-                          thật hiệu quả nhé.
-                        </>
-                      ) : (
-                        words[currentWordIndex - 1]
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div
-                  className={`border-2 rounded-3xl py-4 px-6 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 ${
-                    theme === "dark"
-                      ? "bg-[#151b2b] border-sky-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]"
-                      : "bg-gradient-to-br from-white via-white to-sky-50/40 border-sky-100/80 shadow-[0_10px_30px_rgba(14,165,233,0.08)] hover:shadow-[0_20px_40px_rgba(14,165,233,0.15)]"
-                  }`}
-                >
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-sky-400/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-500 group-hover:scale-125"></div>
-                  <p className="text-sky-500 text-[11px] font-extrabold uppercase tracking-widest mb-1 relative z-10">
-                    Tổng Lớp
-                  </p>
-                  <div className="flex items-baseline gap-2 relative z-10">
-                    <span
-                      className={`text-3xl font-extrabold transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-900"}`}
-                    >
-                      {stats.total}
-                    </span>
-                    <span className="text-slate-500 text-xs font-semibold">
-                      hệ thống
-                    </span>
-                  </div>
-                </div>
-
-                <div
-                  className={`border-2 rounded-3xl py-4 px-6 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 ${
-                    theme === "dark"
-                      ? "bg-[#151b2b] border-blue-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]"
-                      : "bg-gradient-to-br from-white via-white to-blue-50/40 border-blue-100/80 shadow-[0_10px_30px_rgba(37,99,235,0.08)] hover:shadow-[0_20px_40px_rgba(37,99,235,0.15)]"
-                  }`}
-                >
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-400/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-500 group-hover:scale-125"></div>
-                  <p className="text-blue-500 text-[11px] font-extrabold uppercase tracking-widest mb-1 relative z-10">
-                    Đang Học
-                  </p>
-                  <div className="flex items-baseline gap-2 relative z-10">
-                    <span className="text-3xl font-extrabold text-blue-500">
-                      {stats.studying}
-                    </span>
-                    <span className="text-slate-500 text-xs font-semibold">
-                      đang chạy
-                    </span>
-                  </div>
-                </div>
-
-                <div
-                  className={`border-2 rounded-3xl py-4 px-6 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 ${
-                    theme === "dark"
-                      ? "bg-[#151b2b] border-orange-900/30 shadow-[0_10px_30px_rgba(0,0,0,0.3)]"
-                      : "bg-gradient-to-br from-white via-white to-orange-50/40 border-orange-100/80 shadow-[0_10px_30px_rgba(249,115,22,0.08)] hover:shadow-[0_20px_40px_rgba(249,115,22,0.15)]"
-                  }`}
-                >
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-orange-400/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-500 group-hover:scale-125"></div>
-                  <p className="text-orange-500 text-[11px] font-extrabold uppercase tracking-widest mb-1 relative z-10">
-                    Chờ Khai Giảng
-                  </p>
-                  <div className="flex items-baseline gap-2 relative z-10">
-                    <span className="text-3xl font-extrabold text-orange-500">
-                      {stats.pending}
-                    </span>
-                    <span className="text-slate-500 text-xs font-semibold">
-                      chờ khai giảng
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 px-8 pb-6 min-h-0 flex flex-col">
-              <div
-                className={`rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
-                  theme === "dark"
-                    ? "bg-[#151b2b] border border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
-                    : "bg-white shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100"
-                }`}
-              >
-                <div
-                  className={`px-6 py-4 border-b flex flex-wrap gap-3 justify-between items-center shrink-0 z-30 relative transition-colors duration-0 ${
-                    theme === "dark"
-                      ? "bg-transparent border-white/5"
-                      : "bg-white border-slate-100"
-                  }`}
-                >
-                  <h3
-                    className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-                  >
-                    <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
-                    {activeNav === "Giữ Slot"
-                      ? "📌 Bảng Tác Vụ Giữ Slot Chuyên Biệt"
-                      : `Daily — Dữ liệu ${activeNav}`}
-                  </h3>
-
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    {renderCustomDropdown(
-                      "Môn",
-                      "mon",
-                      filterMonHoc,
-                      dropdownOptions.monHoc,
-                      setFilterMonHoc,
-                    )}
-
-                    {/* BỘ LỌC TÀNG HÌNH: Chỉ trượt ra khi Môn = KHTN */}
-                    {filterMonHoc === "KHTN" && (
-                      <div className="animate-fade-slide-up">
-                        {renderCustomDropdown(
-                          "Phân môn",
-                          "phanMonKHTN",
-                          filterPhanMonKHTN,
-                          ["Vật lí", "Hóa học", "Sinh học"],
-                          setFilterPhanMonKHTN,
-                        )}
-                      </div>
-                    )}
-                    {renderCustomDropdown(
-                      "Trình độ",
-                      "trinhDo",
-                      filterTrinhDo,
-                      dropdownOptions.trinhDo, // <--- ĐỔI CHỖ NÀY LẠI THÀNH dropdownOptions.trinhDo
-                      setFilterTrinhDo,
-                    )}
-
-                    {/* Chỉ giữ lại đúng 1 dòng của bộ lọc Khối */}
-                    {renderCustomDropdown(
-                      "Khối",
-                      "khoi",
-                      filterKhoi,
-                      dropdownOptions.khoi,
-                      setFilterKhoi,
-                      (val) => `Khối ${val}`,
-                    )}
-                    {renderCustomDropdown(
-                      "Loại lớp",
-                      "loai",
-                      filterLoaiLop,
-                      dropdownOptions.loaiLop,
-                      setFilterLoaiLop,
-                    )}
-                    {renderCustomDropdown(
-                      "Lịch",
-                      "lich",
-                      filterLichHoc,
-                      dropdownOptions.lichHoc,
-                      setFilterLichHoc,
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => setFilterToday(!filterToday)}
-                      className={`px-4 py-2 border rounded-xl font-bold text-xs flex items-center gap-2 focus:outline-none transition-colors duration-0 active:scale-95 ${
-                        filterToday
-                          ? theme === "dark"
-                            ? "bg-orange-500/20 border-orange-500/30 text-orange-400"
-                            : "bg-orange-50 border-orange-400 text-orange-600 shadow-sm"
-                          : theme === "dark"
-                            ? "bg-[#0a0f1c] border-white/10 text-slate-300 hover:border-orange-500/50 hover:text-orange-400"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50/30 hover:text-orange-500"
-                      }`}
-                    >
-                      <span className="text-sm">
-                        {filterToday ? "📅" : "🗓️"}
-                      </span>
-                      {filterToday ? "Đang chọn: Hôm nay" : "Hôm nay"}
-                    </button>
-                    {/* NÚT XÓA BỘ LỌC ĐỘNG (Chỉ hiện khi có lọc) */}
-                    {isFiltering && (
-                      <button
-                        type="button"
-                        onClick={handleClearFilters}
-                        className={`group px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 focus:outline-none transition-all duration-300 active:scale-95 animate-fade-slide-up border ${
-                          theme === "dark"
-                            ? "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-300 hover:shadow-[0_0_12px_rgba(239,68,68,0.3)]"
-                            : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300 hover:text-red-700 hover:shadow-sm"
-                        }`}
-                        title="Xóa tất cả bộ lọc"
-                      >
-                        <svg
-                          className="w-4 h-4 transition-transform duration-500 group-hover:rotate-180"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2.5"
-                            d="M6 18L18 6M6 6l12 12"
-                          ></path>
-                        </svg>
-                        <span className="hidden sm:inline">Xóa lọc</span>
-                      </button>
-                    )}
-
-                    <span
-                      className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
-                        theme === "dark"
-                          ? "bg-sky-500/10 text-sky-400 border-sky-500/20"
-                          : "bg-sky-50 text-sky-600 border-sky-100"
-                      }`}
-                    >
-                      {filteredData.length} kết quả
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-auto custom-scrollbar relative">
-                  <table className="w-full text-sm text-left whitespace-nowrap">
-                    <thead
-                      className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors duration-0 ${
-                        theme === "dark"
-                          ? "bg-[#1a2235] text-slate-400 border-white/5"
-                          : "bg-slate-50 text-slate-400 border-slate-100"
-                      }`}
-                    >
-                      <tr>
-                        <th className="px-6 py-4">Mã lớp</th>
-                        <th className="px-6 py-4">Môn học</th>
-                        <th className="px-6 py-4">Loại lớp</th>
-                        <th className="px-6 py-4 text-center">Khối</th>
-                        <th className="px-6 py-4">Trình độ</th>
-                        <th className="px-6 py-4">Giáo trình</th>
-
-                        {activeNav !== "Giữ Slot" && (
-                          <th className="px-6 py-4 text-sky-500">
-                            M: Khung chương trình
-                          </th>
-                        )}
-
-                        <th className="px-6 py-4">Lịch học</th>
-
-                        {activeNav === "Giữ Slot" && (
-                          <th className="px-6 py-4 text-center text-orange-500">
-                            Số slot còn
-                          </th>
-                        )}
-                        {activeNav === "Giữ Slot" && (
-                          <th className="px-6 py-4 text-center text-rose-500">
-                            Trạng thái sĩ số
-                          </th>
-                        )}
-                        {activeNav === "Giữ Slot" && (
-                          <th className="px-6 py-4 text-right pr-8 text-orange-500">
-                            Thao tác giữ
-                          </th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody
-                      key={`${activeNav}-${currentPage}-${filterLoaiLop}-${filterKhoi}-${filterMonHoc}-${filterLichHoc}-${filterToday}`}
-                      className={`divide-y transition-colors duration-0 ${theme === "dark" ? "divide-white/5" : "divide-slate-50"}`}
-                    >
-                      {currentTableData.length > 0 ? (
-                        currentTableData.map((row, index) => {
-                          const maLop = row["Mã lớp"];
-                          const rawSubjectStr = row["Môn học"] || "";
-                          let displaySubject = rawSubjectStr;
-                          if (
-                            rawSubjectStr.toLowerCase().includes("toán") ||
-                            rawSubjectStr.toLowerCase().includes("toan")
-                          ) {
-                            displaySubject = (maLop || "")
-                              .toUpperCase()
-                              .startsWith("TCLC")
-                              ? "Toán TCLC"
-                              : "Toán";
-                          }
-                          const heldCount = getActiveHeldCount(maLop);
-                          const availableSlots = calculateAvailableSlots(
-                            row,
-                            heldCount,
-                          );
-                          const attendanceCheck = checkAttendanceStatus(row);
-                          const isFull = availableSlots <= 0;
-                          const isLoading = isHoldingSlot === maLop;
-                          const lichHocStr = (row["Lịch học"] || "").trim();
-                          const firstSpaceIdx = lichHocStr.indexOf(" ");
-                          const thuPart =
-                            firstSpaceIdx > -1
-                              ? lichHocStr.substring(0, firstSpaceIdx)
-                              : lichHocStr;
-                          const gioPart =
-                            firstSpaceIdx > -1
-                              ? lichHocStr.substring(firstSpaceIdx)
-                              : "";
-
-                          return (
-                            <tr
-                              key={`${maLop}-${index}`}
-                              className={`transition-colors duration-0 group/row ${
-                                theme === "dark"
-                                  ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50"
-                                  : "hover:bg-sky-50/40 even:bg-slate-50/60"
-                              }`}
-                            >
-                              <td className="px-6 py-4 font-bold text-sky-500">
-                                {maLop}
-                              </td>
-                              <td className="px-6 py-4">
-                                <span
-                                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border transition-colors duration-0 ${
-                                    theme === "dark"
-                                      ? "bg-[#1e293b] border-white/20 text-white shadow-sm"
-                                      : getSubjectStyle(displaySubject)
-                                  }`}
-                                >
-                                  {displaySubject}
-                                </span>
-                              </td>
-                              <td
-                                className={`px-6 py-4 text-[13px] font-medium transition-colors duration-0 ${theme === "dark" ? "text-slate-200" : "text-slate-500"}`}
-                              >
-                                {row["Loại lớp"]}
-                              </td>
-                              <td
-                                className={`px-6 py-4 text-center font-bold transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-600"}`}
-                              >
-                                {row["Khối"]}
-                              </td>
-                              <td
-                                className={`px-6 py-4 font-semibold transition-colors duration-0 ${theme === "dark" ? "text-slate-200" : "text-slate-600"}`}
-                              >
-                                {row["Trình độ"]}
-                              </td>
-
-                              {/* [TỐI ƯU V3] Bổ sung thẻ title để khi hover hiển thị đủ nội dung bị truncate */}
-                              <td
-                                className={`px-6 py-4 text-[13px] truncate max-w-[120px] transition-colors duration-0 ${theme === "dark" ? "text-slate-300" : "text-slate-500"}`}
-                                title={row["Giáo trình"]}
-                              >
-                                {row["Giáo trình"]}
-                              </td>
-
-                              {activeNav !== "Giữ Slot" && (
-                                <td className="px-6 py-4 font-semibold text-sky-400 text-[13px]">
-                                  {row["M: Khung chương trình"] ||
-                                    row["Khung chương trình"] ||
-                                    "-"}
-                                </td>
-                              )}
-
-                              <td
-                                className={`px-6 py-4 font-medium transition-colors duration-0 ${theme === "dark" ? "text-slate-200" : "text-slate-600"}`}
-                              >
-                                <span
-                                  className={`${theme === "dark" ? "text-amber-400 font-extrabold text-sm" : "text-orange-600 font-bold"}`}
-                                >
-                                  {thuPart}
-                                </span>
-                                <span className="ml-1 opacity-90">
-                                  {gioPart}
-                                </span>
-                              </td>
-
-                              {activeNav === "Giữ Slot" && (
-                                <>
-                                  <td className="px-6 py-4 text-center">
-                                    <span
-                                      className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${
-                                        availableSlots > 0
-                                          ? theme === "dark"
-                                            ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
-                                            : "bg-orange-50 text-orange-600 border-orange-200"
-                                          : theme === "dark"
-                                            ? "bg-white/10 text-slate-400 border-white/10"
-                                            : "bg-slate-100 text-slate-400 border-slate-200"
-                                      }`}
-                                    >
-                                      {availableSlots > 0
-                                        ? `Còn ${availableSlots} slot`
-                                        : "Đã hết slot"}
-                                    </span>
-                                  </td>
-
-                                  <td className="px-6 py-4 text-center">
-                                    {attendanceCheck.isLow ? (
-                                      <span
-                                        className={`px-2.5 py-1 rounded-md font-bold text-xs border transition-colors duration-0 ${theme === "dark" ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-red-50 text-red-600 border-red-200"}`}
-                                      >
-                                        {attendanceCheck.text}
-                                      </span>
-                                    ) : (
-                                      <span className="text-transparent">
-                                        _
-                                      </span>
-                                    )}
-                                  </td>
-
-                                  <td className="px-6 py-4 text-right pr-6 min-w-[130px]">
-                                    <div
-                                      onClick={() =>
-                                        !isFull &&
-                                        !isLoading &&
-                                        handleOpenPopup(row, availableSlots)
-                                      }
-                                      className={`inline-block ${isFull || isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}
-                                    >
-                                      <div
-                                        onClick={() =>
-                                          !isFull &&
-                                          !isLoading &&
-                                          handleOpenPopup(row, availableSlots)
-                                        }
-                                        className={`inline-block ${isFull || isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}
-                                      >
-                                        <ActionButton
-                                          isFull={isFull}
-                                          isLoading={isLoading}
-                                        />
-                                      </div>
-                                    </div>
-                                  </td>
-                                </>
-                              )}
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td colSpan={10} className="px-6 py-24 text-center">
-                            <div className="flex flex-col items-center justify-center text-slate-400">
-                              <div
-                                className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center border-2 border-dashed transition-colors duration-0 ${theme === "dark" ? "bg-[#0a0f1c] border-white/10" : "bg-slate-50 border-slate-200"}`}
-                              >
-                                <span className="text-3xl opacity-60">📭</span>
-                              </div>
-                              <p
-                                className={`font-bold text-lg mb-1 transition-colors duration-0 ${theme === "dark" ? "text-slate-300" : "text-slate-500"}`}
-                              >
-                                Không tìm thấy dữ liệu phù hợp
-                              </p>
-                              <p className="text-sm font-medium">
-                                Hãy thử thay đổi điều kiện bộ lọc hoặc từ khóa
-                                tìm kiếm.
-                              </p>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {totalPages > 1 && (
-                  <div
-                    className={`flex items-center justify-between px-6 py-4 border-t shrink-0 z-10 transition-colors duration-0 ${theme === "dark" ? "bg-transparent border-white/5" : "bg-white border-slate-100"}`}
-                  >
-                    <span className="text-[13px] text-slate-500 font-bold tracking-wide uppercase">
-                      Page{" "}
-                      <span className="text-sky-500 text-sm mx-1">
-                        {currentPage}
-                      </span>{" "}
-                      / {totalPages}
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          setCurrentPage((p) => Math.max(1, p - 1))
-                        }
-                        disabled={currentPage === 1}
-                        className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-0 active:scale-95 ${
-                          theme === "dark"
-                            ? "bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400"
-                            : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500"
-                        }`}
-                      >
-                        ← Back
-                      </button>
-                      <button
-                        onClick={() =>
-                          setCurrentPage((p) => Math.min(totalPages, p + 1))
-                        }
-                        disabled={currentPage === totalPages}
-                        className={`px-5 py-2 border rounded-xl text-[13px] font-bold focus:outline-none transition-colors duration-0 active:scale-95 ${
-                          theme === "dark"
-                            ? "bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-sky-400 hover:border-sky-500/50 disabled:opacity-40 disabled:hover:bg-[#0a0f1c] disabled:hover:border-white/10 disabled:hover:text-slate-400"
-                            : "bg-white border-slate-200 text-slate-500 hover:text-sky-600 hover:border-sky-300 hover:bg-sky-50 disabled:opacity-40 disabled:hover:bg-white disabled:hover:border-slate-200 disabled:hover:text-slate-500"
-                        }`}
-                      >
-                        Next →
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <MainDataTable
+            theme={theme}
+            displayName={displayName}
+            currentWordIndex={currentWordIndex}
+            words={words}
+            stats={stats}
+            activeNav={activeNav}
+            filterMonHoc={filterMonHoc}
+            setFilterMonHoc={setFilterMonHoc}
+            filterPhanMonKHTN={filterPhanMonKHTN}
+            setFilterPhanMonKHTN={setFilterPhanMonKHTN}
+            filterTrinhDo={filterTrinhDo}
+            setFilterTrinhDo={setFilterTrinhDo}
+            filterKhoi={filterKhoi}
+            setFilterKhoi={setFilterKhoi}
+            filterLoaiLop={filterLoaiLop}
+            setFilterLoaiLop={setFilterLoaiLop}
+            filterLichHoc={filterLichHoc}
+            setFilterLichHoc={setFilterLichHoc}
+            filterToday={filterToday}
+            setFilterToday={setFilterToday}
+            isFiltering={isFiltering}
+            handleClearFilters={handleClearFilters}
+            filteredData={filteredData}
+            dropdownOptions={dropdownOptions}
+            currentTableData={currentTableData}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            totalPages={totalPages}
+            isHoldingSlot={isHoldingSlot}
+            renderCustomDropdown={renderCustomDropdown}
+            getActiveHeldCount={getActiveHeldCount}
+            calculateAvailableSlots={calculateAvailableSlots}
+            checkAttendanceStatus={checkAttendanceStatus}
+            getSubjectStyle={getSubjectStyle}
+            handleOpenPopup={handleOpenPopup}
+          />
         )}
       </main>
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-slide-up">
-          <div
-            className={`rounded-3xl p-6 w-full max-w-md shadow-2xl border relative transition-colors duration-0 ${
-              theme === "dark"
-                ? "bg-[#151b2b] border-white/10 text-slate-200"
-                : "bg-white border-slate-100"
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors duration-0 ${theme === "dark" ? "bg-orange-500/20 text-orange-400" : "bg-orange-50 text-orange-500"}`}
-              >
-                📌
-              </div>
-              <div>
-                <h3
-                  className={`text-lg font-bold transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-                >
-                  Xác nhận Giữ Slot
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Mã lớp:{" "}
-                  <strong className="text-sky-500">
-                    {selectedRowForSlot?.["Mã lớp"]}
-                  </strong>
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4 my-4">
-              <div>
-                <label
-                  className={`block text-xs font-bold uppercase tracking-wider mb-1.5 transition-colors duration-0 ${theme === "dark" ? "text-slate-400" : "text-slate-700"}`}
-                >
-                  Nhập SID hoặc CID học sinh{" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  maxLength={8}
-                  placeholder=""
-                  value={inputValue}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (/^\d*$/.test(val) && val.length <= 8) {
-                      setInputValue(val);
-                      setInputError("");
-                    }
-                  }}
-                  className={`w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 font-bold text-sm transition-colors duration-0 ${
-                    theme === "dark"
-                      ? "bg-[#0a0f1c] border-white/10 text-white"
-                      : "bg-slate-50 border-slate-200 text-slate-800"
-                  }`}
-                  autoFocus
-                />
-                {inputError && (
-                  <p className="text-[11px] font-bold text-red-500 mt-1.5">
-                    {inputError}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-colors duration-0 cursor-pointer border ${
-                  theme === "dark"
-                    ? "bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                    : "bg-slate-100 hover:bg-slate-200 text-slate-600 border-transparent"
-                }`}
-              >
-                Hủy bỏ
-              </button>
-              {/* [TỐI ƯU V3] Khóa nút bấm khi đang Submitting */}
-              <button
-                type="button"
-                onClick={handleConfirmKeepSlot}
-                disabled={isSubmitting}
-                className={`px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-orange-500/30 transition-colors duration-0 cursor-pointer active:scale-95 ${
-                  isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                {isSubmitting ? "Đang xử lý..." : "Xác nhận Giữ Slot"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <SlotModal
+          theme={theme}
+          selectedRowForSlot={selectedRowForSlot}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          inputError={inputError}
+          setInputError={setInputError}
+          setShowModal={setShowModal}
+          handleConfirmKeepSlot={handleConfirmKeepSlot}
+          isSubmitting={isSubmitting}
+        />
       )}
 
       {/* 📍 BẠN DÁN ĐOẠN POPUP LỖI VÀO ĐÂY (NGAY TRÊN DÒNG 4140) */}
 {errorMessage && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fade-slide-up">
-          <div
-            className={`rounded-3xl p-8 w-full max-w-md shadow-2xl border relative text-center transition-colors duration-0 ${
-              theme === "dark"
-                ? "bg-[#151b2b] border-red-500/30 text-slate-200"
-                : "bg-white border-red-200"
-            }`}
-          >
-            {/* Icon báo lỗi */}
-            <div className="w-24 h-24 mx-auto mb-5 rounded-full flex items-center justify-center shadow-inner animate-bounce-bitu bg-red-100 dark:bg-red-500/20 text-5xl">
-              {errorMessage.includes("trống") ? "📭" : "🚨"}
-            </div>
-            
-            {/* Tiêu đề lỗi */}
-            <h3 className={`text-2xl font-bold mb-3 ${theme === "dark" ? "text-red-400" : "text-red-600"}`}>
-              {errorMessage.includes("trống") ? "Dữ liệu trống!" : "Sự cố kết nối!"}
-            </h3>
-            
-            {/* Chi tiết lỗi */}
-            <p className={`font-medium text-sm mb-8 leading-relaxed ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}>
-              {errorMessage}
-            </p>
-            
-            {/* 2 Nút thao tác */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setErrorMessage("")}
-                className={`flex-1 py-3.5 rounded-2xl font-bold text-sm transition-colors cursor-pointer border ${
-                  theme === "dark"
-                    ? "bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                    : "bg-slate-100 hover:bg-slate-200 text-slate-600 border-transparent"
-                }`}
-              >
-                Đóng
-              </button>
-              <button
-                onClick={() => loadData()}
-                className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-red-500/30 transition-colors cursor-pointer active:scale-95 flex justify-center items-center gap-2"
-              >
-                <span>🔄</span> Thử lại ngay
-              </button>
-            </div>
-          </div>
-        </div>
+        <ErrorPopup
+          errorMessage={errorMessage}
+          setErrorMessage={setErrorMessage}
+          loadData={loadData}
+          theme={theme}
+        />
       )}
       {/* -------------------------------------------------------- */}
       <style

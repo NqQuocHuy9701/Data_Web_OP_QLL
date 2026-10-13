@@ -45,15 +45,20 @@ export async function POST(request: Request) {
   }
 }
 
-// 3. CẬP NHẬT TRẠNG THÁI "ĐÃ XẾP"
+// 3. CẬP NHẬT TRẠNG THÁI
+//    - action "done" (mặc định): đánh dấu đã xếp xong (is_done = true)
+//    - action "cancel": QLL thu hồi slot còn hạn (is_cancelled = true)
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id } = body;
+    const { id, action } = body;
 
     if (!id) {
       return NextResponse.json({ success: false, error: "Thiếu ID bản ghi" }, { status: 400 });
     }
+
+    const payload =
+      action === "cancel" ? { is_cancelled: true } : { is_done: true };
 
     const res = await fetch(`${SUPABASE_ENDPOINT}?id=eq.${id}`, {
       method: "PATCH",
@@ -63,7 +68,7 @@ export async function PATCH(request: Request) {
         "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
         "Prefer": "return=minimal"
       },
-      body: JSON.stringify({ is_done: true })
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) throw new Error(await res.text());
