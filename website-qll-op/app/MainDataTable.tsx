@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import ActionButton from "./ActionButton";
 
 interface MainDataTableProps {
@@ -98,7 +99,7 @@ export default function MainDataTable({
     >
       <div className="px-8 pt-4 pb-3 shrink-0">
         {/* BƯỚC 2: BANNER CHÀO MỪNG CÁ NHÂN HÓA CHO QLL */}
-        <div className="flex items-center gap-2.5 mb-3 flex-wrap">
+        <div className="flex items-center gap-2.5 mb-3">
           <img
             src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f"
             alt="Bitu Mascot"
@@ -131,6 +132,17 @@ export default function MainDataTable({
                 )}
               </span>
             </div>
+          </div>
+
+          {/* Animation thư giãn — nằm bên phải trong cùng, né đoạn chữ chạy.
+              pointer-events-none để không vướng thao tác. Ẩn trên mobile. */}
+          <div className="hidden lg:block ml-auto shrink-0 h-14 w-40 pointer-events-none select-none">
+            <DotLottieReact
+              src="https://lottie.host/ff770bc9-a952-4a8c-b6d2-c20940ca5dbf/tsB3MRK0AC.json"
+              loop
+              autoplay
+              style={{ width: "100%", height: "100%" }}
+            />
           </div>
         </div>
 

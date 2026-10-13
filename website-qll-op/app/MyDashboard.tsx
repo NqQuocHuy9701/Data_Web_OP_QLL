@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import CountdownTimer from "./CountdownTimer";
 
 interface MyDashboardProps {
@@ -115,9 +116,20 @@ export default function MyDashboard({
             Tổng quan nhanh các slot bạn đang giữ
           </p>
         </div>
+
+        {/* Animation thư giãn ở khung trống giữa — không bắt sự kiện (pointer-events-none) */}
+        <div className="hidden md:block flex-1 h-20 pointer-events-none select-none">
+          <DotLottieReact
+            src="https://lottie.host/ff770bc9-a952-4a8c-b6d2-c20940ca5dbf/tsB3MRK0AC.json"
+            loop
+            autoplay
+            style={{ width: "100%", height: "100%" }}
+          />
+        </div>
+
         <button
           onClick={onGoKeepSlot}
-          className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-colors cursor-pointer active:scale-95 flex items-center gap-2"
+          className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-colors cursor-pointer active:scale-95 flex items-center gap-2 shrink-0"
         >
           📌 Giữ slot mới
         </button>
