@@ -8,7 +8,7 @@ interface SlotHeldTableProps {
   displayName: string;
   completedSlots: Record<string, boolean>;
   checkIsExpired: (timeString: string) => boolean;
-  handleRecallSlot?: (dbId: string) => void;
+  onRequestRecall?: (row: any) => void;
   theme: "light" | "dark";
 }
 
@@ -17,7 +17,7 @@ export default function SlotHeldTable({
   displayName,
   completedSlots,
   checkIsExpired,
-  handleRecallSlot,
+  onRequestRecall,
   theme,
 }: SlotHeldTableProps) {
   return (
@@ -198,15 +198,7 @@ export default function SlotHeldTable({
                       <td className="px-6 py-4 text-center">
                         {canRecall ? (
                           <button
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  `Bạn chắc chắn muốn THU HỒI slot lớp ${maLop}? Slot sẽ được nhả lại cho người khác.`,
-                                )
-                              ) {
-                                handleRecallSlot?.(row.id);
-                              }
-                            }}
+                            onClick={() => onRequestRecall?.(row)}
                             className="px-4 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-sm transition-colors cursor-pointer active:scale-95"
                           >
                             🔄 Thu hồi

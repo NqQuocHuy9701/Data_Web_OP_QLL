@@ -187,7 +187,7 @@ export default function Sidebar({
               }`}
             >
               <span className="text-lg">📈</span>
-              <span className="text-xs truncate">Dashboard</span>
+              <span className="text-xs truncate">Dashboard book Slots</span>
             </button>
 
             <button

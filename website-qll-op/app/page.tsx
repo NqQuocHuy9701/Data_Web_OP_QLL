@@ -18,6 +18,7 @@ import SlotModal from "./SlotModal";
 import ErrorPopup from "./ErrorPopup";
 import MainDataTable from "./MainDataTable";
 import Dashboard from "./Dashboard";
+import ConfirmDialog from "./ConfirmDialog";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl =
@@ -118,6 +119,9 @@ export default function Home() {
 
   // [MOBILE] Mở/đóng sidebar dạng drawer trên màn hình nhỏ (desktop luôn hiện).
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Slot đang chờ xác nhận thu hồi (mở popup ConfirmDialog). null = đóng.
+  const [recallTarget, setRecallTarget] = useState<any>(null);
 
   // Ref giữ channel realtime để nút "Làm mới" có thể đọc lại presence thủ công.
   const presenceChannelRef = useRef<any>(null);
@@ -1747,7 +1751,7 @@ const loadData = () => {
               displayName={displayName}
               completedSlots={completedSlots}
               checkIsExpired={checkIsExpired}
-              handleRecallSlot={handleRecallSlot}
+              onRequestRecall={(row) => setRecallTarget(row)}
               theme={theme}
             />
           </div>
@@ -1823,6 +1827,28 @@ const loadData = () => {
           isSubmitting={isSubmitting}
         />
       )}
+
+      <ConfirmDialog
+        open={!!recallTarget}
+        theme={theme}
+        title="Xác nhận Thu hồi Slot"
+        message={
+          recallTarget
+            ? `Bạn chắc chắn muốn THU HỒI slot lớp ${
+                recallTarget.ma_lop ||
+                recallTarget["Mã lớp giữ"] ||
+                recallTarget["Mã lớp"] ||
+                ""
+              }? Slot sẽ được nhả lại cho người khác.`
+            : ""
+        }
+        confirmText="🔄 Thu hồi"
+        onConfirm={() => {
+          if (recallTarget) handleRecallSlot(recallTarget.id);
+          setRecallTarget(null);
+        }}
+        onCancel={() => setRecallTarget(null)}
+      />
 
       {/* 📍 BẠN DÁN ĐOẠN POPUP LỖI VÀO ĐÂY (NGAY TRÊN DÒNG 4140) */}
 {errorMessage && (
