@@ -11,7 +11,8 @@ type NavKey =
   | "LichSuSlotAdmin"
   | "ThongKeAdmin"
   | "Dashboard"
-  | "TrangCuaToi";
+  | "TrangCuaToi"
+  | "NhatKy";
 
 interface SidebarProps {
   theme: "light" | "dark";
@@ -211,6 +212,20 @@ export default function Sidebar({
             >
               <span className="text-lg">📈</span>
               <span className="text-xs truncate">Dashboard book Slots</span>
+            </button>
+
+            <button
+              onClick={() => setActiveNav("NhatKy")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
+                activeNav === "NhatKy"
+                  ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]"
+                  : theme === "dark"
+                    ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium"
+                    : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
+              }`}
+            >
+              <span className="text-lg">📜</span>
+              <span className="text-xs truncate">Nhật ký</span>
             </button>
 
             <button

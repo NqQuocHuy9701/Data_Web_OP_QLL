@@ -356,3 +356,36 @@ body {
   opacity: 1;
   transform: translateY(-50%);
 }
+
+/* --- V5: Toast thành công (pop) + Confetti ăn mừng giữ slot --- */
+@keyframes toastPop {
+  0% {
+    transform: translateY(-20px) scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(0) scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+.animate-toast-pop {
+  animation: toastPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(70vh) rotate(540deg);
+    opacity: 0;
+  }
+}
+.animate-confetti-fall {
+  animation: confettiFall 1.4s ease-in forwards;
+}

@@ -20,6 +20,7 @@ import MainDataTable from "./MainDataTable";
 import Dashboard from "./Dashboard";
 import MyDashboard from "./MyDashboard";
 import ConfirmDialog from "./ConfirmDialog";
+import AuditLog from "./AuditLog";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl =
@@ -47,6 +48,24 @@ function getVNDateTime() {
     dateStr: `${get("day")}/${get("month")}/${get("year")}`,
     timeSlot: `${get("hour")}:${get("minute")}`,
   };
+}
+
+// Danh sách date_str (DD/MM/YYYY) của N ngày gần nhất theo giờ VN (gồm hôm nay).
+function getRecentVNDates(days: number): string[] {
+  const fmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const result: string[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+    const parts = fmt.formatToParts(d);
+    const get = (t: string) => parts.find((p) => p.type === t)?.value || "00";
+    result.push(`${get("day")}/${get("month")}/${get("year")}`);
+  }
+  return result;
 }
 
 export default function Home() {
@@ -131,6 +150,7 @@ export default function Home() {
     | "ThongKeAdmin"
     | "Dashboard"
     | "TrangCuaToi"
+    | "NhatKy"
   >("Giữ Slot");
   const [onlineUsers, setOnlineUsers] = useState<
     { namecode: string; teamLead: string; onlineAt: number }[]
@@ -145,6 +165,9 @@ export default function Home() {
 
   // Ref giữ channel realtime để nút "Làm mới" có thể đọc lại presence thủ công.
   const presenceChannelRef = useRef<any>(null);
+
+  // Ref ghi nhớ slot đã cảnh báo "sắp hết hạn" để không báo trùng nhiều lần.
+  const notifiedSoonRef = useRef<Set<string>>(new Set());
 
   // Đọc lại danh sách online hiện tại từ channel (không đụng luồng subscribe/track).
   const refreshOnlineUsers = () => {
@@ -338,6 +361,18 @@ export default function Home() {
         });
         setDailyTrafficStats(trafficMap);
       }
+
+      // [DỌN LOG] Xóa mọi bản ghi KHÔNG thuộc 7 ngày gần nhất (giữ bảng gọn nhẹ).
+      // Chạy nền, không chặn hiển thị biểu đồ.
+      const keepDates = getRecentVNDates(7);
+      const inList = `(${keepDates.map((d) => `"${d}"`).join(",")})`;
+      supabase
+        .from("system_traffic_logs")
+        .delete()
+        .not("date_str", "in", inList)
+        .then(({ error: delErr }) => {
+          if (delErr) console.error("Lỗi dọn log cũ:", delErr.message);
+        });
     } catch (err) {
       console.error("Lỗi tải traffic từ Supabase:", err);
     }
@@ -590,6 +625,28 @@ export default function Home() {
     return activeHolds.length;
   };
 
+  // Ghi nhật ký thao tác (audit). Chạy nền, không chặn luồng chính.
+  const writeAuditLog = (
+    action: "hold" | "recall" | "done",
+    slotId: string | null,
+    maLop: string,
+  ) => {
+    supabase
+      .from("audit_logs")
+      .insert([
+        {
+          action,
+          slot_id: slotId,
+          ma_lop: maLop,
+          actor: isUserAdmin ? adminUsername : namecode,
+          role: isUserAdmin ? "Admin" : "QLL",
+        },
+      ])
+      .then(({ error }) => {
+        if (error) console.error("Lỗi ghi audit log:", error.message);
+      });
+  };
+
   const handleMarkAsDone = async (dbId: string) => {
     if (!dbId) {
       alert("Lỗi: Không tìm thấy ID bản ghi trong cơ sở dữ liệu!");
@@ -625,6 +682,14 @@ export default function Home() {
         alert("Lỗi Update DB: " + error.message);
         loadSlotHistory(true);
       }
+
+      // Ghi nhật ký: chốt done
+      const doneRow = slotHistoryData.find((it) => it.id === dbId);
+      writeAuditLog(
+        "done",
+        dbId,
+        doneRow?.ma_lop || doneRow?.["Mã lớp giữ"] || doneRow?.["Mã lớp"] || "",
+      );
     } catch (error) {
       console.error("Lỗi mạng khi update trạng thái:", error);
     }
@@ -665,6 +730,17 @@ export default function Home() {
         alert("Lỗi thu hồi slot: " + error.message);
         loadSlotHistory(true);
       }
+
+      // Ghi nhật ký: thu hồi
+      const recallRow = slotHistoryData.find((it) => it.id === dbId);
+      writeAuditLog(
+        "recall",
+        dbId,
+        recallRow?.ma_lop ||
+          recallRow?.["Mã lớp giữ"] ||
+          recallRow?.["Mã lớp"] ||
+          "",
+      );
     } catch (error) {
       console.error("Lỗi mạng khi thu hồi slot:", error);
     }
@@ -755,6 +831,54 @@ export default function Home() {
       };
     }
   }, [isLoggedIn, displayName, displayTeamOrRole]);
+
+  // [PUSH] Cảnh báo QLL khi slot CỦA HỌ sắp hết hạn (< 15 phút). Thông báo local
+  // trên máy đang mở web. Quét mỗi phút, dùng notifiedSoonRef để không báo trùng.
+  useEffect(() => {
+    if (!isLoggedIn || loginRole !== "QLL") return;
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+
+    const FIFTEEN_MIN = 15 * 60 * 1000;
+
+    const checkSoonExpire = () => {
+      if (Notification.permission !== "granted") return;
+
+      slotHistoryData.forEach((row) => {
+        const owner = row.nguoi_giu || row["Người giữ"];
+        if (owner !== displayName) return;
+        if (row.is_done || row.is_cancelled) return;
+
+        const ts = Number(row.timestamp);
+        if (!ts || isNaN(ts)) return;
+        const msLeft = ts + 24 * 60 * 60 * 1000 - Date.now();
+
+        const id = String(row.id || "");
+        if (msLeft > 0 && msLeft <= FIFTEEN_MIN) {
+          if (!notifiedSoonRef.current.has(id)) {
+            notifiedSoonRef.current.add(id);
+            const maLop =
+              row.ma_lop || row["Mã lớp giữ"] || row["Mã lớp"] || "";
+            const mins = Math.max(1, Math.floor(msLeft / 60000));
+            try {
+              new Notification("⏰ SLOT SẮP HẾT HẠN!", {
+                body: `Slot lớp ${maLop} của bạn còn khoảng ${mins} phút. Vào xử lý hoặc thu hồi nếu không dùng nhé!`,
+                icon: "https://vuihoc.vn/favicon.ico",
+              });
+            } catch {
+              // Bỏ qua nếu trình duyệt chặn.
+            }
+          }
+        } else if (msLeft <= 0) {
+          // Hết hạn rồi thì dọn khỏi set (cho lần giữ sau nếu trùng id — hiếm).
+          notifiedSoonRef.current.delete(id);
+        }
+      });
+    };
+
+    checkSoonExpire();
+    const interval = setInterval(checkSoonExpire, 60000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn, loginRole, displayName, slotHistoryData]);
 
   const qllStats = useMemo(() => {
     if (!slotHistoryData || slotHistoryData.length === 0) return [];
@@ -1568,6 +1692,9 @@ const loadData = () => {
 
       await loadSlotHistory();
 
+      // Ghi nhật ký: giữ slot
+      writeAuditLog("hold", null, maLop);
+
       setSuccessMessage("Đã lưu giữ slot thành công!");
       setTimeout(() => setSuccessMessage(""), 4000);
     } catch (error) {
@@ -1681,9 +1808,44 @@ const loadData = () => {
       </div>
 
       {successMessage && (
-        <div className="fixed top-6 right-8 bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl z-50 flex items-center gap-2 font-bold text-sm animate-fade-slide-down">
-          <span>✅</span> {successMessage}
-        </div>
+        <>
+          {/* Toast thành công (nâng cấp: gradient + icon tròn + pop) */}
+          <div className="fixed top-6 right-8 bg-gradient-to-r from-emerald-500 to-teal-500 text-white pl-3 pr-5 py-3 rounded-2xl shadow-[0_8px_30px_rgba(16,185,129,0.4)] z-[60] flex items-center gap-3 font-bold text-sm animate-toast-pop">
+            <span className="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center text-base shrink-0">
+              ✅
+            </span>
+            {successMessage}
+          </div>
+
+          {/* Confetti nhẹ ăn mừng giữ slot thành công */}
+          <div className="fixed inset-x-0 top-0 flex justify-center pointer-events-none z-[55]">
+            <div className="relative w-0 h-0">
+              {Array.from({ length: 14 }).map((_, i) => {
+                const colors = [
+                  "#f97316",
+                  "#0ea5e9",
+                  "#10b981",
+                  "#f59e0b",
+                  "#ec4899",
+                  "#8b5cf6",
+                ];
+                const left = (i - 7) * 22;
+                const delay = (i % 5) * 0.06;
+                return (
+                  <span
+                    key={i}
+                    className="absolute top-10 block w-2 h-3 rounded-sm animate-confetti-fall"
+                    style={{
+                      left: `${left}px`,
+                      backgroundColor: colors[i % colors.length],
+                      animationDelay: `${delay}s`,
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
 
       <Sidebar
@@ -1714,7 +1876,9 @@ const loadData = () => {
           loadSlotHistory={loadSlotHistory}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
-        {loginRole === "QLL" && activeNav === "TrangCuaToi" ? (
+        {loginRole === "Admin" && activeNav === "NhatKy" ? (
+          <AuditLog theme={theme} />
+        ) : loginRole === "QLL" && activeNav === "TrangCuaToi" ? (
           <MyDashboard
             slotHistoryData={slotHistoryData}
             displayName={displayName}
