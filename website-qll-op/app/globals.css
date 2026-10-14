@@ -389,3 +389,71 @@ body {
 .animate-confetti-fall {
   animation: confettiFall 1.4s ease-in forwards;
 }
+
+/* ============================================================
+   V6: BỘ ANIMATION NÂNG CẤP
+   ============================================================ */
+
+/* 1. Highlight dòng mới xuất hiện realtime (vàng rồi mờ dần) */
+@keyframes rowHighlight {
+  0% {
+    background-color: rgba(250, 204, 21, 0.35);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.animate-row-highlight {
+  animation: rowHighlight 2.5s ease-out forwards;
+}
+
+/* 2. Pulse / glow cho slot sắp hết hạn (hút mắt) */
+@keyframes soonGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 14px 2px rgba(239, 68, 68, 0.45);
+    border-color: rgba(239, 68, 68, 0.9);
+  }
+}
+.animate-soon-glow {
+  animation: soonGlow 1.6s ease-in-out infinite;
+}
+
+/* 3. Ripple cho nút khi bấm */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.ripple-span {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.6);
+  transform: scale(0);
+  animation: ripple 0.6s ease-out;
+  pointer-events: none;
+}
+
+/* 4. Chuyển tab: fade + slide nhẹ (đồng bộ hóa) */
+@keyframes tabFadeSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-tab-enter {
+  animation: tabFadeSlide 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}

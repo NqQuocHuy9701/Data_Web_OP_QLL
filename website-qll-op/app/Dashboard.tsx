@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import CountUp from "./CountUp";
 import {
   BarChart,
   Bar,
@@ -118,7 +119,7 @@ export default function Dashboard({
           <span
             className={`text-2xl font-extrabold ${theme === "dark" ? "text-white" : "text-slate-900"}`}
           >
-            {totals.total}
+            <CountUp value={totals.total} />
           </span>
         </div>
         <div className={`border rounded-2xl py-3 px-4 ${cardBase}`}>
@@ -126,7 +127,7 @@ export default function Dashboard({
             Tỉ Lệ Xử Lý
           </p>
           <span className="text-2xl font-extrabold text-emerald-500">
-            {doneRate}%
+            <CountUp value={doneRate} />%
           </span>
           <div className="mt-2 h-2 w-full rounded-full bg-slate-200/40 overflow-hidden">
             <div
@@ -140,7 +141,7 @@ export default function Dashboard({
             Đang Chờ
           </p>
           <span className="text-2xl font-extrabold text-amber-500">
-            {totals.pending}
+            <CountUp value={totals.pending} />
           </span>
         </div>
         <div className={`border rounded-2xl py-3 px-4 ${cardBase}`}>
@@ -148,7 +149,7 @@ export default function Dashboard({
             Quá Hạn
           </p>
           <span className="text-2xl font-extrabold text-red-500">
-            {totals.expired}
+            <CountUp value={totals.expired} />
           </span>
         </div>
       </div>

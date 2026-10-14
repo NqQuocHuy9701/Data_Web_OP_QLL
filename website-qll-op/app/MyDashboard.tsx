@@ -176,7 +176,7 @@ export default function MyDashboard({
             {soonList.map((m, i) => (
               <div
                 key={m.row.id || i}
-                className={`flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border ${
+                className={`animate-soon-glow flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border ${
                   theme === "dark"
                     ? "bg-red-900/15 border-red-500/20"
                     : "bg-red-50/60 border-red-100"

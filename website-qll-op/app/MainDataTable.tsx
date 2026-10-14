@@ -101,9 +101,13 @@ export default function MainDataTable({
         {/* BƯỚC 2: BANNER CHÀO MỪNG CÁ NHÂN HÓA CHO QLL */}
         <div className="flex items-center gap-2.5 mb-3">
           <img
-            src="https://lh3.googleusercontent.com/d/1OUQHIpJzHQ-Xugd1BBN0eDR9Bt-cW0_f"
+            src="/Chào hỏi_2.png"
             alt="Bitu Mascot"
             className="h-8 sm:h-10 w-auto object-contain shrink-0 drop-shadow-sm animate-bounce"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                "/Ch%C3%A0o%20h%E1%BB%8Fi_2.png";
+            }}
           />
 
           <div className="flex items-center gap-1.5 flex-wrap min-w-0">
