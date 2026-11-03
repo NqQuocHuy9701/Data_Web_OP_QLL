@@ -8,14 +8,22 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGci
 // 1. LẤY DANH SÁCH SLOT
 export async function GET() {
   try {
-    const res = await fetch(`${SUPABASE_ENDPOINT}?select=*&order=timestamp.desc`, {
-      method: "GET",
-      headers: {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-      },
-      cache: 'no-store'
-    });
+    // [TỐI ƯU PAYLOAD] Chỉ lấy đúng các cột client dùng (thay cho select=*),
+    // giảm kích thước Output. Tất cả cột client đọc đều có mặt ở đây;
+    // client còn có fallback "|| ''" nên kể cả thiếu cột cũng không vỡ UI.
+    const SELECT_COLS =
+      "id,ma_lop,mon_hoc,nguoi_giu,team,note,timestamp,is_done,is_cancelled,ngay_bat_dau,ngay_het_han";
+    const res = await fetch(
+      `${SUPABASE_ENDPOINT}?select=${SELECT_COLS}&order=timestamp.desc`,
+      {
+        method: "GET",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        cache: 'no-store'
+      }
+    );
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     return NextResponse.json({ success: true, data });

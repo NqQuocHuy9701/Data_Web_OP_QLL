@@ -5,7 +5,7 @@ import React from "react";
 interface ErrorPopupProps {
   errorMessage: string;
   setErrorMessage: (val: string) => void;
-  loadData: () => void;
+  loadData: (forceFresh?: boolean) => void;
   theme: "light" | "dark";
 }
 
@@ -56,7 +56,7 @@ export default function ErrorPopup({
             Đóng
           </button>
           <button
-            onClick={() => loadData()}
+            onClick={() => loadData(true)}
             className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-red-500/30 transition-colors cursor-pointer active:scale-95 flex justify-center items-center gap-2"
           >
             <span>🔄</span> Thử lại ngay

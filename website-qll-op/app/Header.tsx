@@ -12,7 +12,7 @@ interface HeaderProps {
   loading: boolean;
   loadingHistory: boolean;
   loginRole: "QLL" | "Admin";
-  loadData: () => void;
+  loadData: (forceFresh?: boolean) => void;
   loadSlotHistory: (isSilent?: boolean) => void;
   onOpenSidebar?: () => void;
 }
@@ -101,7 +101,7 @@ export default function Header({
 
         <button
           onClick={() => {
-            loadData();
+            loadData(true); // Bấm Update -> ép tải data tươi, bỏ qua cache
             if (loginRole === "Admin") loadSlotHistory();
           }}
           disabled={loading || loadingHistory}

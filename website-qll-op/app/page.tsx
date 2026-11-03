@@ -385,10 +385,10 @@ export default function Home() {
     if (isLoggedIn && activeNav === "ThongKeAdmin") {
       loadTrafficStatsFromSupabase(); // Kéo data ngay lập tức khi mở tab
 
-      // Thiết lập tự động kéo data mới mỗi 30 giây (30000ms)
+      // [TỐI ƯU] Giãn tự động kéo data traffic 30s -> 60s (giảm tải, biểu đồ vẫn cập nhật).
       const interval = setInterval(() => {
         loadTrafficStatsFromSupabase();
-      }, 30000);
+      }, 60000);
 
       // Dọn dẹp interval khi chuyển sang tab khác
       return () => clearInterval(interval);
@@ -1053,11 +1053,17 @@ export default function Home() {
     }
   }, [isLoggedIn]);
 
-const loadData = () => {
+const loadData = (forceFresh = false) => {
     setLoading(true);
     setErrorMessage(""); 
 
-    Papa.parse(SHEET_CSV_URL, {
+    // forceFresh=true (bấm nút Update): ép tải bản mới, bỏ qua cache CDN.
+    // forceFresh=false (auto-load/interval): dùng bản cache 120s -> tiết kiệm băng thông.
+    const parseUrl = forceFresh
+      ? `${SHEET_CSV_URL}?fresh=${Date.now()}`
+      : SHEET_CSV_URL;
+
+    Papa.parse(parseUrl, {
       download: true,
       header: true,
       skipEmptyLines: true,
@@ -1144,11 +1150,13 @@ const loadData = () => {
       loadData();
       loadSlotHistory();
 
+      // [TỐI ƯU BĂNG THÔNG] Giãn auto-refresh CSV từ 5 phút -> 30 phút để giảm
+      // Fast Origin Transfer. Người dùng vẫn bấm nút "Update" để tải tức thì khi cần.
       const intervalId = setInterval(
         () => {
           loadData();
         },
-        5 * 60 * 1000,
+        30 * 60 * 1000,
       );
 
       // LẮNG NGHE REALTIME TỪ SUPABASE
