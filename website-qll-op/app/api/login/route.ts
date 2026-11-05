@@ -100,15 +100,21 @@ export async function POST(request: Request) {
 
     let ok = false;
 
+    // 1) Nếu có hash hợp lệ → thử bcrypt trước.
     if (looksHashed(account.pass_hash)) {
-      // Tài khoản đã có hash → so khớp bằng bcrypt.
       ok = await bcrypt.compare(password, account.pass_hash);
-    } else {
-      // Tài khoản cũ (chưa migrate) → so khớp plaintext, rồi tự hash & lưu lại.
-      ok = account.pass != null && account.pass === password;
-      if (ok) {
+    }
+
+    // 2) FALLBACK TỰ CHỮA: nếu bcrypt fail (hoặc chưa có hash) nhưng khớp mật khẩu
+    //    gốc ở cột `pass` → vẫn cho đăng nhập VÀ ghi đè lại pass_hash cho chuẩn.
+    //    Xử lý được cả trường hợp pass_hash cũ bị lệch/sai.
+    if (!ok && account.pass != null && account.pass === password) {
+      ok = true;
+      try {
         const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
         await persistHash(account.username, hash);
+      } catch {
+        // Ghi lại hash là tối ưu dần, không chặn đăng nhập nếu lỗi.
       }
     }
 
