@@ -216,8 +216,7 @@ Deno.serve(async (request) => {
       `QLL: ${mention}`,
       "",
       "VH đã add lớp theo thông tin mã lớp QLL báo trên web.",
-      "Nhờ QLL kiểm tra lại thông tin lớp học (lịch học, khối lớp) và thông báo đến PH;",
-      "đồng thời hướng dẫn PH nhắn OA để VH hỗ trợ, hướng dẫn học tập cho HS nhé!",
+      "Nhờ QLL kiểm tra lại thông tin lớp học (lịch học, khối lớp) và thông báo đến PH đồng thời hướng dẫn PH nhắn OA để VH hỗ trợ, hướng dẫn học tập cho HS nhé!",
     ].join("\n");
   }
 
