@@ -79,7 +79,15 @@ Deno.serve(async (request) => {
     console.error("CLASS_SCHEDULE_WEBHOOK_SECRET is not configured.");
     return jsonResponse({ success: false, error: "Webhook is not configured." }, 500);
   }
-  if (request.headers.get("x-supabase-webhook-secret") !== webhookSecret) {
+  const suppliedWebhookSecret =
+    request.headers.get("x-supabase-webhook-secret");
+  const suppliedBearer =
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const authorized =
+    suppliedWebhookSecret === webhookSecret ||
+    (serviceRoleKey !== "" && suppliedBearer === serviceRoleKey);
+  if (!authorized) {
     return jsonResponse({ success: false, error: "Unauthorized." }, 401);
   }
 

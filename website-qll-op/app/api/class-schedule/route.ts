@@ -291,6 +291,58 @@ export async function PATCH(request: Request) {
       );
     }
 
+    if (action === "done") {
+      const recordResponse = await fetch(
+        `${SUPABASE_ENDPOINT}?select=id,ma_lop,mon_hoc,nguoi_tao,team,sid_cid,timestamp,created_at,is_done&id=eq.${encodeURIComponent(id)}`,
+        {
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+          },
+          cache: "no-store",
+        },
+      );
+
+      if (recordResponse.ok) {
+        const records = await recordResponse.json();
+        const record = Array.isArray(records) ? records[0] : null;
+        if (record?.is_done === true) {
+          const notificationResponse = await fetch(
+            "https://sehvatktrqtgsnmvebmm.supabase.co/functions/v1/class-schedule-telegram",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${serviceRoleKey}`,
+              },
+              body: JSON.stringify({
+                type: "UPDATE",
+                schema: "public",
+                table: "class_schedule_requests",
+                record,
+                old_record: { ...record, is_done: false },
+              }),
+              cache: "no-store",
+              signal: AbortSignal.timeout(10_000),
+            },
+          );
+
+          if (!notificationResponse.ok) {
+            const notificationError = await notificationResponse.text();
+            console.error(
+              "Failed to notify Telegram done group:",
+              notificationError,
+            );
+          }
+        }
+      } else {
+        console.error(
+          "Failed to read Add lớp record after Done:",
+          await recordResponse.text(),
+        );
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to update Add lớp status:", error);
