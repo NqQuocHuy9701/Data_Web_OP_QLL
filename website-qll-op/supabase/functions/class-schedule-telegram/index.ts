@@ -62,6 +62,40 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;");
 }
 
+async function findTelegramQllUsername(nguoiTao: string) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) return null;
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/telegram_users_qll?select=username,full_name&username=ilike.${encodeURIComponent(nguoiTao.trim())}&limit=1`,
+      {
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    if (!response.ok) return null;
+
+    const rows: unknown = await response.json();
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const row = rows[0];
+    if (!isRecord(row) || typeof row.username !== "string") return null;
+    return row.username.trim();
+  } catch (error) {
+    console.error("Failed to map nguoi_tao to Telegram username:", error);
+    return null;
+  }
+}
+
+function formatTelegramMention(username: string) {
+  const cleaned = username.trim().replace(/^@/, "");
+  return cleaned ? `@${cleaned}` : "";
+}
+
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -165,7 +199,14 @@ Deno.serve(async (request) => {
     }
 
     const creator = record.nguoi_tao.trim();
-    const mention = creator ? `@SA_${escapeHtml(creator)}` : "@SA_KhongRo";
+    const mappedUsername = await findTelegramQllUsername(creator);
+    const mention = escapeHtml(
+      mappedUsername
+        ? formatTelegramMention(mappedUsername)
+        : creator
+          ? `@SA_${creator}`
+          : "@SA_KhongRo",
+    );
     message = [
       `SID/CID: ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
       `Mã lớp: ${escapeHtml(record.ma_lop)}`,
