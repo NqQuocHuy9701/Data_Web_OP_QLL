@@ -40,6 +40,7 @@ interface MainDataTableProps {
   setCurrentPage: (updater: (p: number) => number) => void;
   totalPages: number;
   isHoldingSlot: string | null;
+  isAddingClass: string | null;
   renderCustomDropdown: (
     label: string,
     key: string,
@@ -53,6 +54,10 @@ interface MainDataTableProps {
   checkAttendanceStatus: (row: any) => { isLow: boolean; text: string };
   getSubjectStyle: (subject: string) => string;
   handleOpenPopup: (row: any, availableSlots: number) => void;
+  handleOpenClassRequest: (
+    row: Record<string, unknown>,
+    availableSlots: number,
+  ) => void;
 }
 
 export default function MainDataTable({
@@ -85,12 +90,14 @@ export default function MainDataTable({
   setCurrentPage,
   totalPages,
   isHoldingSlot,
+  isAddingClass,
   renderCustomDropdown,
   getActiveHeldCount,
   calculateAvailableSlots,
   checkAttendanceStatus,
   getSubjectStyle,
   handleOpenPopup,
+  handleOpenClassRequest,
 }: MainDataTableProps) {
   return (
     <div
@@ -389,6 +396,11 @@ export default function MainDataTable({
                       Thao tác giữ
                     </th>
                   )}
+                  {activeNav === "Giữ Slot" && (
+                    <th className="px-6 py-4 text-center text-sky-500">
+                      Chốt lịch
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody
@@ -551,6 +563,19 @@ export default function MainDataTable({
                                 </div>
                               </div>
                             </td>
+
+                            <td className="px-6 py-4 text-center min-w-[150px]">
+                              <ActionButton
+                                label="Add lớp"
+                                hoverLabel="Thêm lớp"
+                                variant="inverse"
+                                isFull={isFull}
+                                isLoading={isAddingClass === maLop}
+                                onClick={() =>
+                                  handleOpenClassRequest(row, availableSlots)
+                                }
+                              />
+                            </td>
                           </>
                         )}
                       </tr>
@@ -558,7 +583,10 @@ export default function MainDataTable({
                   })
                 ) : (
                   <tr>
-                    <td colSpan={10} className="px-6 py-24 text-center">
+                    <td
+                      colSpan={activeNav === "Giữ Slot" ? 11 : 8}
+                      className="px-6 py-24 text-center"
+                    >
                       <div className="flex flex-col items-center justify-center text-slate-400">
                         <div
                           className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center border-2 border-dashed transition-colors duration-0 ${theme === "dark" ? "bg-[#0a0f1c] border-white/10" : "bg-slate-50 border-slate-200"}`}

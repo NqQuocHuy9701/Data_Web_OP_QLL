@@ -6,12 +6,18 @@ interface ActionButtonProps {
   onClick?: () => void;
   isFull?: boolean;
   isLoading?: boolean;
+  label?: string;
+  hoverLabel?: string;
+  variant?: "default" | "inverse";
 }
 
 export default function ActionButton({
   onClick,
   isFull = false,
   isLoading = false,
+  label = "Giữ Slot",
+  hoverLabel = "Đồng ý",
+  variant = "default",
 }: ActionButtonProps) {
   const [ripples, setRipples] = useState<
     { id: number; x: number; y: number }[]
@@ -41,7 +47,7 @@ export default function ActionButton({
 
   return (
     <button
-      className="custom-btn btn-hover relative overflow-hidden"
+      className={`custom-btn btn-hover relative overflow-hidden ${variant === "inverse" ? "custom-btn-inverse" : ""}`}
       onClick={handleClick}
       disabled={isLoading}
     >
@@ -55,7 +61,7 @@ export default function ActionButton({
       <span className="btn-text flex items-center justify-center h-full">
         {isLoading ? (
           <svg
-            className="animate-spin h-4 w-4 text-white mx-auto"
+            className="animate-spin h-4 w-4 mx-auto"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -76,8 +82,8 @@ export default function ActionButton({
           </svg>
         ) : (
           <span className="btn-label-swap">
-            <span className="default-text">Giữ Slot</span>
-            <span className="hover-text">Đồng ý</span>
+            <span className="default-text">{label}</span>
+            <span className="hover-text">{hoverLabel}</span>
           </span>
         )}
       </span>

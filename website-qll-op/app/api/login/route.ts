@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import {
+  ADMIN_SESSION_COOKIE,
+  ADMIN_SESSION_MAX_AGE,
+  createAdminSessionToken,
+  hasAdminSessionSecret,
+} from "../_lib/admin-session";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +75,15 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
+    if (!hasAdminSessionSecret()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Server chưa cấu hình khóa phiên Admin an toàn.",
+        },
+        { status: 503 },
+      );
+    }
 
     // Chỉ lấy đúng bản ghi theo username, KHÔNG lọc theo mật khẩu trên URL.
     const endpoint =
@@ -125,8 +140,29 @@ export async function POST(request: Request) {
       );
     }
 
-    // Chỉ trả username, KHÔNG trả mật khẩu ra client.
-    return NextResponse.json({ success: true, username: account.username });
+    const sessionToken = createAdminSessionToken(account.username);
+    if (!sessionToken) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Không thể tạo phiên Admin an toàn trên máy chủ.",
+        },
+        { status: 503 },
+      );
+    }
+
+    const response = NextResponse.json({
+      success: true,
+      username: account.username,
+    });
+    response.cookies.set(ADMIN_SESSION_COOKIE, sessionToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: ADMIN_SESSION_MAX_AGE,
+    });
+    return response;
   } catch {
     return NextResponse.json(
       { success: false, error: "Lỗi máy chủ khi xác thực." },

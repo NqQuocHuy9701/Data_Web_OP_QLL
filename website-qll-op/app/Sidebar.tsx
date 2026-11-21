@@ -7,6 +7,8 @@ type NavKey =
   | "Khai giảng"
   | "Giữ Slot"
   | "SlotDaGiu"
+  | "DanhSachAddLopQLL"
+  | "DanhSachHSAddLop"
   | "QuanTriAdmin"
   | "LichSuSlotAdmin"
   | "ThongKeAdmin"
@@ -191,8 +193,52 @@ export default function Sidebar({
           <span className="text-xs truncate">Slot Đã Giữ</span>
         </button>
 
+        {loginRole === "QLL" && (
+          <>
+            <div className="text-[10px] font-black text-sky-500 uppercase tracking-widest mb-2 mt-6 px-2">
+              Học sinh add lớp
+            </div>
+
+            <button
+              onClick={() => setActiveNav("DanhSachAddLopQLL")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
+                activeNav === "DanhSachAddLopQLL"
+                  ? theme === "dark"
+                    ? "bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20"
+                    : "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]"
+                  : theme === "dark"
+                    ? "text-slate-400 hover:bg-white/5 hover:text-sky-400 font-medium"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
+              }`}
+            >
+              <span className="text-lg">🎓</span>
+              <span className="text-xs truncate">Danh sách học sinh</span>
+            </button>
+          </>
+        )}
+
         {loginRole === "Admin" && (
           <>
+            <div className="text-[10px] font-black text-sky-500 uppercase tracking-widest mb-2 mt-6 px-2">
+              Quản lý học sinh
+            </div>
+
+            <button
+              onClick={() => setActiveNav("DanhSachHSAddLop")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
+                activeNav === "DanhSachHSAddLop"
+                  ? theme === "dark"
+                    ? "bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20"
+                    : "bg-sky-50/80 text-sky-600 font-bold shadow-[0_2px_10px_rgba(14,165,233,0.05)]"
+                  : theme === "dark"
+                    ? "text-slate-400 hover:bg-white/5 hover:text-sky-400 font-medium"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
+              }`}
+            >
+              <span className="text-lg">🎓</span>
+              <span className="text-xs truncate">Danh sách HS add lớp</span>
+            </button>
+
             <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
               Hệ thống Quản trị
             </div>

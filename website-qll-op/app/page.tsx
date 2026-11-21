@@ -15,6 +15,8 @@ import SlotHeldTable from "./SlotHeldTable";
 import AdminManagement from "./AdminManagement";
 import HistoryTable from "./HistoryTable";
 import SlotModal from "./SlotModal";
+import StudentAddRequestsPage from "./StudentAddRequestsPage";
+import StudentAddRequestsQLLPage from "./StudentAddRequestsQLLPage";
 import ErrorPopup from "./ErrorPopup";
 import MainDataTable from "./MainDataTable";
 import Dashboard from "./Dashboard";
@@ -145,6 +147,8 @@ export default function Home() {
     | "Khai giảng"
     | "Giữ Slot"
     | "SlotDaGiu"
+    | "DanhSachAddLopQLL"
+    | "DanhSachHSAddLop"
     | "QuanTriAdmin"
     | "LichSuSlotAdmin"
     | "ThongKeAdmin"
@@ -513,10 +517,17 @@ export default function Home() {
   const [heldSlots, setHeldSlots] = useState<
     Record<string, { timestamp: number }[]>
   >({});
+  const [classScheduleCounts, setClassScheduleCounts] = useState<
+    Record<string, number>
+  >({});
   const [isHoldingSlot, setIsHoldingSlot] = useState<string | null>(null);
+  const [isAddingClass, setIsAddingClass] = useState<string | null>(null);
 
   const [showModal, setShowModal] = useState(false);
   const [selectedRowForSlot, setSelectedRowForSlot] = useState<any>(null);
+  const [slotActionMode, setSlotActionMode] = useState<"hold" | "add-class">(
+    "hold",
+  );
   const [slotAvailableCount, setSlotAvailableCount] = useState(0);
   const [inputValue, setInputValue] = useState("");
   const [inputError, setInputError] = useState("");
@@ -605,12 +616,10 @@ export default function Home() {
   };
 
   const getActiveHeldCount = (maLop: string) => {
-    if (!slotHistoryData || slotHistoryData.length === 0) return 0;
-
     const now = Date.now();
     const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-    const activeHolds = slotHistoryData.filter((item: any) => {
+    const activeHolds = (slotHistoryData || []).filter((item: any) => {
       const matchMaLop =
         item.ma_lop === maLop ||
         item["Mã lớp giữ"] === maLop ||
@@ -622,7 +631,7 @@ export default function Home() {
       return matchMaLop && notDone && notExpired && notCancelled;
     });
 
-    return activeHolds.length;
+    return activeHolds.length + (classScheduleCounts[maLop] || 0);
   };
 
   // Ghi nhật ký thao tác (audit). Chạy nền, không chặn luồng chính.
@@ -974,7 +983,9 @@ export default function Home() {
         const result = await res.json();
 
         if (!result.success) {
-          setLoginError("Tên đăng nhập hoặc mật khẩu Admin không chính xác!");
+          setLoginError(
+            result.error || "Tên đăng nhập hoặc mật khẩu Admin không chính xác!",
+          );
           return;
         }
 
@@ -994,6 +1005,15 @@ export default function Home() {
   };
 
   const handleLogout = () => {
+    void fetch("/api/logout", { method: "POST" })
+      .then((response) => {
+        if (!response.ok) {
+          console.error("Không thể kết thúc phiên Admin trên máy chủ.");
+        }
+      })
+      .catch((error) => {
+        console.error("Lỗi kết thúc phiên Admin:", error);
+      });
     localStorage.removeItem("qll_logged_user");
     setIsLoggedIn(false);
     setNamecode("");
@@ -1105,6 +1125,27 @@ const loadData = (forceFresh = false) => {
     });
   };
 
+  const loadClassScheduleCounts = async () => {
+    try {
+      const response = await fetch(`/api/class-schedule?t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      const result: {
+        success: boolean;
+        data?: Record<string, number>;
+        error?: string;
+      } = await response.json();
+
+      if (!response.ok || !result.success || !result.data) {
+        throw new Error(result.error || "Không thể tải số lớp đã Add.");
+      }
+
+      setClassScheduleCounts(result.data);
+    } catch (error) {
+      console.error("Lỗi tải số lớp đã Add:", error);
+    }
+  };
+
   const loadSlotHistory = async (isSilent = false) => {
     if (!isSilent) {
       setLoadingHistory(true);
@@ -1149,6 +1190,7 @@ const loadData = (forceFresh = false) => {
     if (isLoggedIn) {
       loadData();
       loadSlotHistory();
+      loadClassScheduleCounts();
 
       // [TỐI ƯU BĂNG THÔNG] Giãn auto-refresh CSV từ 5 phút -> 30 phút để giảm
       // Fast Origin Transfer. Người dùng vẫn bấm nút "Update" để tải tức thì khi cần.
@@ -1157,6 +1199,10 @@ const loadData = (forceFresh = false) => {
           loadData();
         },
         30 * 60 * 1000,
+      );
+      const classCountIntervalId = setInterval(
+        loadClassScheduleCounts,
+        30 * 1000,
       );
 
       // LẮNG NGHE REALTIME TỪ SUPABASE
@@ -1223,6 +1269,7 @@ const loadData = (forceFresh = false) => {
 
       return () => {
         clearInterval(intervalId);
+        clearInterval(classCountIntervalId);
         supabase.removeChannel(slotHistorySubscription);
       };
     }
@@ -1342,6 +1389,7 @@ const loadData = (forceFresh = false) => {
       const status = (item["Phân loại lớp"] || "").toLowerCase().trim();
       if (
         activeNav === "Giữ Slot" ||
+        activeNav === "DanhSachHSAddLop" ||
         activeNav === "QuanTriAdmin" ||
         activeNav === "LichSuSlotAdmin" ||
         activeNav === "ThongKeAdmin"
@@ -1471,6 +1519,7 @@ const loadData = (forceFresh = false) => {
 
       if (
         activeNav !== "Giữ Slot" &&
+        activeNav !== "DanhSachHSAddLop" &&
         activeNav !== "QuanTriAdmin" &&
         activeNav !== "LichSuSlotAdmin" &&
         activeNav !== "ThongKeAdmin"
@@ -1662,8 +1711,21 @@ const loadData = (forceFresh = false) => {
 
   const handleOpenPopup = (row: any, availableSlots: number) => {
     if (availableSlots <= 0) return;
+    setSlotActionMode("hold");
     setSelectedRowForSlot(row);
     setSlotAvailableCount(availableSlots);
+    setInputValue("");
+    setInputError("");
+    setShowModal(true);
+  };
+
+  const handleOpenClassRequest = (
+    row: Record<string, unknown>,
+    availableSlots: number,
+  ) => {
+    if (availableSlots <= 0) return;
+    setSlotActionMode("add-class");
+    setSelectedRowForSlot(row);
     setInputValue("");
     setInputError("");
     setShowModal(true);
@@ -1685,6 +1747,10 @@ const loadData = (forceFresh = false) => {
     }
 
     const row = selectedRowForSlot;
+    if (!row) {
+      setInputError("Không tìm thấy thông tin lớp cần xử lý.");
+      return;
+    }
     const maLop = row["Mã lớp"];
 
     const currentHeldCount = getActiveHeldCount(maLop);
@@ -1692,7 +1758,9 @@ const loadData = (forceFresh = false) => {
 
     if (currentAvailable <= 0) {
       alert(
-        `⚠️ Chậm chân mất rồi! Vừa có một QLL khác nhanh tay giữ slot cuối cùng của lớp ${maLop}. Vui lòng f5 hoặc chờ lớp khác nhé!`,
+        slotActionMode === "hold"
+          ? `⚠️ Chậm chân mất rồi! Vừa có một QLL khác nhanh tay giữ slot cuối cùng của lớp ${maLop}. Vui lòng f5 hoặc chờ lớp khác nhé!`
+          : `Lớp ${maLop} đã hết slot còn trống.`,
       );
       setShowModal(false);
       return;
@@ -1701,50 +1769,86 @@ const loadData = (forceFresh = false) => {
     // [TỐI ƯU V3] Bật trạng thái khóa nút để chống spam click
     setIsSubmitting(true);
     setShowModal(false);
-    setIsHoldingSlot(maLop);
+    if (slotActionMode === "hold") {
+      setIsHoldingSlot(maLop);
+    } else {
+      setIsAddingClass(maLop);
+    }
 
     try {
+      const isClassRequest = slotActionMode === "add-class";
       const startDate = new Date();
       const expiryDate = new Date();
       expiryDate.setDate(startDate.getDate() + 1);
       const formatDate = (date: Date) => date.toLocaleDateString("vi-VN");
 
-      const response = await fetch("/api/slot-hold", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ma_lop: maLop,
-          mon_hoc: row["Môn học"] || "",
-          nguoi_giu: displayName,
-          team: displayTeamOrRole,
-          ngay_bat_dau: formatDate(startDate),
-          ngay_het_han: formatDate(expiryDate),
-          note: `SID/CID: ${cleanVal}`,
-          timestamp: Date.now(),
-        }),
-      });
+      const response = await fetch(
+        isClassRequest ? "/api/class-schedule" : "/api/slot-hold",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            isClassRequest
+              ? {
+                  ma_lop: maLop,
+                  mon_hoc: row["Môn học"] || "",
+                  nguoi_tao: displayName,
+                  team: displayTeamOrRole,
+                  sid_cid: cleanVal,
+                  timestamp: Date.now(),
+                }
+              : {
+                  ma_lop: maLop,
+                  mon_hoc: row["Môn học"] || "",
+                  nguoi_giu: displayName,
+                  team: displayTeamOrRole,
+                  ngay_bat_dau: formatDate(startDate),
+                  ngay_het_han: formatDate(expiryDate),
+                  note: `SID/CID: ${cleanVal}`,
+                  timestamp: Date.now(),
+                },
+          ),
+        },
+      );
 
       const result = await response.json();
 
       if (!result.success) {
-        alert("Lỗi khi lưu giữ slot: " + result.error);
+        alert(
+          isClassRequest
+            ? "Lỗi khi gửi yêu cầu Add lớp: " + result.error
+            : "Lỗi khi lưu giữ slot: " + result.error,
+        );
         return;
       }
 
-      await loadSlotHistory();
+      if (!isClassRequest) {
+        await loadSlotHistory();
 
-      // Ghi nhật ký: giữ slot
-      writeAuditLog("hold", null, maLop);
+        // Ghi nhật ký: giữ slot
+        writeAuditLog("hold", null, maLop);
+      } else {
+        await loadClassScheduleCounts();
+      }
 
-      setSuccessMessage("Đã lưu giữ slot thành công!");
+      setSuccessMessage(
+        isClassRequest
+          ? "Đã gửi yêu cầu Add lớp thành công!"
+          : "Đã lưu giữ slot thành công!",
+      );
       setTimeout(() => setSuccessMessage(""), 4000);
     } catch (error) {
       console.error("Lỗi kết nối:", error);
-      alert("Lỗi kết nối khi giữ slot!");
+      alert(
+        slotActionMode === "add-class"
+          ? "Lỗi kết nối khi gửi yêu cầu Add lớp!"
+          : "Lỗi kết nối khi giữ slot!",
+      );
     } finally {
       // [TỐI ƯU V3] Tắt trạng thái khóa nút
       setIsSubmitting(false);
       setIsHoldingSlot(null);
+      setIsAddingClass(null);
       setSelectedRowForSlot(null);
     }
   };
@@ -1917,7 +2021,12 @@ const loadData = (forceFresh = false) => {
           loadSlotHistory={loadSlotHistory}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
-        {loginRole === "Admin" && activeNav === "NhatKy" ? (
+        {loginRole === "Admin" && activeNav === "DanhSachHSAddLop" ? (
+          <StudentAddRequestsPage
+            theme={theme}
+            onCountsChanged={loadClassScheduleCounts}
+          />
+        ) : loginRole === "Admin" && activeNav === "NhatKy" ? (
           <AuditLog theme={theme} />
         ) : loginRole === "QLL" && activeNav === "TrangCuaToi" ? (
           <MyDashboard
@@ -1928,6 +2037,11 @@ const loadData = (forceFresh = false) => {
             onRequestRecall={(row) => setRecallTarget(row)}
             onGoKeepSlot={() => setActiveNav("Giữ Slot")}
             theme={theme}
+          />
+        ) : loginRole === "QLL" && activeNav === "DanhSachAddLopQLL" ? (
+          <StudentAddRequestsQLLPage
+            theme={theme}
+            displayName={displayName}
           />
         ) : loginRole === "Admin" && activeNav === "Dashboard" ? (
           <Dashboard
@@ -2050,12 +2164,14 @@ const loadData = (forceFresh = false) => {
             setCurrentPage={setCurrentPage}
             totalPages={totalPages}
             isHoldingSlot={isHoldingSlot}
+            isAddingClass={isAddingClass}
             renderCustomDropdown={renderCustomDropdown}
             getActiveHeldCount={getActiveHeldCount}
             calculateAvailableSlots={calculateAvailableSlots}
             checkAttendanceStatus={checkAttendanceStatus}
             getSubjectStyle={getSubjectStyle}
             handleOpenPopup={handleOpenPopup}
+            handleOpenClassRequest={handleOpenClassRequest}
           />
         )}
       </main>
@@ -2063,6 +2179,7 @@ const loadData = (forceFresh = false) => {
       {showModal && (
         <SlotModal
           theme={theme}
+          actionMode={slotActionMode}
           selectedRowForSlot={selectedRowForSlot}
           inputValue={inputValue}
           setInputValue={setInputValue}

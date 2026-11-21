@@ -4,6 +4,7 @@ import React from "react";
 
 interface SlotModalProps {
   theme: "light" | "dark";
+  actionMode: "hold" | "add-class";
   selectedRowForSlot: any;
   inputValue: string;
   setInputValue: (val: string) => void;
@@ -16,6 +17,7 @@ interface SlotModalProps {
 
 export default function SlotModal({
   theme,
+  actionMode,
   selectedRowForSlot,
   inputValue,
   setInputValue,
@@ -25,6 +27,8 @@ export default function SlotModal({
   handleConfirmKeepSlot,
   isSubmitting,
 }: SlotModalProps) {
+  const actionLabel = actionMode === "hold" ? "Giữ Slot" : "Add lớp";
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-slide-up">
       <div
@@ -44,7 +48,7 @@ export default function SlotModal({
             <h3
               className={`text-lg font-bold transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
             >
-              Xác nhận Giữ Slot
+              {actionMode === "hold" ? "Xác nhận Giữ Slot" : "Thêm lớp vào lịch"}
             </h3>
             <p className="text-xs text-slate-500">
               Mã lớp:{" "}
@@ -110,7 +114,7 @@ export default function SlotModal({
               isSubmitting ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {isSubmitting ? "Đang xử lý..." : "Xác nhận Giữ Slot"}
+            {isSubmitting ? "Đang xử lý..." : `Xác nhận ${actionLabel}`}
           </button>
         </div>
       </div>
