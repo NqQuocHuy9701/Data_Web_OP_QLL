@@ -65,18 +65,20 @@ function escapeHtml(value: string) {
 async function findTelegramQllUsername(nguoiTao: string) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceRoleKey) return null;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const accessKey = serviceRoleKey || anonKey;
+  if (!supabaseUrl || !accessKey) return null;
 
   try {
     const creator = nguoiTao.trim();
     if (!creator) return null;
 
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/telegram_users_qll?select=username,full_name&username=ilike.*${encodeURIComponent(creator)}*&limit=10`,
+      `${supabaseUrl}/rest/v1/telegram_users_qll?select=username,full_name&username=ilike.*${encodeURIComponent(creator)}*&limit=100`,
       {
         headers: {
-          apikey: serviceRoleKey,
-          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: accessKey,
+          Authorization: `Bearer ${accessKey}`,
         },
         signal: AbortSignal.timeout(10_000),
       },
@@ -85,9 +87,31 @@ async function findTelegramQllUsername(nguoiTao: string) {
 
     const rows: unknown = await response.json();
     if (!Array.isArray(rows) || rows.length === 0) return null;
-    const row = rows[0];
-    if (!isRecord(row) || typeof row.username !== "string") return null;
-    return row.username.trim();
+    const creatorLower = creator.toLocaleLowerCase("vi-VN");
+    const candidates = rows.filter(
+      (row): row is Record<string, unknown> =>
+        isRecord(row) && typeof row.username === "string",
+    );
+
+    const exact = candidates.find(
+      (row) =>
+        (row.username as string).trim().toLocaleLowerCase("vi-VN") === creatorLower,
+    );
+    const suffix = candidates.find((row) =>
+      (row.username as string)
+        .trim()
+        .toLocaleLowerCase("vi-VN")
+        .endsWith(creatorLower),
+    );
+    const contains = candidates.find((row) =>
+      (row.username as string)
+        .trim()
+        .toLocaleLowerCase("vi-VN")
+        .includes(creatorLower),
+    );
+
+    const matched = exact || suffix || contains;
+    return matched ? (matched.username as string).trim() : null;
   } catch (error) {
     console.error("Failed to map nguoi_tao to Telegram username:", error);
     return null;
@@ -97,6 +121,11 @@ async function findTelegramQllUsername(nguoiTao: string) {
 function formatTelegramMention(username: string) {
   const cleaned = username.trim().replace(/^@/, "");
   return cleaned ? `@${cleaned}` : "";
+}
+
+function formatSubjectHashtag(maLop: string) {
+  const subjectCode = maLop.trim().slice(0, 4);
+  return subjectCode ? `#${subjectCode.toLocaleUpperCase("vi-VN")}` : "";
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -207,13 +236,15 @@ Deno.serve(async (request) => {
       mappedUsername
         ? formatTelegramMention(mappedUsername)
         : creator
-          ? `@SA_${creator}`
-          : "@SA_KhongRo",
+          ? `@${creator}`
+          : "@KhongRo",
     );
+    const subjectHashtag = formatSubjectHashtag(record.ma_lop);
     message = [
       `SID/CID: ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
       `Mã lớp: ${escapeHtml(record.ma_lop)}`,
       `QLL: ${mention}`,
+      subjectHashtag,
       "",
       "VH đã add lớp theo thông tin mã lớp QLL báo trên web.",
       "Nhờ QLL kiểm tra lại thông tin lớp học (lịch học, khối lớp) và thông báo đến PH đồng thời hướng dẫn PH nhắn OA để VH hỗ trợ, hướng dẫn học tập cho HS nhé!",
