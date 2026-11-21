@@ -53,6 +53,13 @@ function formatPersonName(value: string) {
     : "Không rõ";
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -108,14 +115,16 @@ Deno.serve(async (request) => {
 
   const record = payload.record;
   const message = [
-    "🔔 YÊU CẦU THÊM LỚP MỚI",
+    "<b>🔔 YÊU CẦU THÊM LỚP MỚI</b>",
     "",
-    `📚 Mã lớp: ${record.ma_lop}`,
-    `📖 Môn học: ${record.mon_hoc?.trim() || "Không rõ"}`,
-    `👤 QLL phụ trách: ${formatPersonName(record.nguoi_tao)}`,
-    `🏷 Team: ${record.team?.trim() || "Không rõ"}`,
+    `📚 <b>Mã lớp:</b> ${escapeHtml(record.ma_lop)}`,
+    `📖 <b>Môn học:</b> ${escapeHtml(record.mon_hoc?.trim() || "Không rõ")}`,
+    `👤 <b>QLL phụ trách:</b> ${escapeHtml(formatPersonName(record.nguoi_tao))}`,
+    `🏷 <b>Team:</b> ${escapeHtml(record.team?.trim() || "Không rõ")}`,
     "",
-    `🕐 Thời gian: ${formatCreatedAt(record)}`,
+    `🕐 <b>Thời gian:</b> ${escapeHtml(formatCreatedAt(record))}`,
+    "",
+    "@OP_LinhDK6 @OP_LinhDTT1",
   ].join("\n");
 
   try {
@@ -128,6 +137,7 @@ Deno.serve(async (request) => {
           chat_id: chatId,
           message_thread_id: messageThreadId,
           text: message,
+          parse_mode: "HTML",
           disable_web_page_preview: true,
         }),
         signal: AbortSignal.timeout(10_000),
