@@ -203,7 +203,7 @@ Deno.serve(async (request) => {
       `📚 <b>Mã lớp:</b> ${escapeHtml(record.ma_lop)}`,
       `📖 <b>Môn học:</b> ${escapeHtml(record.mon_hoc?.trim() || "Không rõ")}`,
       `👤 <b>QLL phụ trách:</b> ${escapeHtml(formatPersonName(record.nguoi_tao))}`,
-      `<b>SID/CID:</b> ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
+      `🆔 <b>SID/CID:</b> ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
       `🏷 <b>Team:</b> ${escapeHtml(record.team?.trim() || "Không rõ")}`,
       "",
       `🕐 <b>Thời gian:</b> ${escapeHtml(formatCreatedAt(record))}`,
