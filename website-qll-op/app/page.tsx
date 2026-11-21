@@ -1953,7 +1953,7 @@ const loadData = (forceFresh = false) => {
               Lưu ý đặt tên đăng nhập
             </h3>
             <p className="mb-6 text-center text-sm leading-relaxed">
-              Nhờ anh/chị QLL đặt username đúng theo tên để dữ liệu hệ thống chuẩn xác nhất nhé ạ!
+              Nhờ anh/chị QLL truy cập vào web đặt đúng NAMECODE để hệ thống truy xuất, thông báo được chuẩn xác nhất nhé ạ !
             </p>
             <button
               type="button"
