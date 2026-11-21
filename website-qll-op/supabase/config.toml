@@ -1,0 +1,2 @@
+[functions.class-schedule-telegram]
+verify_jwt = false
