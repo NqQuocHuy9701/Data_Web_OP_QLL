@@ -313,7 +313,7 @@ export async function PATCH(request: Request) {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${serviceRoleKey}`,
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
               },
               body: JSON.stringify({
                 type: "UPDATE",

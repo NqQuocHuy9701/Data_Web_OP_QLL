@@ -74,23 +74,6 @@ Deno.serve(async (request) => {
     return jsonResponse({ success: false, error: "Method not allowed." }, 405);
   }
 
-  const webhookSecret = Deno.env.get("CLASS_SCHEDULE_WEBHOOK_SECRET");
-  if (!webhookSecret) {
-    console.error("CLASS_SCHEDULE_WEBHOOK_SECRET is not configured.");
-    return jsonResponse({ success: false, error: "Webhook is not configured." }, 500);
-  }
-  const suppliedWebhookSecret =
-    request.headers.get("x-supabase-webhook-secret");
-  const suppliedBearer =
-    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const authorized =
-    suppliedWebhookSecret === webhookSecret ||
-    (serviceRoleKey !== "" && suppliedBearer === serviceRoleKey);
-  if (!authorized) {
-    return jsonResponse({ success: false, error: "Unauthorized." }, 401);
-  }
-
   let payload: unknown;
   try {
     payload = await request.json();
@@ -111,6 +94,16 @@ Deno.serve(async (request) => {
   const eventType = payload.type;
   if (eventType !== "INSERT" && eventType !== "UPDATE") {
     return jsonResponse({ success: false, error: "Unsupported database event." }, 400);
+  }
+
+  if (eventType === "INSERT") {
+    const webhookSecret = Deno.env.get("CLASS_SCHEDULE_WEBHOOK_SECRET");
+    if (
+      !webhookSecret ||
+      request.headers.get("x-supabase-webhook-secret") !== webhookSecret
+    ) {
+      return jsonResponse({ success: false, error: "Unauthorized." }, 401);
+    }
   }
 
   const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
