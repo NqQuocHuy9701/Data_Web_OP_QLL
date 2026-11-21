@@ -68,8 +68,11 @@ async function findTelegramQllUsername(nguoiTao: string) {
   if (!supabaseUrl || !serviceRoleKey) return null;
 
   try {
+    const creator = nguoiTao.trim();
+    if (!creator) return null;
+
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/telegram_users_qll?select=username,full_name&username=ilike.${encodeURIComponent(nguoiTao.trim())}&limit=1`,
+      `${supabaseUrl}/rest/v1/telegram_users_qll?select=username,full_name&username=ilike.*${encodeURIComponent(creator)}*&limit=10`,
       {
         headers: {
           apikey: serviceRoleKey,
