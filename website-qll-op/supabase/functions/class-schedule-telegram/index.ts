@@ -166,15 +166,13 @@ Deno.serve(async (request) => {
     const creator = record.nguoi_tao.trim();
     const mention = creator ? `@SA_${escapeHtml(creator)}` : "@SA_KhongRo";
     message = [
-      "<b>✅ CASE ĐÃ ĐƯỢC XẾP XONG</b>",
+      `SID/CID: ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
+      `Mã lớp: ${escapeHtml(record.ma_lop)}`,
+      `QLL: ${mention}`,
       "",
-      `📚 <b>Mã lớp:</b> ${escapeHtml(record.ma_lop)}`,
-      `📖 <b>Môn học:</b> ${escapeHtml(record.mon_hoc?.trim() || "Không rõ")}`,
-      `👤 <b>QLL phụ trách:</b> ${escapeHtml(formatPersonName(record.nguoi_tao))}`,
-      `<b>SID/CID:</b> ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
-      `🏷 <b>Team:</b> ${escapeHtml(record.team?.trim() || "Không rõ")}`,
-      "",
-      mention,
+      "VH đã add lớp theo thông tin mã lớp QLL báo trên web.",
+      "Nhờ QLL kiểm tra lại thông tin lớp học (lịch học, khối lớp) và thông báo đến PH;",
+      "đồng thời hướng dẫn PH nhắn OA để VH hỗ trợ, hướng dẫn học tập cho HS nhé!",
     ].join("\n");
   }
 
