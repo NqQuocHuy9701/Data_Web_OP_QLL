@@ -241,7 +241,7 @@ Deno.serve(async (request) => {
     );
     const subjectHashtag = formatSubjectHashtag(record.ma_lop);
     message = [
-      `SID/CID: ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
+      `🆔 SID/CID: ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
       `Mã lớp: ${escapeHtml(record.ma_lop)}`,
       `QLL: ${mention}`,
       subjectHashtag,
