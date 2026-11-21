@@ -95,9 +95,18 @@ export async function POST(request: Request) {
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!botToken || !chatId) {
+  const messageThreadId = Number(process.env.TELEGRAM_MESSAGE_THREAD_ID);
+  if (
+    !botToken ||
+    !chatId ||
+    !Number.isSafeInteger(messageThreadId) ||
+    messageThreadId <= 0
+  ) {
     return NextResponse.json(
-      { success: false, error: "Telegram chưa được cấu hình." },
+      {
+        success: false,
+        error: "Telegram bot, group hoặc topic chưa được cấu hình đầy đủ.",
+      },
       { status: 503 },
     );
   }
@@ -120,6 +129,7 @@ export async function POST(request: Request) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
+          message_thread_id: messageThreadId,
           text: message,
           disable_web_page_preview: true,
         }),
