@@ -585,10 +585,7 @@ export default function Home() {
           setTeamLead(parsed.teamLead || "Lead LienDT");
           setLoginRole("QLL");
           setActiveNav("TrangCuaToi"); // QLL vào thẳng Trang của tôi
-          const noticeKey = `qll_username_notice_${parsed.namecode.trim().toLowerCase()}`;
-          if (!localStorage.getItem(noticeKey)) {
-            setShowUsernameNotice(true);
-          }
+          setShowUsernameNotice(true);
         }
         setIsLoggedIn(true);
       } catch (e) {
@@ -968,10 +965,7 @@ export default function Home() {
       };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
       setActiveNav("TrangCuaToi"); // QLL vào thẳng Trang của tôi
-      const noticeKey = `qll_username_notice_${namecode.trim().toLowerCase()}`;
-      if (!localStorage.getItem(noticeKey)) {
-        setShowUsernameNotice(true);
-      }
+      setShowUsernameNotice(true);
       setIsLoggedIn(true);
     } else {
       if (!adminUsername.trim() || !adminPassword.trim()) {
@@ -1964,8 +1958,6 @@ const loadData = (forceFresh = false) => {
             <button
               type="button"
               onClick={() => {
-                const noticeKey = `qll_username_notice_${namecode.trim().toLowerCase()}`;
-                localStorage.setItem(noticeKey, "shown");
                 setShowUsernameNotice(false);
               }}
               className="w-full rounded-xl bg-sky-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-colors hover:bg-sky-600 active:scale-[0.98]"
