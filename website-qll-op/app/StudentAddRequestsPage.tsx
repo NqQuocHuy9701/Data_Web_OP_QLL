@@ -2,6 +2,14 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ConfirmDialog from "./ConfirmDialog";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    "https://sehvatktrqtgsnmvebmm.supabase.co",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E",
+);
 
 interface StudentAddRequest {
   id: number | string;
@@ -113,6 +121,84 @@ export default function StudentAddRequestsPage({
     };
   }, [fetchRequests]);
 
+  useEffect(() => {
+    const applyStatus = (
+      id: number | string,
+      action: RequestAction,
+    ) => {
+      setRequests((current) =>
+        current.map((request) =>
+          String(request.id) === String(id)
+            ? {
+                ...request,
+                is_done: action === "done",
+                is_cancelled: action === "cancel",
+              }
+            : request,
+        ),
+      );
+    };
+
+    const channel = supabase
+      .channel("qll-room")
+      .on("broadcast", { event: "student_add_status" }, (payload) => {
+        const id = payload.payload?.id;
+        const action = payload.payload?.action;
+        if (id && (action === "done" || action === "cancel")) {
+          applyStatus(id, action);
+        }
+      })
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "class_schedule_requests",
+        },
+        (payload) => {
+          if (payload.eventType === "UPDATE") {
+            const updated = payload.new as Partial<StudentAddRequest>;
+            if (
+              updated.id !== undefined &&
+              (typeof updated.is_done === "boolean" ||
+                typeof updated.is_cancelled === "boolean")
+            ) {
+              setRequests((current) =>
+                current.map((request) =>
+                  String(request.id) === String(updated.id)
+                    ? { ...request, ...updated }
+                    : request,
+                ),
+              );
+            }
+          } else if (payload.eventType === "INSERT") {
+            const inserted = payload.new as StudentAddRequest;
+            setRequests((current) =>
+              current.some(
+                (request) => String(request.id) === String(inserted.id),
+              )
+                ? current
+                : [inserted, ...current],
+            );
+          } else if (payload.eventType === "DELETE") {
+            const deleted = payload.old as Partial<StudentAddRequest>;
+            if (deleted.id !== undefined) {
+              setRequests((current) =>
+                current.filter(
+                  (request) => String(request.id) !== String(deleted.id),
+                ),
+              );
+            }
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
   const pendingCount = useMemo(
     () => requests.filter((request) => !request.is_done && !request.is_cancelled).length,
     [requests],
@@ -149,14 +235,26 @@ export default function StudentAddRequestsPage({
     if (!confirmTarget) return;
 
     const id = String(confirmTarget.request.id);
+    const action = confirmTarget.action;
     setUpdatingId(id);
+    setRequests((current) =>
+      current.map((request) =>
+        String(request.id) === id
+          ? {
+              ...request,
+              is_done: action === "done",
+              is_cancelled: action === "cancel",
+            }
+          : request,
+      ),
+    );
     try {
       const response = await fetch("/api/class-schedule", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id,
-          action: confirmTarget.action,
+          action,
         }),
       });
       const result = await response.json();
@@ -166,10 +264,16 @@ export default function StudentAddRequestsPage({
       }
 
       setConfirmTarget(null);
+      await supabase.channel("qll-room").send({
+        type: "broadcast",
+        event: "student_add_status",
+        payload: { id, action },
+      });
       await loadRequests();
       await onCountsChanged();
     } catch (error) {
       console.error("Lỗi cập nhật yêu cầu Add lớp:", error);
+      await loadRequests();
       setErrorMessage(
         error instanceof Error
           ? error.message
