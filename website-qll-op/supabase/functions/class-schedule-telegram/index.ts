@@ -4,6 +4,7 @@ interface ClassScheduleRecord {
   nguoi_tao: string;
   sid_cid?: string | null;
   team?: string | null;
+  is_done?: boolean | null;
   timestamp?: number | string | null;
   created_at?: string | null;
 }
@@ -91,11 +92,16 @@ Deno.serve(async (request) => {
 
   if (
     !isRecord(payload) ||
-    payload.type !== "INSERT" ||
     payload.schema !== "public" ||
     payload.table !== "class_schedule_requests" ||
+    !isRecord(payload.record) ||
     !isClassScheduleRecord(payload.record)
   ) {
+    return jsonResponse({ success: false, error: "Unsupported database event." }, 400);
+  }
+
+  const eventType = payload.type;
+  if (eventType !== "INSERT" && eventType !== "UPDATE") {
     return jsonResponse({ success: false, error: "Unsupported database event." }, 400);
   }
 
@@ -103,31 +109,74 @@ Deno.serve(async (request) => {
   const chatId = Deno.env.get("TELEGRAM_CHAT_ID");
   const threadIdValue = Deno.env.get("TELEGRAM_MESSAGE_THREAD_ID") || "";
   const messageThreadId = Number(threadIdValue);
-  if (
-    !botToken ||
-    !chatId ||
-    !/^\d+$/.test(threadIdValue) ||
-    !Number.isSafeInteger(messageThreadId) ||
-    messageThreadId <= 0
-  ) {
-    console.error("Telegram bot, group, or topic secrets are not configured.");
+  if (!botToken) {
+    console.error("Telegram bot secret is not configured.");
     return jsonResponse({ success: false, error: "Telegram is not configured." }, 500);
   }
 
   const record = payload.record;
-  const message = [
-    "<b>🔔 YÊU CẦU THÊM LỚP MỚI</b>",
-    "",
-    `📚 <b>Mã lớp:</b> ${escapeHtml(record.ma_lop)}`,
-    `📖 <b>Môn học:</b> ${escapeHtml(record.mon_hoc?.trim() || "Không rõ")}`,
-    `👤 <b>QLL phụ trách:</b> ${escapeHtml(formatPersonName(record.nguoi_tao))}`,
-    `<b>SID/CID:</b> ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
-    `🏷 <b>Team:</b> ${escapeHtml(record.team?.trim() || "Không rõ")}`,
-    "",
-    `🕐 <b>Thời gian:</b> ${escapeHtml(formatCreatedAt(record))}`,
-    "",
-    "@OP_LinhDK6 @OP_LinhDTT1",
-  ].join("\n");
+  let targetChatId = chatId;
+  let targetThreadId: number | undefined;
+  let message: string;
+
+  if (eventType === "INSERT") {
+    if (
+      !chatId ||
+      !/^\d+$/.test(threadIdValue) ||
+      !Number.isSafeInteger(messageThreadId) ||
+      messageThreadId <= 0
+    ) {
+      console.error("Telegram insert group or topic secrets are not configured.");
+      return jsonResponse({ success: false, error: "Telegram insert destination is not configured." }, 500);
+    }
+    targetThreadId = messageThreadId;
+    message = [
+      "<b>🔔 YÊU CẦU THÊM LỚP MỚI</b>",
+      "",
+      `📚 <b>Mã lớp:</b> ${escapeHtml(record.ma_lop)}`,
+      `📖 <b>Môn học:</b> ${escapeHtml(record.mon_hoc?.trim() || "Không rõ")}`,
+      `👤 <b>QLL phụ trách:</b> ${escapeHtml(formatPersonName(record.nguoi_tao))}`,
+      `<b>SID/CID:</b> ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
+      `🏷 <b>Team:</b> ${escapeHtml(record.team?.trim() || "Không rõ")}`,
+      "",
+      `🕐 <b>Thời gian:</b> ${escapeHtml(formatCreatedAt(record))}`,
+      "",
+      "@OP_LinhDK6 @OP_LinhDTT1",
+    ].join("\n");
+  } else {
+    if (record.is_done !== true) {
+      return jsonResponse({ success: true, ignored: "not_done" });
+    }
+    if (
+      isRecord(payload.old_record) &&
+      payload.old_record.is_done === true
+    ) {
+      return jsonResponse({ success: true, ignored: "already_done" });
+    }
+
+    targetChatId = Deno.env.get("TELEGRAM_DONE_CHAT_ID") || "-1002273179613";
+    const doneThreadIdValue = Deno.env.get("TELEGRAM_DONE_MESSAGE_THREAD_ID") || "";
+    if (/^\d+$/.test(doneThreadIdValue)) {
+      const doneThreadId = Number(doneThreadIdValue);
+      if (Number.isSafeInteger(doneThreadId) && doneThreadId > 0) {
+        targetThreadId = doneThreadId;
+      }
+    }
+
+    const creator = record.nguoi_tao.trim();
+    const mention = creator ? `@SA_${escapeHtml(creator)}` : "@SA_KhongRo";
+    message = [
+      "<b>✅ CASE ĐÃ ĐƯỢC XẾP XONG</b>",
+      "",
+      `📚 <b>Mã lớp:</b> ${escapeHtml(record.ma_lop)}`,
+      `📖 <b>Môn học:</b> ${escapeHtml(record.mon_hoc?.trim() || "Không rõ")}`,
+      `👤 <b>QLL phụ trách:</b> ${escapeHtml(formatPersonName(record.nguoi_tao))}`,
+      `<b>SID/CID:</b> ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
+      `🏷 <b>Team:</b> ${escapeHtml(record.team?.trim() || "Không rõ")}`,
+      "",
+      mention,
+    ].join("\n");
+  }
 
   try {
     const telegramResponse = await fetch(
@@ -136,8 +185,8 @@ Deno.serve(async (request) => {
         method: "POST",
         headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify({
-          chat_id: chatId,
-          message_thread_id: messageThreadId,
+          chat_id: targetChatId,
+          ...(targetThreadId ? { message_thread_id: targetThreadId } : {}),
           text: message,
           parse_mode: "HTML",
           disable_web_page_preview: true,
