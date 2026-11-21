@@ -2,6 +2,7 @@ interface ClassScheduleRecord {
   ma_lop: string;
   mon_hoc?: string | null;
   nguoi_tao: string;
+  sid_cid?: string | null;
   team?: string | null;
   timestamp?: number | string | null;
   created_at?: string | null;
@@ -120,6 +121,7 @@ Deno.serve(async (request) => {
     `📚 <b>Mã lớp:</b> ${escapeHtml(record.ma_lop)}`,
     `📖 <b>Môn học:</b> ${escapeHtml(record.mon_hoc?.trim() || "Không rõ")}`,
     `👤 <b>QLL phụ trách:</b> ${escapeHtml(formatPersonName(record.nguoi_tao))}`,
+    `<b>SID/CID:</b> ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
     `🏷 <b>Team:</b> ${escapeHtml(record.team?.trim() || "Không rõ")}`,
     "",
     `🕐 <b>Thời gian:</b> ${escapeHtml(formatCreatedAt(record))}`,
