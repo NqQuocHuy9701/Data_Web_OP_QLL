@@ -83,6 +83,7 @@ export default function Home() {
   const [adminPassword, setAdminPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [showUsernameNotice, setShowUsernameNotice] = useState(false);
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [filterTeam, setFilterTeam] = useState("Tất cả");
@@ -584,6 +585,10 @@ export default function Home() {
           setTeamLead(parsed.teamLead || "Lead LienDT");
           setLoginRole("QLL");
           setActiveNav("TrangCuaToi"); // QLL vào thẳng Trang của tôi
+          const noticeKey = `qll_username_notice_${parsed.namecode.trim().toLowerCase()}`;
+          if (!localStorage.getItem(noticeKey)) {
+            setShowUsernameNotice(true);
+          }
         }
         setIsLoggedIn(true);
       } catch (e) {
@@ -963,6 +968,10 @@ export default function Home() {
       };
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
       setActiveNav("TrangCuaToi"); // QLL vào thẳng Trang của tôi
+      const noticeKey = `qll_username_notice_${namecode.trim().toLowerCase()}`;
+      if (!localStorage.getItem(noticeKey)) {
+        setShowUsernameNotice(true);
+      }
       setIsLoggedIn(true);
     } else {
       if (!adminUsername.trim() || !adminPassword.trim()) {
@@ -1926,6 +1935,47 @@ const loadData = (forceFresh = false) => {
     <div
       className={`flex h-screen font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0 transition-colors duration-0 ${theme === "dark" ? "bg-[#070b14] text-slate-300" : "bg-[#F4F7FE] text-slate-700"}`}
     >
+      {showUsernameNotice && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+          <div
+            className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${
+              theme === "dark"
+                ? "border-white/10 bg-[#151b2b] text-slate-200"
+                : "border-slate-100 bg-white text-slate-700"
+            }`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="username-notice-title"
+          >
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/15 text-3xl">
+              👤
+            </div>
+            <h3
+              id="username-notice-title"
+              className={`mb-3 text-center text-lg font-bold ${
+                theme === "dark" ? "text-white" : "text-slate-800"
+              }`}
+            >
+              Lưu ý đặt tên đăng nhập
+            </h3>
+            <p className="mb-6 text-center text-sm leading-relaxed">
+              Nhờ anh/chị QLL đặt username đúng theo tên để dữ liệu hệ thống chuẩn xác nhất nhé ạ!
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                const noticeKey = `qll_username_notice_${namecode.trim().toLowerCase()}`;
+                localStorage.setItem(noticeKey, "shown");
+                setShowUsernameNotice(false);
+              }}
+              className="w-full rounded-xl bg-sky-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-colors hover:bg-sky-600 active:scale-[0.98]"
+            >
+              Đã hiểu
+            </button>
+          </div>
+        </div>
+      )}
+
       <div
         className={`absolute inset-0 pointer-events-none -z-10 transition-opacity duration-0 ${theme === "dark" ? "opacity-100" : "opacity-0"}`}
       >
