@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import {
   ADMIN_SESSION_COOKIE,
-  ADMIN_SESSION_MAX_AGE,
   createAdminSessionToken,
   hasAdminSessionSecret,
 } from "../_lib/admin-session";
@@ -160,7 +159,6 @@ export async function POST(request: Request) {
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: ADMIN_SESSION_MAX_AGE,
     });
     return response;
   } catch {

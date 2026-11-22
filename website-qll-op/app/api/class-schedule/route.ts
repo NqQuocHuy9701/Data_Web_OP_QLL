@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: "Phiên Admin không hợp lệ hoặc đã hết hạn. Vui lòng đăng xuất và đăng nhập lại.",
+        error: "Phiên Admin không hợp lệ. Vui lòng đăng xuất và đăng nhập lại.",
       },
       { status: 401 },
     );
@@ -213,7 +213,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: "Phiên Admin không hợp lệ hoặc đã hết hạn. Vui lòng đăng xuất và đăng nhập lại.",
+        error: "Phiên Admin không hợp lệ. Vui lòng đăng xuất và đăng nhập lại.",
       },
       { status: 401 },
     );

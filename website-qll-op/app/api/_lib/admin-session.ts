@@ -1,7 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const ADMIN_SESSION_COOKIE = "qll_admin_session";
-export const ADMIN_SESSION_MAX_AGE = 8 * 60 * 60;
 
 function getSessionSecret() {
   return process.env.ADMIN_SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -18,7 +17,6 @@ export function createAdminSessionToken(username: string) {
   const payload = Buffer.from(
     JSON.stringify({
       username,
-      expiresAt: Date.now() + ADMIN_SESSION_MAX_AGE * 1000,
     }),
   ).toString("base64url");
   const signature = createHmac("sha256", secret)
@@ -64,10 +62,7 @@ export function getAdminSessionUsername(request: Request) {
       session === null ||
       !("username" in session) ||
       typeof session.username !== "string" ||
-      !session.username ||
-      !("expiresAt" in session) ||
-      typeof session.expiresAt !== "number" ||
-      session.expiresAt <= Date.now()
+      !session.username
     ) {
       return null;
     }
