@@ -420,32 +420,82 @@ body {
    ============================================================ */
 
 /* 1. Highlight dòng mới xuất hiện realtime (vàng rồi mờ dần) */
-@media (width >= 64rem) {
-  .ops-sidebar[data-collapsed="true"] {
+.ops-sidebar-rail {
+  display: contents;
+}
+
+@media (width >= 64rem) and (hover: hover) {
+  .ops-sidebar-rail {
+    display: block;
+    position: relative;
+    z-index: 40;
+    width: 4rem;
+    flex: 0 0 4rem;
+  }
+
+  .ops-sidebar-rail .ops-sidebar {
+    position: absolute;
+    inset-block: 0;
+    width: 16rem;
+    overflow: hidden;
+  }
+
+  .ops-sidebar:not(:hover, :has(:focus-visible)) {
     width: 4rem;
   }
 
-  .ops-sidebar[data-collapsed="true"] :is(
+  .ops-sidebar :is(
     .ops-sidebar-brand,
     .ops-sidebar-label,
     .ops-sidebar-section,
     .ops-sidebar-profile
   ) {
-    display: none;
+    white-space: nowrap;
   }
 
-  .ops-sidebar[data-collapsed="true"] :is(.ops-sidebar-heading, .ops-sidebar-footer) {
-    justify-content: center;
-    padding-inline: 0;
+  .ops-sidebar:not(:hover, :has(:focus-visible)) :is(
+    .ops-sidebar-brand,
+    .ops-sidebar-label,
+    .ops-sidebar-section,
+    .ops-sidebar-profile
+  ) {
+    opacity: 0;
   }
 
-  .ops-sidebar[data-collapsed="true"] nav {
+  .ops-sidebar nav {
     padding-inline: 0.5rem;
   }
 
-  .ops-sidebar[data-collapsed="true"] nav button {
-    justify-content: center;
-    padding-inline: 0;
+  .ops-sidebar nav button {
+    overflow: hidden;
+    padding-inline: 0.75rem;
+  }
+
+  .ops-sidebar nav button > span:first-of-type {
+    flex-shrink: 0;
+  }
+
+  .ops-sidebar-footer {
+    padding-inline: 0.875rem;
+  }
+
+  .ops-sidebar-profile {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .ops-sidebar-footer > button {
+    flex-shrink: 0;
+  }
+}
+
+@media (width >= 64rem) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ops-sidebar-rail .ops-sidebar {
+    transition: width 220ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  }
+
+  .ops-sidebar :is(.ops-sidebar-brand, .ops-sidebar-label, .ops-sidebar-section, .ops-sidebar-profile) {
+    transition: opacity 130ms ease-out;
   }
 }
 

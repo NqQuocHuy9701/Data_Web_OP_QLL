@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 
 export type NavKey =
   | "Đang học"
@@ -31,8 +31,6 @@ export const navLabels: Record<NavKey, string> = {
   NhatKy: "Nhật ký",
 };
 
-const SIDEBAR_STORAGE_KEY = "qll_sidebar_collapsed";
-
 interface SidebarProps {
   theme: "light" | "dark";
   activeNav: NavKey;
@@ -60,16 +58,6 @@ export default function Sidebar({
   sidebarOpen = false,
   setSidebarOpen,
 }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(
-    () => typeof window !== "undefined" && window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true",
-  );
-
-  const toggleCollapsed = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
-  };
-
   return (
     <>
       {/* [MOBILE] Lớp nền tối: chỉ hiện khi drawer mở, bấm để đóng. Ẩn trên desktop. */}
@@ -81,8 +69,8 @@ export default function Sidebar({
         />
       )}
 
+      <div className="ops-sidebar-rail">
       <aside
-        data-collapsed={collapsed}
         onClick={() => setSidebarOpen?.(false)}
         className={`ops-sidebar w-64 flex flex-col z-40 shrink-0 motion-safe:transition-transform motion-safe:duration-200 fixed inset-y-0 left-0 lg:static ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -109,21 +97,6 @@ export default function Sidebar({
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
-          aria-expanded={!collapsed}
-          aria-controls="ops-sidebar-navigation"
-          title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
-          onClick={toggleCollapsed}
-          className={`hidden size-8 shrink-0 items-center justify-center rounded-lg border text-sm focus-visible:outline-2 focus-visible:outline-sky-500 lg:inline-flex ${
-            theme === "dark" ? "border-white/10 text-slate-300 hover:bg-white/5" : "border-slate-200 text-slate-700 hover:bg-slate-50"
-          }`}
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={`size-4 ${collapsed ? "rotate-180" : ""}`}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="m14 6-6 6 6 6" />
-          </svg>
-        </button>
       </div>
 
       <nav id="ops-sidebar-navigation" aria-label="Điều hướng chính" className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
@@ -449,6 +422,7 @@ export default function Sidebar({
         </button>
       </div>
     </aside>
+    </div>
     </>
   );
 }
