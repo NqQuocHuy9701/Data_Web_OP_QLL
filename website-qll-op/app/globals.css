@@ -41,6 +41,10 @@ body {
   --circle-transition: 0.3s cubic-bezier(0, -0.02, 0.35, 1.17);
 }
 
+.header-theme-toggle .theme-switch {
+  --toggle-size: 11px;
+}
+
 .theme-switch,
 .theme-switch *,
 .theme-switch *::before,
@@ -416,6 +420,60 @@ body {
    ============================================================ */
 
 /* 1. Highlight dòng mới xuất hiện realtime (vàng rồi mờ dần) */
+@media (width >= 64rem) {
+  .ops-sidebar[data-collapsed="true"] {
+    width: 4rem;
+  }
+
+  .ops-sidebar[data-collapsed="true"] :is(
+    .ops-sidebar-brand,
+    .ops-sidebar-label,
+    .ops-sidebar-section,
+    .ops-sidebar-profile
+  ) {
+    display: none;
+  }
+
+  .ops-sidebar[data-collapsed="true"] :is(.ops-sidebar-heading, .ops-sidebar-footer) {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .ops-sidebar[data-collapsed="true"] nav {
+    padding-inline: 0.5rem;
+  }
+
+  .ops-sidebar[data-collapsed="true"] nav button {
+    justify-content: center;
+    padding-inline: 0;
+  }
+}
+
+.ops-sidebar nav button:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: -2px;
+}
+
+.ops-table-container {
+  container: ops-table / inline-size;
+}
+
+.ops-table-compact-field {
+  display: none;
+}
+
+@container ops-table (width < 60rem) {
+  .ops-table-wide-column {
+    display: none;
+  }
+
+  .ops-table-compact-field {
+    display: block;
+    margin-top: 0.25rem;
+  }
+
+}
+
 @keyframes class-schedule-enter {
   from {
     opacity: 0;

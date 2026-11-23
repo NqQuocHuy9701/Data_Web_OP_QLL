@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Papa from "papaparse";
 import LoginScreen from "./LoginScreen";
-import Sidebar from "./Sidebar";
+import Sidebar, { navLabels } from "./Sidebar";
 import Header from "./Header";
 import AdminStats from "./AdminStats";
 import TrafficCharts from "./TrafficCharts";
@@ -1954,6 +1954,7 @@ const loadData = (forceFresh = false) => {
     );
   }
 
+  const isClassTable = activeNav === "Đang học" || activeNav === "Khai giảng" || activeNav === "Giữ Slot";
   return (
     <div
       className={`flex h-screen font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0 transition-colors duration-0 ${theme === "dark" ? "bg-[#070b14] text-slate-300" : "bg-[#F4F7FE] text-slate-700"}`}
@@ -2082,9 +2083,10 @@ const loadData = (forceFresh = false) => {
         <Header
           theme={theme}
           toggleTheme={toggleTheme}
+          title={navLabels[activeNav]}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
-          lastUpdated={lastUpdated}
+          lastUpdated={isClassTable ? lastUpdated : ""}
           loading={loading}
           loadingHistory={loadingHistory}
           loginRole={loginRole}
@@ -2176,7 +2178,7 @@ const loadData = (forceFresh = false) => {
         ) : activeNav === "SlotDaGiu" ? (
           <div
             key="SlotDaGiu"
-            className="flex-1 px-8 pt-5 pb-6 min-h-0 flex flex-col animate-fade-slide-up"
+            className="flex min-h-0 min-w-0 flex-1 flex-col px-3 pb-3 pt-3 sm:px-4 xl:px-6 2xl:px-8 animate-fade-slide-up"
           >
             <SlotHeldTable
               slotHistoryData={slotHistoryData}
@@ -2184,6 +2186,8 @@ const loadData = (forceFresh = false) => {
               completedSlots={completedSlots}
               checkIsExpired={checkIsExpired}
               onRequestRecall={(row) => setRecallTarget(row)}
+              onRefresh={() => void loadSlotHistory()}
+              refreshing={loadingHistory}
               theme={theme}
             />
           </div>

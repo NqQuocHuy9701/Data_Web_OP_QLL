@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
-type NavKey =
+export type NavKey =
   | "Đang học"
   | "Khai giảng"
   | "Giữ Slot"
@@ -15,6 +15,23 @@ type NavKey =
   | "Dashboard"
   | "TrangCuaToi"
   | "NhatKy";
+
+export const navLabels: Record<NavKey, string> = {
+  "Đang học": "Lớp đang học",
+  "Khai giảng": "Chờ khai giảng",
+  "Giữ Slot": "Giữ slot lớp",
+  SlotDaGiu: "Slot đã giữ",
+  DanhSachAddLopQLL: "Danh sách học sinh",
+  DanhSachHSAddLop: "Danh sách HS add lớp",
+  QuanTriAdmin: "Quản trị Admin",
+  LichSuSlotAdmin: "DS Giữ Slot",
+  ThongKeAdmin: "Theo dõi truy cập",
+  Dashboard: "Dashboard book Slots",
+  TrangCuaToi: "Trang của tôi",
+  NhatKy: "Nhật ký",
+};
+
+const SIDEBAR_STORAGE_KEY = "qll_sidebar_collapsed";
 
 interface SidebarProps {
   theme: "light" | "dark";
@@ -43,6 +60,16 @@ export default function Sidebar({
   sidebarOpen = false,
   setSidebarOpen,
 }: SidebarProps) {
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true",
+  );
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+  };
+
   return (
     <>
       {/* [MOBILE] Lớp nền tối: chỉ hiện khi drawer mở, bấm để đóng. Ẩn trên desktop. */}
@@ -55,8 +82,9 @@ export default function Sidebar({
       )}
 
       <aside
+        data-collapsed={collapsed}
         onClick={() => setSidebarOpen?.(false)}
-        className={`w-64 min-w-[16rem] max-w-[16rem] flex flex-col z-40 shrink-0 transition-transform duration-300 lg:transition-colors fixed inset-y-0 left-0 lg:static ${
+        className={`ops-sidebar w-64 flex flex-col z-40 shrink-0 motion-safe:transition-transform motion-safe:duration-200 fixed inset-y-0 left-0 lg:static ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         } ${
           theme === "dark"
@@ -65,9 +93,9 @@ export default function Sidebar({
         }`}
       >
       <div
-        className={`h-20 flex items-center px-6 border-b shrink-0 transition-colors duration-0 ${theme === "dark" ? "border-white/5" : "border-slate-100"}`}
+        className={`ops-sidebar-heading h-14 flex items-center justify-between gap-2 px-4 border-b shrink-0 transition-colors duration-0 ${theme === "dark" ? "border-white/5" : "border-slate-100"}`}
       >
-        <div className="flex items-center gap-3 cursor-pointer">
+        <div className="ops-sidebar-brand flex min-w-0 items-center gap-3">
           <img
             src="https://xcdn-cf.vuihoc.vn/theme/vuihoc/imgs/vuihoc_logo_final.png"
             alt="Vuihoc Logo"
@@ -81,12 +109,30 @@ export default function Sidebar({
             </p>
           </div>
         </div>
+        <button
+          type="button"
+          aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+          aria-expanded={!collapsed}
+          aria-controls="ops-sidebar-navigation"
+          title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+          onClick={toggleCollapsed}
+          className={`hidden size-8 shrink-0 items-center justify-center rounded-lg border text-sm focus-visible:outline-2 focus-visible:outline-sky-500 lg:inline-flex ${
+            theme === "dark" ? "border-white/10 text-slate-300 hover:bg-white/5" : "border-slate-200 text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={`size-4 ${collapsed ? "rotate-180" : ""}`}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m14 6-6 6 6 6" />
+          </svg>
+        </button>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+      <nav id="ops-sidebar-navigation" aria-label="Điều hướng chính" className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
         {/* Trang chủ cá nhân — chỉ QLL */}
         {loginRole === "QLL" && (
           <button
+            title={navLabels["TrangCuaToi"]}
+            aria-label={navLabels["TrangCuaToi"]}
+            aria-current={activeNav === "TrangCuaToi" ? "page" : undefined}
             onClick={() => setActiveNav("TrangCuaToi")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
               activeNav === "TrangCuaToi"
@@ -102,15 +148,18 @@ export default function Sidebar({
               className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-0 ${activeNav === "TrangCuaToi" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
             ></div>
             <span className="text-lg">🏠</span>
-            <span className="text-xs truncate">Trang của tôi</span>
+            <span className="ops-sidebar-label text-xs truncate">Trang của tôi</span>
           </button>
         )}
 
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2 px-2">
+        <div className="ops-sidebar-section text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2 px-2">
           Quản lý báo cáo
         </div>
 
         <button
+          title={navLabels["Đang học"]}
+          aria-label={navLabels["Đang học"]}
+          aria-current={activeNav === "Đang học" ? "page" : undefined}
           onClick={() => setActiveNav("Đang học")}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
             activeNav === "Đang học"
@@ -126,10 +175,13 @@ export default function Sidebar({
             className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-0 ${activeNav === "Đang học" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
           ></div>
           <span className="text-lg">📚</span>
-          <span className="text-xs truncate">Lớp Đang Học</span>
+          <span className="ops-sidebar-label text-xs truncate">Lớp Đang Học</span>
         </button>
 
         <button
+          title={navLabels["Khai giảng"]}
+          aria-label={navLabels["Khai giảng"]}
+          aria-current={activeNav === "Khai giảng" ? "page" : undefined}
           onClick={() => setActiveNav("Khai giảng")}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
             activeNav === "Khai giảng"
@@ -145,14 +197,17 @@ export default function Sidebar({
             className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-0 ${activeNav === "Khai giảng" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
           ></div>
           <span className="text-lg">🚀</span>
-          <span className="text-xs truncate">Chờ Khai Giảng</span>
+          <span className="ops-sidebar-label text-xs truncate">Chờ Khai Giảng</span>
         </button>
 
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-6 px-2">
+        <div className="ops-sidebar-section text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-6 px-2">
           Tác vụ chuyên biệt
         </div>
 
         <button
+          title={navLabels["Giữ Slot"]}
+          aria-label={navLabels["Giữ Slot"]}
+          aria-current={activeNav === "Giữ Slot" ? "page" : undefined}
           onClick={() => setActiveNav("Giữ Slot")}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
             activeNav === "Giữ Slot"
@@ -168,10 +223,13 @@ export default function Sidebar({
             className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-500 rounded-r-full transition-all duration-0 ${activeNav === "Giữ Slot" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
           ></div>
           <span className="text-lg">📌</span>
-          <span className="text-xs truncate">Giữ Slot Lớp</span>
+          <span className="ops-sidebar-label text-xs truncate">Giữ Slot Lớp</span>
         </button>
 
         <button
+          title={navLabels["SlotDaGiu"]}
+          aria-label={navLabels["SlotDaGiu"]}
+          aria-current={activeNav === "SlotDaGiu" ? "page" : undefined}
           onClick={() => {
             setActiveNav("SlotDaGiu");
             loadSlotHistory();
@@ -190,16 +248,19 @@ export default function Sidebar({
             className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-amber-500 rounded-r-full transition-all duration-0 ${activeNav === "SlotDaGiu" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
           ></div>
           <span className="text-lg">🕒</span>
-          <span className="text-xs truncate">Slot Đã Giữ</span>
+          <span className="ops-sidebar-label text-xs truncate">Slot Đã Giữ</span>
         </button>
 
         {loginRole === "QLL" && (
           <>
-            <div className="text-[10px] font-black text-sky-500 uppercase tracking-widest mb-2 mt-6 px-2">
+            <div className="ops-sidebar-section text-[10px] font-black text-sky-500 uppercase tracking-widest mb-2 mt-6 px-2">
               Học sinh add lớp
             </div>
 
             <button
+              title={navLabels["DanhSachAddLopQLL"]}
+              aria-label={navLabels["DanhSachAddLopQLL"]}
+              aria-current={activeNav === "DanhSachAddLopQLL" ? "page" : undefined}
               onClick={() => setActiveNav("DanhSachAddLopQLL")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
                 activeNav === "DanhSachAddLopQLL"
@@ -212,18 +273,21 @@ export default function Sidebar({
               }`}
             >
               <span className="text-lg">🎓</span>
-              <span className="text-xs truncate">Danh sách học sinh</span>
+              <span className="ops-sidebar-label text-xs truncate">Danh sách học sinh</span>
             </button>
           </>
         )}
 
         {loginRole === "Admin" && (
           <>
-            <div className="text-[10px] font-black text-sky-500 uppercase tracking-widest mb-2 mt-6 px-2">
+            <div className="ops-sidebar-section text-[10px] font-black text-sky-500 uppercase tracking-widest mb-2 mt-6 px-2">
               Quản lý học sinh
             </div>
 
             <button
+              title={navLabels["DanhSachHSAddLop"]}
+              aria-label={navLabels["DanhSachHSAddLop"]}
+              aria-current={activeNav === "DanhSachHSAddLop" ? "page" : undefined}
               onClick={() => setActiveNav("DanhSachHSAddLop")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
                 activeNav === "DanhSachHSAddLop"
@@ -236,14 +300,17 @@ export default function Sidebar({
               }`}
             >
               <span className="text-lg">🎓</span>
-              <span className="text-xs truncate">Danh sách HS add lớp</span>
+              <span className="ops-sidebar-label text-xs truncate">Danh sách HS add lớp</span>
             </button>
 
-            <div className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
+            <div className="ops-sidebar-section text-[10px] font-black text-orange-400 uppercase tracking-widest mb-2 mt-6 px-2">
               Hệ thống Quản trị
             </div>
 
             <button
+              title={navLabels["Dashboard"]}
+              aria-label={navLabels["Dashboard"]}
+              aria-current={activeNav === "Dashboard" ? "page" : undefined}
               onClick={() => {
                 setActiveNav("Dashboard");
                 loadSlotHistory();
@@ -257,10 +324,13 @@ export default function Sidebar({
               }`}
             >
               <span className="text-lg">📈</span>
-              <span className="text-xs truncate">Dashboard book Slots</span>
+              <span className="ops-sidebar-label text-xs truncate">Dashboard book Slots</span>
             </button>
 
             <button
+              title={navLabels["NhatKy"]}
+              aria-label={navLabels["NhatKy"]}
+              aria-current={activeNav === "NhatKy" ? "page" : undefined}
               onClick={() => setActiveNav("NhatKy")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
                 activeNav === "NhatKy"
@@ -271,10 +341,13 @@ export default function Sidebar({
               }`}
             >
               <span className="text-lg">📜</span>
-              <span className="text-xs truncate">Nhật ký</span>
+              <span className="ops-sidebar-label text-xs truncate">Nhật ký</span>
             </button>
 
             <button
+              title={navLabels["LichSuSlotAdmin"]}
+              aria-label={navLabels["LichSuSlotAdmin"]}
+              aria-current={activeNav === "LichSuSlotAdmin" ? "page" : undefined}
               onClick={() => {
                 setActiveNav("LichSuSlotAdmin");
                 loadSlotHistory();
@@ -288,10 +361,13 @@ export default function Sidebar({
               }`}
             >
               <span className="text-lg">📋</span>
-              <span className="text-xs truncate">DS Giữ Slot</span>
+              <span className="ops-sidebar-label text-xs truncate">DS Giữ Slot</span>
             </button>
 
             <button
+              title={navLabels["ThongKeAdmin"]}
+              aria-label={navLabels["ThongKeAdmin"]}
+              aria-current={activeNav === "ThongKeAdmin" ? "page" : undefined}
               onClick={() => {
                 setActiveNav("ThongKeAdmin");
                 loadSlotHistory();
@@ -305,10 +381,13 @@ export default function Sidebar({
               }`}
             >
               <span className="text-lg">📊</span>
-              <span className="text-xs truncate">Theo dõi truy cập</span>
+              <span className="ops-sidebar-label text-xs truncate">Theo dõi truy cập</span>
             </button>
 
             <button
+              title={navLabels["QuanTriAdmin"]}
+              aria-label={navLabels["QuanTriAdmin"]}
+              aria-current={activeNav === "QuanTriAdmin" ? "page" : undefined}
               onClick={() => {
                 setActiveNav("QuanTriAdmin");
               }}
@@ -321,16 +400,16 @@ export default function Sidebar({
               }`}
             >
               <span className="text-lg">⚙️</span>
-              <span className="text-xs truncate">Quản Trị Admin</span>
+              <span className="ops-sidebar-label text-xs truncate">Quản Trị Admin</span>
             </button>
           </>
         )}
       </nav>
 
       <div
-        className={`p-4 border-t shrink-0 flex items-center justify-between transition-colors duration-0 ${theme === "dark" ? "bg-[#0a0f1c] border-white/5" : "bg-slate-50/30 border-slate-100"}`}
+        className={`ops-sidebar-footer p-4 border-t shrink-0 flex items-center justify-between transition-colors duration-0 ${theme === "dark" ? "bg-[#0a0f1c] border-white/5" : "bg-slate-50/30 border-slate-100"}`}
       >
-        <div className="flex items-center gap-3 px-1 cursor-pointer group">
+        <div className="ops-sidebar-profile flex items-center gap-3 px-1 cursor-pointer group">
           <div
             className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm transition-colors duration-0 ${
               theme === "dark"

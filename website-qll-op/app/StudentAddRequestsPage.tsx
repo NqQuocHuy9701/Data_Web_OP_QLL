@@ -348,8 +348,8 @@ export default function StudentAddRequestsPage({
           </div>
         )}
 
-        <div className="flex-1 overflow-auto custom-scrollbar">
-          <table className="w-full min-w-[820px] text-left text-sm [&_td]:px-2 [&_td]:py-2 [&_th]:px-2 [&_th]:py-2 2xl:[&_td]:px-4 2xl:[&_td]:py-3 2xl:[&_th]:px-4">
+        <div className="ops-table-container flex-1 overflow-auto custom-scrollbar">
+          <table className="w-full min-w-[720px] text-left text-sm [&_td]:px-2 [&_td]:py-2 [&_th]:px-2 [&_th]:py-2 2xl:[&_td]:px-4 2xl:[&_td]:py-3 2xl:[&_th]:px-4">
             <thead
               className={`sticky top-0 z-10 border-b text-[11px] uppercase tracking-wider ${
                 theme === "dark"
@@ -363,10 +363,10 @@ export default function StudentAddRequestsPage({
                 <th className="px-5 py-4">Môn học</th>
                 <th className="px-5 py-4">SID/CID</th>
                 <th className="px-5 py-4">QLL</th>
-                <th className="px-5 py-4">Team</th>
+                <th className="ops-table-wide-column px-5 py-4">Team</th>
                 <th className="px-5 py-4">Người xử lý / thời gian</th>
                 <th className="px-5 py-4">Trạng thái</th>
-                <th className="px-5 py-4">Thời gian còn chờ</th>
+                <th className="ops-table-wide-column px-5 py-4">Thời gian còn chờ</th>
                 <th className="px-5 py-4 text-right">Thao tác</th>
               </tr>
             </thead>
@@ -393,6 +393,23 @@ export default function StudentAddRequestsPage({
                     !request.is_done && !request.is_cancelled;
                   const deadline = parseTimestamp(request.timestamp).getTime() + MAX_WAIT_MS;
                   const remainingMs = deadline - now;
+                  const waitIndicator = !isPending || !Number.isFinite(remainingMs) ? (
+                      <span className={muted}>-</span>
+                    ) : remainingMs <= 0 ? (
+                      <span
+                        className={`inline-flex rounded-md border px-2.5 py-1 font-bold ${
+                          theme === "dark"
+                            ? "border-rose-500/30 bg-rose-500/20 text-rose-300"
+                            : "border-rose-200 bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        Quá hạn 2 giờ
+                      </span>
+                    ) : (
+                      <span className={`font-semibold tabular-nums ${heading}`}>
+                        {formatRemainingTime(Math.min(remainingMs, MAX_WAIT_MS))}
+                      </span>
+                    );
 
                   return (
                     <tr
@@ -418,8 +435,11 @@ export default function StudentAddRequestsPage({
                       </td>
                       <td className={`px-5 py-4 font-bold ${heading}`}>
                         {request.nguoi_tao || "-"}
+                        <span className={`ops-table-compact-field text-xs font-normal ${muted}`}>
+                          {request.team || "-"}
+                        </span>
                       </td>
-                      <td className={`px-5 py-4 ${muted}`}>
+                      <td className={`ops-table-wide-column px-5 py-4 ${muted}`}>
                         {request.team || "-"}
                       </td>
                       <td className="px-5 py-4">
@@ -470,25 +490,10 @@ export default function StudentAddRequestsPage({
                             ⏳ Chờ xử lý
                           </span>
                         )}
+                        <div className="ops-table-compact-field text-xs">{waitIndicator}</div>
                       </td>
-                      <td className="px-5 py-4 text-xs">
-                        {!isPending || !Number.isFinite(remainingMs) ? (
-                          <span className={muted}>-</span>
-                        ) : remainingMs <= 0 ? (
-                          <span
-                            className={`inline-flex rounded-md border px-2.5 py-1 font-bold ${
-                              theme === "dark"
-                                ? "border-rose-500/30 bg-rose-500/20 text-rose-300"
-                                : "border-rose-200 bg-rose-50 text-rose-700"
-                            }`}
-                          >
-                            Quá hạn 2 giờ
-                          </span>
-                        ) : (
-                          <span className={`font-semibold tabular-nums ${heading}`}>
-                            {formatRemainingTime(Math.min(remainingMs, MAX_WAIT_MS))}
-                          </span>
-                        )}
+                      <td className="ops-table-wide-column px-5 py-4 text-xs">
+                        {waitIndicator}
                       </td>
                       <td className="px-5 py-4 text-right">
                         {isPending ? (

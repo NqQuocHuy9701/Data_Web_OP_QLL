@@ -10,6 +10,8 @@ interface SlotHeldTableProps {
   checkIsExpired: (timeString: string) => boolean;
   onRequestRecall?: (row: any) => void;
   theme: "light" | "dark";
+  onRefresh: () => void;
+  refreshing: boolean;
 }
 
 export default function SlotHeldTable({
@@ -19,6 +21,8 @@ export default function SlotHeldTable({
   checkIsExpired,
   onRequestRecall,
   theme,
+  onRefresh,
+  refreshing,
 }: SlotHeldTableProps) {
   return (
     <div
@@ -29,7 +33,7 @@ export default function SlotHeldTable({
       }`}
     >
       <div
-        className={`px-6 py-5 border-b flex items-center justify-between shrink-0 z-30 transition-colors duration-0 ${theme === "dark" ? "bg-transparent border-white/5" : "bg-white border-slate-100"}`}
+        className={`px-3 py-2 border-b flex flex-wrap items-center justify-between gap-2 shrink-0 z-30 transition-colors duration-0 ${theme === "dark" ? "bg-transparent border-white/5" : "bg-white border-slate-100"}`}
       >
         <h3
           className={`font-bold flex items-center gap-3 text-base transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
@@ -37,26 +41,39 @@ export default function SlotHeldTable({
           <span className="w-1.5 h-6 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
           🕒 Danh sách Slot lớp bạn đã giữ
         </h3>
-        <span
-          className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
-            theme === "dark"
-              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-              : "bg-amber-50 text-amber-600 border-amber-100"
-          }`}
-        >
-          Đã giữ:{" "}
-          {
-            slotHistoryData.filter(
-              (item) =>
-                (item.nguoi_giu || item["Người giữ"]) === displayName,
-            ).length
-          }{" "}
-          slot
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`font-extrabold px-3.5 py-2 rounded-xl border shadow-sm text-xs transition-colors duration-0 ${
+              theme === "dark"
+                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                : "bg-amber-50 text-amber-600 border-amber-100"
+            }`}
+          >
+            Đã giữ:{" "}
+            {
+              slotHistoryData.filter(
+                (item) =>
+                  (item.nguoi_giu || item["Người giữ"]) === displayName,
+              ).length
+            }{" "}
+            slot
+          </span>
+          <button
+            type="button"
+            disabled={refreshing}
+            aria-busy={refreshing}
+            onClick={onRefresh}
+            className={`rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
+              theme === "dark" ? "border-white/10 text-slate-300 hover:bg-white/5" : "border-slate-200 text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            {refreshing ? "Đang tải…" : "Làm mới slot"}
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-auto custom-scrollbar relative">
-        <table className="w-full text-sm text-left whitespace-nowrap">
+      <div className="ops-table-container flex-1 overflow-auto custom-scrollbar relative">
+        <table className="w-full min-w-[640px] text-left text-sm [&_td]:px-2 [&_td]:py-2 [&_th]:px-2 [&_th]:py-2 xl:[&_td]:px-4 xl:[&_th]:px-4">
           <thead
             className={`text-[12px] uppercase font-bold tracking-wider sticky top-0 z-20 shadow-sm border-b transition-colors duration-0 ${
               theme === "dark"
@@ -69,8 +86,11 @@ export default function SlotHeldTable({
               <th className="px-6 py-4">Mã lớp</th>
               <th className="px-6 py-4">Môn học</th>
               <th className="px-6 py-4">Lưu ý (SID/CID)</th>
-              <th className="px-6 py-4 text-center">Time còn lại (24h)</th>
-              <th className="px-6 py-4 text-right pr-6">Trạng thái xếp</th>
+              <th className="px-6 py-4">
+                <span className="ops-table-wide-column">Thời gian còn lại (24h)</span>
+                <span className="ops-table-compact-field">Trạng thái / Còn lại</span>
+              </th>
+              <th className="ops-table-wide-column px-6 py-4">Trạng thái xếp</th>
               <th className="px-6 py-4 text-center">Thao tác</th>
             </tr>
           </thead>
@@ -110,6 +130,25 @@ export default function SlotHeldTable({
                   const isCancelled = row.is_cancelled === true;
                   // Slot còn hiệu lực → mới cho thu hồi.
                   const canRecall = !isDone && !isExpired && !isCancelled;
+                  const statusLabel = isCancelled ? (
+                    <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                      <span>🔄</span> Đã thu hồi
+                    </span>
+                  ) : isDone ? (
+                    <span className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                      <span>✅</span> Admin đã chốt xếp
+                    </span>
+                  ) : isExpired ? (
+                    <span
+                      className={`text-xs font-bold ${theme === "dark" ? "text-red-400" : "text-red-500"} flex items-center gap-1`}
+                    >
+                      <span>❌</span> Đã nhả slot
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                      <span>⏳</span> Vận hành đang xử lý !
+                    </span>
+                  );
 
                   return (
                     <tr
@@ -149,8 +188,10 @@ export default function SlotHeldTable({
                         {note}
                       </td>
 
-                      <td className="px-6 py-4 text-center">
-                        {isCancelled ? (
+                      <td className="px-6 py-4">
+                        <div className="ops-table-compact-field">{statusLabel}</div>
+                        <div>
+                          {isCancelled ? (
                           <span className="text-slate-400 text-xs italic">
                             Đã thu hồi
                           </span>
@@ -171,29 +212,9 @@ export default function SlotHeldTable({
                             <CountdownTimer timeString={timeStr} />
                           </span>
                         )}
+                        </div>
                       </td>
-
-                      <td className="px-6 py-4 text-right pr-6">
-                        {isCancelled ? (
-                          <span className="text-xs font-bold text-slate-400 flex items-center justify-end gap-1">
-                            <span>🔄</span> Đã thu hồi
-                          </span>
-                        ) : isDone ? (
-                          <span className="text-xs font-bold text-emerald-500 flex items-center justify-end gap-1">
-                            <span>✅</span> Admin đã chốt xếp
-                          </span>
-                        ) : isExpired ? (
-                          <span
-                            className={`text-xs font-bold ${theme === "dark" ? "text-red-400" : "text-red-500"} flex items-center justify-end gap-1`}
-                          >
-                            <span>❌</span> Đã nhả slot
-                          </span>
-                        ) : (
-                          <span className="text-xs font-bold text-amber-500 flex items-center justify-end gap-1 animate-pulse">
-                            <span>⏳</span> Vận hành đang xử lý !
-                          </span>
-                        )}
-                      </td>
+                      <td className="ops-table-wide-column px-6 py-4">{statusLabel}</td>
 
                       <td className="px-6 py-4 text-center">
                         {canRecall ? (
