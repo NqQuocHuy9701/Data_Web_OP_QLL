@@ -11,6 +11,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
 
@@ -27,6 +28,20 @@ export default function TrafficCharts({
   historicalChartData,
   theme,
 }: TrafficChartsProps) {
+  const gaps: { from: OnlinePeakPoint & { peak: number }; to: OnlinePeakPoint & { peak: number } }[] = [];
+  let previous: (OnlinePeakPoint & { peak: number }) | undefined;
+  let missing = false;
+  for (const point of todayChartData) {
+    if (point.peak === null) {
+      missing = true;
+      continue;
+    }
+    const measured = { ...point, peak: point.peak };
+    if (previous && missing) gaps.push({ from: previous, to: measured });
+    previous = measured;
+    missing = false;
+  }
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 shrink-0">
       <div
@@ -37,6 +52,11 @@ export default function TrafficCharts({
         >
           <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
           📈 {usingMinuteSamples ? "Người online theo phút (2 giờ gần nhất)" : "Đỉnh online mỗi 3 phút (2 giờ gần nhất)"}
+          {gaps.length > 0 && (
+            <span className="ml-auto text-xs font-normal text-slate-500 dark:text-slate-400">
+              Nét đứt: thiếu mẫu
+            </span>
+          )}
         </h3>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -91,6 +111,16 @@ export default function TrafficCharts({
                   marginBottom: "4px",
                 }}
               />
+              {gaps.map(({ from, to }) => (
+                <ReferenceLine
+                  key={`${from.time}-${to.time}`}
+                  segment={[{ x: from.time, y: from.peak }, { x: to.time, y: to.peak }]}
+                  stroke={theme === "dark" ? "#7dd3fc" : "#0284c7"}
+                  strokeWidth={1.5}
+                  strokeDasharray="4 5"
+                  strokeOpacity={0.65}
+                />
+              ))}
               <Line
                 type={usingMinuteSamples ? "linear" : "monotone"}
                 dataKey="peak"
