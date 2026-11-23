@@ -25,6 +25,8 @@ import ConfirmDialog from "./ConfirmDialog";
 import AuditLog from "./AuditLog";
 import { createClient } from "@supabase/supabase-js";
 
+import { buildTrafficPoints, readOnlineUsers, recentTrafficSlots, selectTrafficWriter } from "./trafficMetrics";
+
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://sehvatktrqtgsnmvebmm.supabase.co";
@@ -35,7 +37,7 @@ const supabaseAnonKey =
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Lấy ngày (DD/MM/YYYY) + phút (HH:MM) theo giờ Việt Nam, độc lập múi giờ máy.
-function getVNDateTime() {
+function getVNDateTime(now = new Date()) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Ho_Chi_Minh",
     year: "numeric",
@@ -44,7 +46,7 @@ function getVNDateTime() {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).formatToParts(new Date());
+  }).formatToParts(now);
   const get = (t: string) => parts.find((p) => p.type === t)?.value || "00";
   return {
     dateStr: `${get("day")}/${get("month")}/${get("year")}`,
@@ -53,7 +55,7 @@ function getVNDateTime() {
 }
 
 // Danh sách date_str (DD/MM/YYYY) của N ngày gần nhất theo giờ VN (gồm hôm nay).
-function getRecentVNDates(days: number): string[] {
+function getRecentVNDates(days: number, now = new Date()): string[] {
   const fmt = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Ho_Chi_Minh",
     year: "numeric",
@@ -62,7 +64,7 @@ function getRecentVNDates(days: number): string[] {
   });
   const result: string[] = [];
   for (let i = 0; i < days; i++) {
-    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
     const parts = fmt.formatToParts(d);
     const get = (t: string) => parts.find((p) => p.type === t)?.value || "00";
     result.push(`${get("day")}/${get("month")}/${get("year")}`);
@@ -160,7 +162,6 @@ export default function Home() {
   const [onlineUsers, setOnlineUsers] = useState<
     { namecode: string; teamLead: string; onlineAt: number }[]
   >([]);
-  const [onlineCount, setOnlineCount] = useState(0);
 
   // [MOBILE] Mở/đóng sidebar dạng drawer trên màn hình nhỏ (desktop luôn hiện).
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -175,80 +176,61 @@ export default function Home() {
   const notifiedSoonRef = useRef<Set<string>>(new Set());
 
   // Đọc lại danh sách online hiện tại từ channel (không đụng luồng subscribe/track).
-  const refreshOnlineUsers = () => {
+  const presenceWriterRef = useRef(false);
+  const recordingTrafficRef = useRef(false);
+  const recordedTrafficMinuteRef = useRef("");
+  const onlineCount = onlineUsers.length;
+
+  const refreshOnlineUsers = useCallback(() => {
     const channel = presenceChannelRef.current;
     if (!channel) return;
-    const newState = channel.presenceState();
-    const usersList: {
-      namecode: string;
-      teamLead: string;
-      onlineAt: number;
-    }[] = [];
-    Object.keys(newState).forEach((key) => {
-      const presences = newState[key] as any[];
-      if (presences && presences.length > 0) {
-        const info = presences[0];
-        usersList.push({
-          namecode: info.user_name || key,
-          teamLead: info.team_lead || "Vận hành chung",
-          onlineAt: info.online_at || Date.now(),
-        });
-      }
-    });
-    setOnlineUsers(usersList);
-    setOnlineCount(usersList.length);
-  };
+    const state = channel.presenceState();
+    setOnlineUsers(readOnlineUsers(state));
+  }, []);
 
   // [TỐI ƯU V3] State Debounce để xử lý chống lag khi gõ tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
-  // [TỐI ƯU V6] ĐỒNG BỘ REALTIME TỪNG PHÚT (CHỐNG KẸT BIỂU ĐỒ)
+  // Capture the first online count recorded for each Vietnamese clock minute.
   useEffect(() => {
     if (!isLoggedIn) return;
 
     const syncRealtimePresence = async () => {
+      if (!presenceWriterRef.current || onlineCount === 0 || recordingTrafficRef.current) return;
+      const { dateStr, timeSlot } = getVNDateTime();
+      const minuteKey = `${dateStr} ${timeSlot}`;
+      if (recordedTrafficMinuteRef.current === minuteKey) return;
+
+      recordingTrafficRef.current = true;
       try {
-        const { dateStr, timeSlot } = getVNDateTime();
-
-        const currentOnlineCount = onlineUsers.length; // Số người đang online (kể cả 0)
-
-        const { data: existing } = await supabase
+        // The existing unique index on (date_str, time_slot) protects the
+        // first sample even when two clients briefly elect themselves.
+        const { error } = await supabase
           .from("system_traffic_logs")
-          .select("id, request_count")
-          .eq("date_str", dateStr)
-          .eq("time_slot", timeSlot)
-          .single();
+          .upsert(
+            { date_str: dateStr, time_slot: timeSlot, request_count: onlineCount },
+            { onConflict: "date_str,time_slot", ignoreDuplicates: true },
+          );
 
-        if (existing) {
-          if (currentOnlineCount !== existing.request_count) {
-            await supabase
-              .from("system_traffic_logs")
-              .update({
-                request_count: currentOnlineCount,
-                updated_at: new Date(),
-              })
-              .eq("id", existing.id);
-          }
-        } else {
-          await supabase.from("system_traffic_logs").insert([
-            {
-              date_str: dateStr,
-              time_slot: timeSlot,
-              request_count: currentOnlineCount,
-            },
-          ]);
-        }
+        if (error) throw error;
+        recordedTrafficMinuteRef.current = minuteKey;
       } catch (error) {
         console.error("Lỗi đồng bộ CCU lên Supabase:", error);
+      } finally {
+        recordingTrafficRef.current = false;
       }
     };
 
-    // 1. Kích hoạt ngay khi danh sách online thay đổi (Có người vào/ra)
-    syncRealtimePresence();
-
-    // 2. Chốt sổ định kỳ mỗi 60 giây
-    const interval = setInterval(syncRealtimePresence, 60000);
+    void syncRealtimePresence();
+    let timer: ReturnType<typeof setTimeout>;
+    const scheduleNextMinute = () => {
+      timer = setTimeout(() => {
+        void syncRealtimePresence();
+        scheduleNextMinute();
+      }, 60_000 - (Date.now() % 60_000));
+    };
+    scheduleNextMinute();
 
     // Yêu cầu quyền thông báo (nếu có)
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -260,8 +242,8 @@ export default function Home() {
       }
     }
 
-    return () => clearInterval(interval);
-  }, [isLoggedIn, onlineUsers.length]);
+    return () => clearTimeout(timer);
+  }, [isLoggedIn, onlineCount]);
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -331,8 +313,6 @@ export default function Home() {
     filterTrinhDo !== "Tất cả" || // <--- THÊM ĐIỀU KIỆN NÀY ĐỂ HIỆN NÚT XÓA LỌC
     filterToday !== false;
 
-  const [systemRequestsData, setSystemRequestsData] = useState<any[]>([]);
-
   // [TỐI ƯU V3] State khóa nút chống click liên tục trong form xác nhận
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -340,180 +320,65 @@ export default function Home() {
   // =====================================================================
   // TẢI VÀ VẼ LƯU VẾT TRUY CẬP (TRAFFIC ANALYTICS) TỪ SUPABASE
   // =====================================================================
-  const [dailyTrafficStats, setDailyTrafficStats] = useState<
-    Record<string, number>
-  >({});
+  const [todayChartData, setTodayChartData] = useState<{ time: string; requests: number | null }[]>([]);
+  const [historicalChartData, setHistoricalChartData] = useState<{ date: string; total: number | null }[]>([]);
 
-  // Hàm tải dữ liệu log từ DB (client SDK như bản gốc, chỉ chuẩn hóa ngày theo giờ VN).
-  const loadTrafficStatsFromSupabase = async () => {
-    try {
-      const { dateStr } = getVNDateTime();
-
-      // QUAN TRỌNG: order time_slot GIẢM DẦN để 1000 dòng mặc định PostgREST trả về
-      // là các phút GẦN NHẤT (khoảng biểu đồ đang xem), tránh bị cắt mất buổi tối
-      // khi dữ liệu trong ngày vượt 1000 bản ghi.
-      const { data, error } = await supabase
-        .from("system_traffic_logs")
-        .select("time_slot, request_count")
-        .eq("date_str", dateStr)
-        .order("time_slot", { ascending: false })
-        .limit(1000);
-
-      if (!error && data) {
-        const trafficMap: Record<string, number> = {};
-        data.forEach((row: any) => {
-          trafficMap[row.time_slot] = row.request_count;
-        });
-        setDailyTrafficStats(trafficMap);
-      }
-
-      // [DỌN LOG] Xóa mọi bản ghi KHÔNG thuộc 7 ngày gần nhất (giữ bảng gọn nhẹ).
-      // Chạy nền, không chặn hiển thị biểu đồ.
-      const keepDates = getRecentVNDates(7);
-      const inList = `(${keepDates.map((d) => `"${d}"`).join(",")})`;
-      supabase
-        .from("system_traffic_logs")
-        .delete()
-        .not("date_str", "in", inList)
-        .then(({ error: delErr }) => {
-          if (delErr) console.error("Lỗi dọn log cũ:", delErr.message);
-        });
-    } catch (err) {
-      console.error("Lỗi tải traffic từ Supabase:", err);
-    }
-  };
-
-  // =======================================================================
-  // 1. TỰ ĐỘNG LÀM MỚI BIỂU ĐỒ MỖI 30 GIÂY (GIẢI QUYẾT LỖI LỆCH DATA)
-  // =======================================================================
   useEffect(() => {
-    if (isLoggedIn && activeNav === "ThongKeAdmin") {
-      loadTrafficStatsFromSupabase(); // Kéo data ngay lập tức khi mở tab
+    if (!isLoggedIn || loginRole !== "Admin" || activeNav !== "ThongKeAdmin") return;
 
-      // [TỐI ƯU] Giãn tự động kéo data traffic 30s -> 60s (giảm tải, biểu đồ vẫn cập nhật).
-      const interval = setInterval(() => {
-        loadTrafficStatsFromSupabase();
-      }, 60000);
+    let active = true;
+    let loadingTraffic = false;
+    let cachedDate = "";
+    let pastPeaks: { date: string; total: number | null }[] = [];
 
-      // Dọn dẹp interval khi chuyển sang tab khác
-      return () => clearInterval(interval);
-    }
-  }, [isLoggedIn, activeNav]);
+    const readPeak = async (date: string) => {
+      const { data, error } = await supabase.from("system_traffic_logs")
+        .select("request_count")
+        .eq("date_str", date)
+        .order("request_count", { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return { date: date.slice(0, 5), total: data?.request_count ?? null };
+    };
 
-  // =======================================================================
-  // =======================================================================
-  // 2. ZOOM BIỂU ĐỒ ĐƯỜNG (THUẬT TOÁN ĐIỀN KHUYẾT CHỐNG ĐỨT GÃY)
-  // =======================================================================
-  const todayChartData = useMemo(() => {
-    // Giờ hiện tại theo múi giờ VN (trùng với key time_slot do server ghi).
-    const vnParts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Asia/Ho_Chi_Minh",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).formatToParts(new Date());
-    const vnHour = parseInt(
-      vnParts.find((p) => p.type === "hour")?.value || "0",
-    );
-    const vnMinute = parseInt(
-      vnParts.find((p) => p.type === "minute")?.value || "0",
-    );
-    const currentTotalMinutes = vnHour * 60 + vnMinute;
-    const chartData = [];
-
-    // ZOOM IN: Xem 2 tiếng (120 phút) gần nhất để sóng hiển thị to và rõ
-    const startMinutes = Math.max(0, currentTotalMinutes - 120);
-
-    let lastKnownValue = 0; // Bộ nhớ lưu số lượng online gần nhất
-    let minutesSinceLastData = 0; // Bộ đếm thời gian mất kết nối
-
-    // Quét chi tiết TỪNG PHÚT MỘT
-    for (let i = startMinutes; i <= currentTotalMinutes; i++) {
-      const h = Math.floor(i / 60)
-        .toString()
-        .padStart(2, "0");
-      const m = (i % 60).toString().padStart(2, "0");
-      const timeKey = `${h}:${m}`;
-
-      // Nếu Supabase có ghi nhận phút này -> Cập nhật số mới nhất
-      if (dailyTrafficStats[timeKey] !== undefined) {
-        lastKnownValue = dailyTrafficStats[timeKey];
-        minutesSinceLastData = 0; // Reset bộ đếm
-      } else {
-        // Nếu phút này Database chưa kịp đồng bộ -> Giữ nguyên con số của phút trước
-        minutesSinceLastData++;
-
-        // BẢO VỆ: Nếu quá 3 phút không có tín hiệu (Tất cả đã tắt máy) -> Ép về 0 để không bị ảo
-        if (minutesSinceLastData >= 3) {
-          lastKnownValue = 0;
-        }
+    const refresh = async () => {
+      if (loadingTraffic) return;
+      loadingTraffic = true;
+      try {
+        const now = new Date();
+        const { dateStr, timeSlot } = getVNDateTime(now);
+        const slots = recentTrafficSlots(timeSlot);
+        const dates = getRecentVNDates(7, now);
+        const [samples, todayPeak, history] = await Promise.all([
+          supabase.from("system_traffic_logs")
+            .select("time_slot, request_count")
+            .eq("date_str", dateStr)
+            .gte("time_slot", slots[0])
+            .lte("time_slot", timeSlot),
+          readPeak(dateStr),
+          cachedDate === dateStr ? pastPeaks : Promise.all(dates.slice(1).reverse().map(readPeak)),
+        ]);
+        if (samples.error) throw samples.error;
+        if (!active) return;
+        cachedDate = dateStr;
+        pastPeaks = history;
+        setTodayChartData(buildTrafficPoints(slots, samples.data ?? []));
+        setHistoricalChartData([...history, todayPeak]);
+      } catch (error) {
+        console.error("Traffic chart refresh failed:", error);
+      } finally {
+        loadingTraffic = false;
       }
+    };
 
-      chartData.push({ time: timeKey, requests: lastKnownValue });
-    }
-
-    return chartData;
-  }, [dailyTrafficStats]);
-
-  // 2. BIỂU ĐỒ CỘT: TỔNG HỢP 7 NGÀY GẦN NHẤT & ĐỒNG BỘ DỮ LIỆU
-  const historicalChartData = useMemo(() => {
-    const last7Days: string[] = [];
-    const dayMap: Record<string, number> = {};
-
-    // 1. Khởi tạo mốc 7 ngày gần nhất (Đảm bảo đúng thứ tự thời gian và luôn hiển thị cả ngày 0 request)
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dayStr = `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}`;
-      last7Days.push(dayStr);
-      dayMap[dayStr] = 0;
-    }
-
-    // 2. Đếm số lượng request thực tế từ Database lịch sử
-    if (slotHistoryData && slotHistoryData.length > 0) {
-      slotHistoryData.forEach((row) => {
-        let dateObj = null;
-        try {
-          if (row.timestamp) {
-            const ts = Number(row.timestamp);
-            dateObj = isNaN(ts) ? new Date(row.timestamp) : new Date(ts);
-          } else if (row["Thời gian"]) {
-            const parts = row["Thời gian"].split(" ");
-            if (parts.length >= 2) {
-              const dParts = parts[0].split("/");
-              dateObj = new Date(
-                parseInt(dParts[2]),
-                parseInt(dParts[1]) - 1,
-                parseInt(dParts[0]),
-              );
-            }
-          }
-        } catch (e) {}
-
-        if (dateObj) {
-          const dayStr = `${dateObj.getDate().toString().padStart(2, "0")}/${(dateObj.getMonth() + 1).toString().padStart(2, "0")}`;
-          if (dayMap[dayStr] !== undefined) {
-            dayMap[dayStr] += 1;
-          }
-        }
-      });
-    }
-
-    // 3. ĐỒNG BỘ BIỂU ĐỒ: Cộng số người đang Online vào tổng ngày hôm nay để khớp với biểu đồ Line
-    const today = new Date();
-    const todayStr = `${today.getDate().toString().padStart(2, "0")}/${(today.getMonth() + 1).toString().padStart(2, "0")}`;
-
-    if (
-      onlineUsers &&
-      onlineUsers.length > 0 &&
-      dayMap[todayStr] !== undefined
-    ) {
-      dayMap[todayStr] += onlineUsers.length;
-    }
-
-    // Trả về mảng đúng chuẩn 7 ngày
-    return last7Days.map((day) => ({ date: day, total: dayMap[day] }));
-  }, [slotHistoryData, onlineUsers]);
+    void refresh();
+    const timer = window.setInterval(refresh, 60_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [isLoggedIn, loginRole, activeNav]);
 
   const [heldSlots, setHeldSlots] = useState<
     Record<string, { timestamp: number }[]>
@@ -789,6 +654,7 @@ export default function Home() {
   useEffect(() => {
     if (isLoggedIn) {
       const currentLoginTime = Date.now();
+      const trafficSessionId = crypto.randomUUID();
       const channel = supabase.channel("qll-room", {
         config: {
           presence: { key: displayName },
@@ -798,27 +664,9 @@ export default function Home() {
       presenceChannelRef.current = channel;
 
       channel.on("presence", { event: "sync" }, () => {
-        const newState = channel.presenceState();
-        const usersList: {
-          namecode: string;
-          teamLead: string;
-          onlineAt: number;
-        }[] = [];
-
-        Object.keys(newState).forEach((key) => {
-          const presences = newState[key] as any[];
-          if (presences && presences.length > 0) {
-            const info = presences[0];
-            usersList.push({
-              namecode: info.user_name || key,
-              teamLead: info.team_lead || "Vận hành chung",
-              onlineAt: info.online_at || currentLoginTime,
-            });
-          }
-        });
-
-        setOnlineUsers(usersList);
-        setOnlineCount(usersList.length);
+        const state = channel.presenceState();
+        presenceWriterRef.current = selectTrafficWriter(state) === trafficSessionId;
+        setOnlineUsers(readOnlineUsers(state));
       });
 
       // ========================================================
@@ -854,14 +702,19 @@ export default function Home() {
       channel.subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           await channel.track({
+            traffic_session_id: trafficSessionId,
             user_name: displayName,
             team_lead: displayTeamOrRole,
             online_at: currentLoginTime,
           });
+        } else {
+          presenceWriterRef.current = false;
+          setOnlineUsers([]);
         }
       });
 
       return () => {
+        presenceWriterRef.current = false;
         presenceChannelRef.current = null;
         supabase.removeChannel(channel);
       };
@@ -1102,12 +955,6 @@ export default function Home() {
     }
   };
   // =========================================================
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      loadTrafficStatsFromSupabase();
-    }
-  }, [isLoggedIn]);
 
 const loadData = (forceFresh = false) => {
     setLoading(true);

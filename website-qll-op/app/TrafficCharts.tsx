@@ -14,8 +14,8 @@ import {
 } from "recharts";
 
 interface TrafficChartsProps {
-  todayChartData: { time: string; requests: number }[];
-  historicalChartData: { date: string; total: number }[];
+  todayChartData: { time: string; requests: number | null }[];
+  historicalChartData: { date: string; total: number | null }[];
   theme: "light" | "dark";
 }
 
@@ -33,7 +33,7 @@ export default function TrafficCharts({
           className={`font-bold flex items-center gap-3 text-base mb-6 transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
         >
           <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
-          📈 Requests Trong Ngày (Hôm nay)
+          📈 Người online theo phút (2 giờ gần nhất)
         </h3>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -89,10 +89,11 @@ export default function TrafficCharts({
               <Line
                 type="linear"
                 dataKey="requests"
-                name="Requests"
+                name="Người online"
                 stroke="#0ea5e9"
                 strokeWidth={2}
-                dot={false}
+                dot={{ r: 1.5 }}
+                connectNulls={false}
                 activeDot={{ r: 6, stroke: "#e0f2fe", strokeWidth: 3 }}
                 animationDuration={1000}
               />
@@ -108,7 +109,7 @@ export default function TrafficCharts({
           className={`font-bold flex items-center gap-3 text-base mb-6 transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
         >
           <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></span>
-          📊 Lịch sử truy cập (7 ngày qua)
+          📊 Đỉnh online ghi nhận (7 ngày)
         </h3>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -166,7 +167,7 @@ export default function TrafficCharts({
               />
               <Bar
                 dataKey="total"
-                name="Tổng Requests"
+                name="Người online cao nhất"
                 fill="#f97316"
                 radius={[6, 6, 0, 0]}
                 animationDuration={1000}
