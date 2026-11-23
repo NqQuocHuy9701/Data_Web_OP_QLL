@@ -416,6 +416,38 @@ body {
    ============================================================ */
 
 /* 1. Highlight dòng mới xuất hiện realtime (vàng rồi mờ dần) */
+@keyframes class-schedule-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes class-schedule-new-row {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .class-schedule-row[data-new-request="true"] > td:first-child {
+    position: relative;
+  }
+
+  .class-schedule-row[data-new-request="true"] > td:first-child::before {
+    content: "";
+    position: absolute;
+    inset: 2px auto 2px 0;
+    width: 3px;
+    background: #38bdf8;
+    pointer-events: none;
+    animation: class-schedule-new-row 800ms ease-out forwards;
+  }
+}
+
 @keyframes rowHighlight {
   0% {
     background-color: rgba(250, 204, 21, 0.35);

@@ -63,6 +63,8 @@ export default function StudentAddRequestsPage({
   const [requests, setRequests] = useState<StudentAddRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const loadVersion = useRef(0);
+  const knownRequestIds = useRef<Set<string> | null>(null);
+  const [newRequestIds, setNewRequestIds] = useState<Set<string> | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [conflictMessage, setConflictMessage] = useState("");
@@ -99,6 +101,13 @@ export default function StudentAddRequestsPage({
     try {
       const data = await fetchRequests();
       if (version !== loadVersion.current) return;
+      const previousIds = knownRequestIds.current;
+      const ids = new Set(data.map((request) => String(request.id)));
+      knownRequestIds.current = ids;
+      if (previousIds) {
+        const addedIds = new Set([...ids].filter((id) => !previousIds.has(id)));
+        if (addedIds.size > 0) setNewRequestIds(addedIds);
+      }
       setRequests(data);
       setLastSyncedAt(Date.now());
       setSyncFailed(false);
@@ -118,6 +127,11 @@ export default function StudentAddRequestsPage({
   }, [fetchRequests]);
 
   const connection = useClassScheduleRealtime(loadRequests);
+  useEffect(() => {
+    if (!newRequestIds) return;
+    const timer = window.setTimeout(() => setNewRequestIds(null), 900);
+    return () => window.clearTimeout(timer);
+  }, [newRequestIds]);
   const syncLabel = connection === "reconnecting"
     ? "Đang kết nối lại"
     : syncFailed
@@ -235,7 +249,7 @@ export default function StudentAddRequestsPage({
   const muted = theme === "dark" ? "text-slate-400" : "text-slate-500";
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-3 pb-3 pt-3 sm:px-4 xl:px-6 2xl:px-8 animate-fade-slide-up">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-3 pb-3 pt-3 sm:px-4 xl:px-6 2xl:px-8 motion-safe:animate-[class-schedule-enter_180ms_ease-out]">
       <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div>
           <h1
@@ -268,7 +282,7 @@ export default function StudentAddRequestsPage({
                 type="button"
                 aria-pressed={statusFilter === filter}
                 onClick={() => setStatusFilter(filter)}
-                className={`inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-lg border px-2.5 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                className={`inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-lg border px-2.5 text-xs font-semibold motion-safe:transition-colors motion-safe:duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
                   statusFilter === filter
                     ? theme === "dark"
                       ? "border-orange-500/50 bg-orange-500/15 text-orange-200"
@@ -383,7 +397,8 @@ export default function StudentAddRequestsPage({
                   return (
                     <tr
                       key={request.id}
-                      className={`transition-colors ${
+                      data-new-request={newRequestIds?.has(String(request.id)) || undefined}
+                      className={`class-schedule-row motion-safe:transition-colors ${
                         theme === "dark"
                           ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50"
                           : "hover:bg-sky-50/50 even:bg-slate-50/60"
@@ -527,7 +542,7 @@ export default function StudentAddRequestsPage({
               } yêu cầu lớp ${confirmTarget.request.ma_lop}, SID/CID ${confirmTarget.request.sid_cid}?`
             : ""
         }
-        confirmText={updatingId ? "Đang cập nhật..." : "Xác nhận"}
+        pending={updatingId !== null}
         onConfirm={() => void updateRequestStatus()}
         onCancel={() => setConfirmTarget(null)}
       />
