@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import type { OnlinePeakPoint } from "./trafficMetrics";
 import {
   LineChart,
   Line,
@@ -14,13 +15,15 @@ import {
 } from "recharts";
 
 interface TrafficChartsProps {
-  todayChartData: { time: string; requests: number | null }[];
+  todayChartData: OnlinePeakPoint[];
+  usingMinuteSamples?: boolean;
   historicalChartData: { date: string; total: number | null }[];
   theme: "light" | "dark";
 }
 
 export default function TrafficCharts({
   todayChartData,
+  usingMinuteSamples = false,
   historicalChartData,
   theme,
 }: TrafficChartsProps) {
@@ -33,7 +36,7 @@ export default function TrafficCharts({
           className={`font-bold flex items-center gap-3 text-base mb-6 transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
         >
           <span className="w-1.5 h-6 bg-sky-500 rounded-full shadow-[0_0_8px_rgba(14,165,233,0.5)]"></span>
-          📈 Người online theo phút (2 giờ gần nhất)
+          📈 {usingMinuteSamples ? "Người online theo phút (2 giờ gần nhất)" : "Đỉnh online mỗi 3 phút (2 giờ gần nhất)"}
         </h3>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -72,6 +75,8 @@ export default function TrafficCharts({
                 }}
               />
               <Tooltip
+                labelFormatter={(label, payload) => payload[0]?.payload?.interval ?? label}
+                formatter={(value) => [`${value} người online`, usingMinuteSamples ? "Ghi nhận" : "Cao nhất"]}
                 contentStyle={{
                   backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
                   borderColor:
@@ -87,15 +92,15 @@ export default function TrafficCharts({
                 }}
               />
               <Line
-                type="linear"
-                dataKey="requests"
+                type={usingMinuteSamples ? "linear" : "monotone"}
+                dataKey="peak"
                 name="Người online"
                 stroke="#0ea5e9"
                 strokeWidth={2}
                 dot={{ r: 1.5 }}
                 connectNulls={false}
                 activeDot={{ r: 6, stroke: "#e0f2fe", strokeWidth: 3 }}
-                animationDuration={1000}
+                animationDuration={400}
               />
             </LineChart>
           </ResponsiveContainer>

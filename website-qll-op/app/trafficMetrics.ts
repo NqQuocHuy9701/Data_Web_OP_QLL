@@ -42,21 +42,49 @@ export function selectTrafficWriter(state: PresenceState) {
   return writer;
 }
 
-export function recentTrafficSlots(timeSlot: string) {
-  const [hour, minute] = timeSlot.split(":").map(Number);
-  const end = hour * 60 + minute;
-  return Array.from({ length: Math.min(end + 1, 120) }, (_, index) => {
-    const slot = Math.max(0, end - 119) + index;
-    return `${String(Math.floor(slot / 60)).padStart(2, "0")}:${String(slot % 60).padStart(2, "0")}`;
+const THREE_MINUTES = 180_000;
+const trafficTime = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Asia/Ho_Chi_Minh",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+export interface OnlinePeakPoint {
+  time: string;
+  interval: string;
+  peak: number | null;
+}
+
+export function buildMinuteTrafficPoints(
+  rows: { time_slot: string; request_count: number | null }[],
+  now: number,
+): OnlinePeakPoint[] {
+  const samples = new Map(rows.map((row) => [row.time_slot.slice(0, 5), row.request_count]));
+  const [hour, minute] = trafficTime.format(now).split(":").map(Number);
+  const length = Math.min(120, hour * 60 + minute + 1);
+  return Array.from({ length }, (_, index) => {
+    const time = trafficTime.format(now - (length - 1 - index) * 60_000);
+    return { time, interval: time, peak: samples.get(time) ?? null };
   });
 }
 
-export function buildTrafficPoints(slots: string[], rows: { time_slot: string; request_count: number | null }[]) {
-  const counts = new Map<string, number>();
-  for (const row of rows) {
-    if (row.request_count === null || !Number.isFinite(row.request_count) || row.request_count < 0) continue;
-    const time = row.time_slot.slice(0, 5);
-    counts.set(time, Math.max(counts.get(time) ?? 0, row.request_count));
-  }
-  return slots.map((time) => ({ time, requests: counts.get(time) ?? null }));
+export function buildOnlinePeakPoints(
+  rows: { bucket_end: string; peak_online: number | null }[],
+  now = Date.now(),
+): OnlinePeakPoint[] {
+  const sealed = new Map(rows.map((row) => [Date.parse(row.bucket_end), row.peak_online]));
+  const lastEnd = rows.length > 0
+    ? Math.max(...sealed.keys())
+    : Math.floor(now / THREE_MINUTES) * THREE_MINUTES;
+
+  return Array.from({ length: 40 }, (_, index) => {
+    const end = lastEnd - (39 - index) * THREE_MINUTES;
+    const time = trafficTime.format(end);
+    return {
+      time,
+      interval: `${trafficTime.format(end - THREE_MINUTES)}–${time}`,
+      peak: sealed.get(end) ?? null,
+    };
+  });
 }

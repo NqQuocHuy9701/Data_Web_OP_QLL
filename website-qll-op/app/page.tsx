@@ -25,7 +25,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import AuditLog from "./AuditLog";
 import { createClient } from "@supabase/supabase-js";
 
-import { buildTrafficPoints, readOnlineUsers, recentTrafficSlots, selectTrafficWriter } from "./trafficMetrics";
+import { buildMinuteTrafficPoints, buildOnlinePeakPoints, readOnlineUsers, selectTrafficWriter, type OnlinePeakPoint } from "./trafficMetrics";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -320,7 +320,8 @@ export default function Home() {
   // =====================================================================
   // TẢI VÀ VẼ LƯU VẾT TRUY CẬP (TRAFFIC ANALYTICS) TỪ SUPABASE
   // =====================================================================
-  const [todayChartData, setTodayChartData] = useState<{ time: string; requests: number | null }[]>([]);
+  const [todayChartData, setTodayChartData] = useState<OnlinePeakPoint[]>([]);
+  const [usingMinuteSamples, setUsingMinuteSamples] = useState(false);
   const [historicalChartData, setHistoricalChartData] = useState<{ date: string; total: number | null }[]>([]);
 
   useEffect(() => {
@@ -347,23 +348,37 @@ export default function Home() {
       loadingTraffic = true;
       try {
         const now = new Date();
-        const { dateStr, timeSlot } = getVNDateTime(now);
-        const slots = recentTrafficSlots(timeSlot);
+        const { dateStr } = getVNDateTime(now);
         const dates = getRecentVNDates(7, now);
-        const [samples, todayPeak, history] = await Promise.all([
-          supabase.from("system_traffic_logs")
-            .select("time_slot, request_count")
-            .eq("date_str", dateStr)
-            .gte("time_slot", slots[0])
-            .lte("time_slot", timeSlot),
+        const [sealed, todayPeak, history] = await Promise.all([
+          supabase.from("online_three_minute_peaks")
+            .select("bucket_end, peak_online")
+            .order("bucket_end", { ascending: false })
+            .limit(40),
           readPeak(dateStr),
           cachedDate === dateStr ? pastPeaks : Promise.all(dates.slice(1).reverse().map(readPeak)),
         ]);
-        if (samples.error) throw samples.error;
         if (!active) return;
         cachedDate = dateStr;
         pastPeaks = history;
-        setTodayChartData(buildTrafficPoints(slots, samples.data ?? []));
+        if ((!sealed.error && !sealed.data?.length) ||
+          sealed.error?.code === "PGRST205" || sealed.error?.code === "42P01") {
+          const { data: samples, error } = await supabase.from("system_traffic_logs")
+            .select("time_slot, request_count")
+            .eq("date_str", dateStr)
+            .order("time_slot", { ascending: false })
+            .limit(120);
+          if (error) throw error;
+          if (active) {
+            setUsingMinuteSamples(true);
+            setTodayChartData(buildMinuteTrafficPoints(samples ?? [], now.getTime()));
+          }
+        } else if (sealed.error) {
+          console.error("Sealed online peaks failed:", sealed.error.message);
+        } else {
+          setUsingMinuteSamples(false);
+          setTodayChartData(buildOnlinePeakPoints(sealed.data ?? [], now.getTime()));
+        }
         setHistoricalChartData([...history, todayPeak]);
       } catch (error) {
         console.error("Traffic chart refresh failed:", error);
@@ -2011,6 +2026,7 @@ const loadData = (forceFresh = false) => {
           >
             <TrafficCharts
               todayChartData={todayChartData}
+              usingMinuteSamples={usingMinuteSamples}
               historicalChartData={historicalChartData}
               theme={theme}
             />
