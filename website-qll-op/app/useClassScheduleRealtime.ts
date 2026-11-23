@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CLASS_SCHEDULE_CHANGED, CLASS_SCHEDULE_TOPIC } from "./classScheduleEvents";
 import { createClient } from "@supabase/supabase-js";
 
@@ -12,6 +12,8 @@ const supabase = createClient(
 );
 
 export function useClassScheduleRealtime(refresh: () => Promise<void>) {
+  const [connection, setConnection] = useState<"connecting" | "connected" | "reconnecting">("connecting");
+
   useEffect(() => {
     let active = true;
     let running = false;
@@ -46,7 +48,13 @@ export function useClassScheduleRealtime(refresh: () => Promise<void>) {
       .channel(CLASS_SCHEDULE_TOPIC)
       .on("broadcast", { event: CLASS_SCHEDULE_CHANGED }, queueRefresh)
       .subscribe((status) => {
-        if (status === "SUBSCRIBED") queueRefresh();
+        if (!active) return;
+        if (status === "SUBSCRIBED") {
+          setConnection("connected");
+          queueRefresh();
+        } else {
+          setConnection("reconnecting");
+        }
       });
 
     const refreshIfVisible = () => {
@@ -64,4 +72,6 @@ export function useClassScheduleRealtime(refresh: () => Promise<void>) {
       void supabase.removeChannel(channel);
     };
   }, [refresh]);
+
+  return connection;
 }

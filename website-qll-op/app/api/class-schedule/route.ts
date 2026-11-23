@@ -312,14 +312,14 @@ export async function PATCH(request: Request) {
 
   try {
     const response = await fetch(
-      `${SUPABASE_ENDPOINT}?id=eq.${encodeURIComponent(id)}`,
+      `${SUPABASE_ENDPOINT}?id=eq.${encodeURIComponent(id)}&is_done=eq.false&is_cancelled=eq.false&select=id`,
       {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           apikey: serviceRoleKey,
           Authorization: `Bearer ${serviceRoleKey}`,
-          Prefer: "return=minimal",
+          Prefer: "return=representation",
         },
         body: JSON.stringify(payload),
         cache: "no-store",
@@ -332,6 +332,17 @@ export async function PATCH(request: Request) {
       return NextResponse.json(
         { success: false, error: "Không thể cập nhật trạng thái yêu cầu." },
         { status: 502 },
+      );
+    }
+
+    const updated: unknown = await response.json();
+    if (!Array.isArray(updated)) {
+      throw new Error("Unexpected Add lớp update response.");
+    }
+    if (updated.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Đơn này đã được xử lý hoặc không còn trong danh sách." },
+        { status: 409 },
       );
     }
 

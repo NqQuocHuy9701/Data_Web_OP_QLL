@@ -65,6 +65,9 @@ export default function StudentAddRequestsPage({
   const loadVersion = useRef(0);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [conflictMessage, setConflictMessage] = useState("");
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [syncFailed, setSyncFailed] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Chờ xử lý");
   const [now, setNow] = useState(() => Date.now());
@@ -97,9 +100,12 @@ export default function StudentAddRequestsPage({
       const data = await fetchRequests();
       if (version !== loadVersion.current) return;
       setRequests(data);
+      setLastSyncedAt(Date.now());
+      setSyncFailed(false);
       setErrorMessage("");
     } catch (error) {
       if (version !== loadVersion.current) return;
+      setSyncFailed(true);
       console.error("Lỗi tải danh sách HS Add lớp:", error);
       setErrorMessage(
         error instanceof Error
@@ -111,7 +117,14 @@ export default function StudentAddRequestsPage({
     }
   }, [fetchRequests]);
 
-  useClassScheduleRealtime(loadRequests);
+  const connection = useClassScheduleRealtime(loadRequests);
+  const syncLabel = connection === "reconnecting"
+    ? "Đang kết nối lại"
+    : syncFailed
+      ? "Chưa đồng bộ được"
+      : connection === "connected" && lastSyncedAt !== null
+        ? "Đã kết nối Realtime"
+        : "Đang đồng bộ";
 
   const pendingCount = useMemo(
     () => requests.filter((request) => !request.is_done && !request.is_cancelled).length,
@@ -159,22 +172,12 @@ export default function StudentAddRequestsPage({
   }, [hasPendingRequests]);
 
   const updateRequestStatus = async () => {
-    if (!confirmTarget) return;
+    if (!confirmTarget || updatingId) return;
 
     const id = String(confirmTarget.request.id);
     const action = confirmTarget.action;
     setUpdatingId(id);
-    setRequests((current) =>
-      current.map((request) =>
-        String(request.id) === id
-          ? {
-              ...request,
-              is_done: action === "done",
-              is_cancelled: action === "cancel",
-            }
-          : request,
-      ),
-    );
+    setConflictMessage("");
     try {
       const response = await fetch("/api/class-schedule", {
         method: "PATCH",
@@ -188,6 +191,14 @@ export default function StudentAddRequestsPage({
 
       if (response.status === 401) {
         onSessionExpired();
+        return;
+      }
+
+      if (response.status === 409) {
+        setConfirmTarget(null);
+        setConflictMessage(result.error || "Đơn này đã được xử lý.");
+        await loadRequests();
+        await onCountsChanged();
         return;
       }
 
@@ -231,6 +242,12 @@ export default function StudentAddRequestsPage({
           <p className={`text-sm mt-1 ${muted}`}>
             Theo dõi các yêu cầu QLL đã gửi để vận hành xếp lớp.
           </p>
+          <div className={`mt-2 flex flex-wrap gap-x-3 text-xs ${muted}`}>
+            <span role="status">{syncLabel}</span>
+            {lastSyncedAt !== null && (
+              <span>Cập nhật gần nhất {formatTimestamp(lastSyncedAt)}</span>
+            )}
+          </div>
         </div>
         <span
           className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs ${
@@ -316,6 +333,16 @@ export default function StudentAddRequestsPage({
             </button>
           </div>
         </div>
+
+        {conflictMessage && (
+          <div role="status" className={`mx-5 mt-4 rounded-xl border px-4 py-3 text-sm font-semibold ${
+            theme === "dark"
+              ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+              : "border-amber-200 bg-amber-50 text-amber-800"
+          }`}>
+            {conflictMessage}
+          </div>
+        )}
 
         {errorMessage && (
           <div
