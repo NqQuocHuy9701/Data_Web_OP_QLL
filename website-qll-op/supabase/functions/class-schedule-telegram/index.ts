@@ -135,6 +135,81 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+function hasWebhookSecret(request: Request) {
+  const secret = Deno.env.get("CLASS_SCHEDULE_WEBHOOK_SECRET");
+  return Boolean(secret && request.headers.get("x-supabase-webhook-secret") === secret);
+}
+
+function getAddRequestTopic() {
+  const value = Deno.env.get("TELEGRAM_MESSAGE_THREAD_ID") || "";
+  const id = Number(value);
+  return /^\d+$/.test(value) && Number.isSafeInteger(id) && id > 0 ? id : undefined;
+}
+
+interface OverdueRequest {
+  id: number;
+  sid_cid: string;
+  claimed_at: string;
+}
+
+async function sendOverdueAlerts(request: Request) {
+  if (!hasWebhookSecret(request)) {
+    return jsonResponse({ success: false, error: "Unauthorized." }, 401);
+  }
+
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+  const chatId = Deno.env.get("TELEGRAM_CHAT_ID");
+  const topic = getAddRequestTopic();
+  if (!url || !key || !botToken || !chatId || !topic) {
+    return jsonResponse({ success: false, error: "Overdue alerts are not configured." }, 500);
+  }
+
+  const headers = {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    "Content-Type": "application/json",
+  };
+
+  try {
+    const claim = await fetch(`${url}/rest/v1/rpc/claim_overdue_class_schedule_requests`, {
+      method: "POST",
+      headers,
+      body: "{}",
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!claim.ok) throw new Error(`Claim failed (HTTP ${claim.status}).`);
+    const rows: OverdueRequest[] = await claim.json();
+    if (rows.length === 0) return jsonResponse({ success: true, sent: 0 });
+
+    const text = [
+      `Chị @OP_LinhDK6 @OP_LinhDTT1 ơi, còn ${rows.length} case quá 2 giờ chưa được add lớp ạ !`,
+      "",
+      "SID/CID:",
+      ...rows.map((row) => `• ${row.sid_cid}`),
+    ].join("\n");
+    const sent = await sendTelegram(botToken, chatId, topic, text);
+    if (!sent.ok) return sent;
+
+    const filters = new URLSearchParams({
+      request_id: `in.(${rows.map((row) => row.id).join(",")})`,
+      claimed_at: `eq.${rows[0].claimed_at}`,
+    });
+    const saved = await fetch(`${url}/rest/v1/class_schedule_overdue_alerts?${filters}`, {
+      method: "PATCH",
+      headers: { ...headers, Prefer: "return=minimal" },
+      body: JSON.stringify({ sent_at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!saved.ok) throw new Error(`Saving alert status failed (HTTP ${saved.status}).`);
+    return jsonResponse({ success: true, sent: rows.length });
+  } catch (error) {
+    console.error("Overdue class schedule alert failed:", error);
+    return jsonResponse({ success: false, error: "Overdue alert failed." }, 502);
+  }
+}
+
 Deno.serve(async (request) => {
   if (request.method !== "POST") {
     return jsonResponse({ success: false, error: "Method not allowed." }, 405);
@@ -145,6 +220,10 @@ Deno.serve(async (request) => {
     payload = await request.json();
   } catch {
     return jsonResponse({ success: false, error: "Invalid JSON payload." }, 400);
+  }
+
+  if (isRecord(payload) && payload.type === "OVERDUE_CHECK") {
+    return sendOverdueAlerts(request);
   }
 
   if (
@@ -162,20 +241,12 @@ Deno.serve(async (request) => {
     return jsonResponse({ success: false, error: "Unsupported database event." }, 400);
   }
 
-  if (eventType === "INSERT") {
-    const webhookSecret = Deno.env.get("CLASS_SCHEDULE_WEBHOOK_SECRET");
-    if (
-      !webhookSecret ||
-      request.headers.get("x-supabase-webhook-secret") !== webhookSecret
-    ) {
-      return jsonResponse({ success: false, error: "Unauthorized." }, 401);
-    }
+  if (eventType === "INSERT" && !hasWebhookSecret(request)) {
+    return jsonResponse({ success: false, error: "Unauthorized." }, 401);
   }
 
   const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
   const chatId = Deno.env.get("TELEGRAM_CHAT_ID");
-  const threadIdValue = Deno.env.get("TELEGRAM_MESSAGE_THREAD_ID") || "";
-  const messageThreadId = Number(threadIdValue);
   if (!botToken) {
     console.error("Telegram bot secret is not configured.");
     return jsonResponse({ success: false, error: "Telegram is not configured." }, 500);
@@ -187,16 +258,11 @@ Deno.serve(async (request) => {
   let message: string;
 
   if (eventType === "INSERT") {
-    if (
-      !chatId ||
-      !/^\d+$/.test(threadIdValue) ||
-      !Number.isSafeInteger(messageThreadId) ||
-      messageThreadId <= 0
-    ) {
+    targetThreadId = getAddRequestTopic();
+    if (!chatId || !targetThreadId) {
       console.error("Telegram insert group or topic secrets are not configured.");
       return jsonResponse({ success: false, error: "Telegram insert destination is not configured." }, 500);
     }
-    targetThreadId = messageThreadId;
     message = [
       "<b>🔔 YÊU CẦU THÊM LỚP MỚI</b>",
       "",
@@ -251,6 +317,15 @@ Deno.serve(async (request) => {
     ].join("\n");
   }
 
+  return sendTelegram(botToken, targetChatId, targetThreadId, message);
+});
+
+async function sendTelegram(
+  botToken: string,
+  targetChatId: string | undefined,
+  targetThreadId: number | undefined,
+  message: string,
+) {
   try {
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${botToken}/sendMessage`,
@@ -287,4 +362,4 @@ Deno.serve(async (request) => {
     console.error("Failed to send class schedule Telegram notification:", error);
     return jsonResponse({ success: false, error: "Telegram request failed." }, 502);
   }
-});
+}
