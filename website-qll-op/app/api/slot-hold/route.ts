@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 
 export const dynamic = 'force-dynamic';
 
@@ -6,7 +7,7 @@ const SUPABASE_ENDPOINT = "https://sehvatktrqtgsnmvebmm.supabase.co/rest/v1/slot
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
 
 // 1. LẤY DANH SÁCH SLOT
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // [TỐI ƯU PAYLOAD] Chỉ lấy đúng các cột client dùng (thay cho select=*),
     // giảm kích thước Output. Tất cả cột client đọc đều có mặt ở đây;
@@ -18,7 +19,7 @@ export async function GET() {
 
     for (let offset = 0; ; offset += pageSize) {
       const res = await fetch(
-        `${SUPABASE_ENDPOINT}?select=${SELECT_COLS}&order=timestamp.desc`,
+        `${SUPABASE_ENDPOINT}?select=${SELECT_COLS}&order=timestamp.desc,id.desc`,
         {
           method: "GET",
           headers: {
@@ -41,7 +42,21 @@ export async function GET() {
       if (page.length < pageSize) break;
     }
 
-    return NextResponse.json({ success: true, data });
+    const body = JSON.stringify({ success: true, data });
+    const etag = `W/"${createHash("sha256").update(body).digest("hex")}"`;
+    const headers = { ETag: etag, "Cache-Control": "private, no-cache" };
+    const validators = request.headers.get("if-none-match")?.split(",");
+    const unchanged = validators?.some((validator) => {
+      const tag = validator.trim();
+      return tag === "*" || tag.replace(/^W\//, "") === etag.slice(2);
+    });
+    if (unchanged) {
+      return new Response(null, { status: 304, headers });
+    }
+
+    return new Response(body, {
+      headers: { ...headers, "Content-Type": "application/json" },
+    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

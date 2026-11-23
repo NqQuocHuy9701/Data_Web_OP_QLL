@@ -1163,7 +1163,7 @@ const loadData = (forceFresh = false) => {
 
   const loadClassScheduleCounts = async () => {
     try {
-      const response = await fetch(`/api/class-schedule?t=${Date.now()}`, {
+      const response = await fetch("/api/class-schedule", {
         cache: "no-store",
       });
       const result: {
@@ -1188,12 +1188,8 @@ const loadData = (forceFresh = false) => {
     }
 
     try {
-      const response = await fetch(`/api/slot-hold?t=${Date.now()}`, {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
+      const response = await fetch("/api/slot-hold", {
+        cache: "no-cache",
       });
       const result = await response.json();
 

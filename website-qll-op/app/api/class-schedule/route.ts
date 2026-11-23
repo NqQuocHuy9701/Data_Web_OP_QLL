@@ -43,11 +43,34 @@ export async function GET(request: Request) {
     );
   }
 
-  const counts: Record<string, number> = {};
+  const counts: Record<string, number> = Object.create(null);
   const requests: unknown[] = [];
   const pageSize = 1000;
 
   try {
+    if (!isDetailedList) {
+      const response = await fetch(
+        new URL("rpc/count_pending_class_schedule_requests", SUPABASE_ENDPOINT),
+        {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+          cache: "no-store",
+        },
+      );
+
+      if (response.ok) {
+        return NextResponse.json({ success: true, data: await response.json() });
+      }
+
+      const error = await response.json();
+      // Keep counts available while the database migration is being rolled out.
+      if (response.status !== 404 || error.code !== "PGRST202") {
+        throw new Error(`Supabase count request failed (${response.status}).`);
+      }
+    }
+
     for (let offset = 0; ; offset += pageSize) {
       const selectedColumns = isListView
         ? "id,ma_lop,mon_hoc,nguoi_tao,team,sid_cid,timestamp,is_done,is_cancelled,created_at,processed_by,processed_at"
