@@ -235,7 +235,7 @@ export default function StudentAddRequestsPage({
   const muted = theme === "dark" ? "text-slate-400" : "text-slate-500";
 
   return (
-    <div className="flex-1 px-8 pt-5 pb-6 min-h-0 flex flex-col gap-4 animate-fade-slide-up">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-3 pb-3 pt-3 sm:px-4 xl:px-6 2xl:px-8 animate-fade-slide-up">
       <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div>
           <h1
@@ -244,83 +244,55 @@ export default function StudentAddRequestsPage({
             <span className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
             <span>📋 Danh sách HS add lớp</span>
           </h1>
-          <p className={`text-sm mt-1 ${muted}`}>
-            Theo dõi các yêu cầu QLL đã gửi để vận hành xếp lớp.
-          </p>
-          <div className={`mt-2 flex flex-wrap gap-x-3 text-xs ${muted}`}>
+          <div className={`mt-1 flex flex-wrap gap-x-3 text-xs ${muted}`}>
             <span role="status">{syncLabel}</span>
             {lastSyncedAt !== null && (
               <span>Cập nhật gần nhất {formatTimestamp(lastSyncedAt)}</span>
             )}
           </div>
         </div>
-        <dl
-          aria-label="Thống kê yêu cầu Add lớp"
-          className={`grid grid-cols-2 gap-x-6 gap-y-3 rounded-xl border px-4 py-2.5 sm:grid-cols-4 ${panel}`}
-        >
-          {Object.entries(counts).map(([label, count]) => (
-            <div key={label}>
-              <dt className={`text-xs whitespace-nowrap ${muted}`}>{label}</dt>
-              <dd className={`mt-0.5 text-lg font-extrabold tabular-nums ${heading}`}>
-                {lastSyncedAt === null ? "–" : count}
-              </dd>
-            </div>
-          ))}
-        </dl>
       </div>
 
       <section
         className={`rounded-3xl border flex flex-col min-h-0 flex-1 overflow-hidden ${panel}`}
       >
         <div
-          className={`px-5 py-4 border-b flex flex-wrap items-center justify-between gap-3 shrink-0 ${
+          className={`px-3 py-2 border-b flex flex-wrap items-center justify-between gap-2 shrink-0 ${
             theme === "dark" ? "border-white/5" : "border-slate-100"
           }`}
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <div
-              className={`p-1 border rounded-2xl flex items-center gap-1 transition-colors duration-0 ${
-                theme === "dark"
-                  ? "bg-[#0a0f1c] border-white/10"
-                  : "bg-slate-50 border-slate-200"
-              }`}
-            >
-              {[
-                { label: "Tất cả", icon: "📌" },
-                { label: "Chờ xử lý", icon: "⏳" },
-                { label: "Đã xếp", icon: "✅" },
-                { label: "Đã hủy", icon: "❌" },
-              ].map(({ label, icon }) => {
-                const filter = label as StatusFilter;
-                const isSelected = statusFilter === filter;
-
-                return (
-                <button
-                  key={filter}
-                  type="button"
-                  onClick={() => setStatusFilter(filter)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-1.5 focus:outline-none active:scale-95 ${
-                    isSelected
-                      ? "bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.35)] scale-105"
-                      : theme === "dark"
-                        ? "text-slate-400 hover:text-white hover:bg-white/5"
-                        : "text-slate-600 hover:text-orange-600 hover:bg-white shadow-xs"
-                  }`}
-                >
-                  <span className="text-[11px]">{icon}</span>
-                  <span>{label}</span>
-                </button>
-                );
-              })}
-            </div>
+          <div role="group" aria-label="Lọc yêu cầu theo trạng thái" className="flex flex-wrap gap-1.5">
+            {(["Tất cả", "Chờ xử lý", "Đã xếp", "Đã hủy"] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                aria-pressed={statusFilter === filter}
+                onClick={() => setStatusFilter(filter)}
+                className={`inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-lg border px-2.5 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                  statusFilter === filter
+                    ? theme === "dark"
+                      ? "border-orange-500/50 bg-orange-500/15 text-orange-200"
+                      : "border-orange-300 bg-orange-50 text-orange-800"
+                    : theme === "dark"
+                      ? "border-white/10 text-slate-300 hover:bg-white/5"
+                      : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <span>{filter}</span>
+                <span className="text-sm font-extrabold tabular-nums">
+                  {lastSyncedAt === null ? "–" : counts[filter]}
+                </span>
+              </button>
+            ))}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 max-w-full items-center gap-2">
             <input
               type="search"
+              aria-label="Tìm mã lớp, SID/CID hoặc QLL"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm mã lớp, SID/CID, QLL..."
-              className={`w-64 max-w-full px-3.5 py-2 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-orange-500/30 ${
+              className={`w-52 min-w-0 px-3 py-2 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-orange-500/30 xl:w-64 ${
                 theme === "dark"
                   ? "bg-[#0a0f1c] border-white/10 text-white placeholder:text-slate-500"
                   : "bg-white border-slate-200 text-slate-700 placeholder:text-slate-400"
@@ -332,7 +304,7 @@ export default function StudentAddRequestsPage({
                 setLoading(true);
                 void loadRequests();
               }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold border ${
+              className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold border ${
                 theme === "dark"
                   ? "border-white/10 text-slate-300 hover:bg-white/5"
                   : "border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -363,7 +335,7 @@ export default function StudentAddRequestsPage({
         )}
 
         <div className="flex-1 overflow-auto custom-scrollbar">
-          <table className="w-full min-w-[1200px] text-sm text-left whitespace-nowrap">
+          <table className="w-full min-w-[820px] text-left text-sm [&_td]:px-2 [&_td]:py-2 [&_th]:px-2 [&_th]:py-2 2xl:[&_td]:px-4 2xl:[&_td]:py-3 2xl:[&_th]:px-4">
             <thead
               className={`sticky top-0 z-10 border-b text-[11px] uppercase tracking-wider ${
                 theme === "dark"
@@ -412,17 +384,9 @@ export default function StudentAddRequestsPage({
                     <tr
                       key={request.id}
                       className={`transition-colors ${
-                        request.is_cancelled
-                          ? theme === "dark"
-                            ? "bg-slate-800/40 opacity-70"
-                            : "bg-slate-100/60 opacity-75"
-                          : request.is_done
-                            ? theme === "dark"
-                              ? "bg-emerald-900/20 opacity-80"
-                              : "bg-emerald-50/40"
-                            : theme === "dark"
-                              ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50"
-                              : "hover:bg-orange-50/40 even:bg-slate-50/60"
+                        theme === "dark"
+                          ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50"
+                          : "hover:bg-sky-50/50 even:bg-slate-50/60"
                       }`}
                     >
                       <td className={`px-5 py-4 text-xs ${muted}`}>
@@ -513,7 +477,7 @@ export default function StudentAddRequestsPage({
                       </td>
                       <td className="px-5 py-4 text-right">
                         {isPending ? (
-                          <div className="inline-flex items-center gap-2">
+                          <div className="inline-flex items-center gap-1 whitespace-nowrap">
                             <button
                               type="button"
                               disabled={updatingId === String(request.id)}
@@ -522,7 +486,7 @@ export default function StudentAddRequestsPage({
                               }
                               className="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold disabled:opacity-50"
                             >
-                              Đã xếp (Done)
+                              Đã xếp
                             </button>
                             <button
                               type="button"
@@ -536,19 +500,7 @@ export default function StudentAddRequestsPage({
                             </button>
                           </div>
                         ) : (
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md font-bold text-xs border ${
-                              request.is_done
-                                ? theme === "dark"
-                                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : theme === "dark"
-                                  ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
-                                  : "bg-rose-50 text-rose-600 border-rose-200"
-                            }`}
-                          >
-                            {request.is_done ? "✅ Đã xếp (Done)" : "❌ Đã hủy"}
-                          </span>
+                          <span className={muted}>–</span>
                         )}
                       </td>
                     </tr>
