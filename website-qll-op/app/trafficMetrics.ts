@@ -54,7 +54,7 @@ export function selectTrafficWriter(state: PresenceState) {
   let writer: string | undefined;
   for (const sessions of Object.values(state)) {
     for (const session of sessions) {
-      if (!isMetadata(session)) continue;
+      if (!isMetadata(session) || session.traffic_sampling_version !== 2) continue;
       const id = session.traffic_session_id;
       if (typeof id === "string" && id && (!writer || id < writer)) writer = id;
     }

@@ -765,6 +765,7 @@ export default function Home() {
         if (status === "SUBSCRIBED") {
           await channel.track({
             traffic_session_id: trafficSessionId,
+            traffic_sampling_version: 2,
             user_name: displayName,
             team_lead: displayTeamOrRole,
             online_at: currentLoginTime,
