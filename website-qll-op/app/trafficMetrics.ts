@@ -1,5 +1,25 @@
 type PresenceState = Record<string, unknown[]>;
 
+interface PresenceProbe {
+  on(type: "presence", filter: { event: "sync" }, callback: () => void): PresenceProbe;
+  subscribe(callback: (status: string) => void): unknown;
+  presenceState(): PresenceState;
+}
+
+export function waitForFreshPresence(channel: PresenceProbe, timeoutMs = 4_000) {
+  return new Promise<PresenceState | null>((resolve) => {
+    const finish = (state: PresenceState | null) => {
+      clearTimeout(timer);
+      resolve(state);
+    };
+    const timer = setTimeout(() => finish(null), timeoutMs);
+    channel.on("presence", { event: "sync" }, () => finish(channel.presenceState()));
+    channel.subscribe((status) => {
+      if (status !== "SUBSCRIBED") finish(null);
+    });
+  });
+}
+
 function isMetadata(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }

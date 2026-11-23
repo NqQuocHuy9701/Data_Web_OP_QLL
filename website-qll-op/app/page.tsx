@@ -25,7 +25,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import AuditLog from "./AuditLog";
 import { createClient } from "@supabase/supabase-js";
 
-import { buildMinuteTrafficPoints, buildOnlinePeakPoints, readOnlineUsers, selectTrafficWriter, type OnlinePeakPoint } from "./trafficMetrics";
+import { buildMinuteTrafficPoints, buildOnlinePeakPoints, readOnlineUsers, selectTrafficWriter, waitForFreshPresence, type OnlinePeakPoint } from "./trafficMetrics";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -35,6 +35,22 @@ const supabaseAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+let trafficPresenceClient: typeof supabase | undefined;
+
+async function readFreshOnlineUsers() {
+  trafficPresenceClient ??= createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const channel = trafficPresenceClient.channel("qll-room", {
+    config: { presence: { enabled: true } },
+  });
+  try {
+    const presence = await waitForFreshPresence(channel);
+    return presence === null ? null : { users: readOnlineUsers(presence), capturedAt: new Date() };
+  } finally {
+    await trafficPresenceClient.removeChannel(channel);
+  }
+}
 
 // Lấy ngày (DD/MM/YYYY) + phút (HH:MM) theo giờ Việt Nam, độc lập múi giờ máy.
 function getVNDateTime(now = new Date()) {
@@ -198,18 +214,24 @@ export default function Home() {
 
     const syncRealtimePresence = async () => {
       if (!presenceWriterRef.current || onlineCount === 0 || recordingTrafficRef.current) return;
-      const { dateStr, timeSlot } = getVNDateTime();
-      const minuteKey = `${dateStr} ${timeSlot}`;
-      if (recordedTrafficMinuteRef.current === minuteKey) return;
+      const expected = getVNDateTime();
+      if (recordedTrafficMinuteRef.current === `${expected.dateStr} ${expected.timeSlot}`) return;
 
       recordingTrafficRef.current = true;
       try {
+        const fresh = await readFreshOnlineUsers();
+        if (!presenceWriterRef.current || !fresh || fresh.users.length === 0) return;
+        setOnlineUsers(fresh.users);
+        const { dateStr, timeSlot } = getVNDateTime(fresh.capturedAt);
+        const minuteKey = `${dateStr} ${timeSlot}`;
+        if (recordedTrafficMinuteRef.current === minuteKey) return;
+
         // The existing unique index on (date_str, time_slot) protects the
         // first sample even when two clients briefly elect themselves.
         const { error } = await supabase
           .from("system_traffic_logs")
           .upsert(
-            { date_str: dateStr, time_slot: timeSlot, request_count: onlineCount },
+            { date_str: dateStr, time_slot: timeSlot, request_count: fresh.users.length },
             { onConflict: "date_str,time_slot", ignoreDuplicates: true },
           );
 
