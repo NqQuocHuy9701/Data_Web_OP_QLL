@@ -1,15 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ConfirmDialog from "./ConfirmDialog";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    "https://sehvatktrqtgsnmvebmm.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E",
-);
+import { useClassScheduleRealtime } from "./useClassScheduleRealtime";
 
 interface StudentAddRequest {
   id: number | string;
@@ -69,6 +62,7 @@ export default function StudentAddRequestsPage({
 }: StudentAddRequestsPageProps) {
   const [requests, setRequests] = useState<StudentAddRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const loadVersion = useRef(0);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [search, setSearch] = useState("");
@@ -98,10 +92,14 @@ export default function StudentAddRequestsPage({
   }, [onSessionExpired]);
 
   const loadRequests = useCallback(async () => {
+    const version = ++loadVersion.current;
     try {
-      setRequests(await fetchRequests());
+      const data = await fetchRequests();
+      if (version !== loadVersion.current) return;
+      setRequests(data);
       setErrorMessage("");
     } catch (error) {
+      if (version !== loadVersion.current) return;
       console.error("Lỗi tải danh sách HS Add lớp:", error);
       setErrorMessage(
         error instanceof Error
@@ -109,116 +107,11 @@ export default function StudentAddRequestsPage({
           : "Không thể tải danh sách HS Add lớp.",
       );
     } finally {
-      setLoading(false);
+      if (version === loadVersion.current) setLoading(false);
     }
   }, [fetchRequests]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    fetchRequests()
-      .then((data) => {
-        if (!cancelled) {
-          setRequests(data);
-          setErrorMessage("");
-        }
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          console.error("Lỗi tải danh sách HS Add lớp:", error);
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : "Không thể tải danh sách HS Add lớp.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchRequests]);
-
-  useEffect(() => {
-    const applyStatus = (
-      id: number | string,
-      action: RequestAction,
-    ) => {
-      setRequests((current) =>
-        current.map((request) =>
-          String(request.id) === String(id)
-            ? {
-                ...request,
-                is_done: action === "done",
-                is_cancelled: action === "cancel",
-              }
-            : request,
-        ),
-      );
-    };
-
-    const channel = supabase
-      .channel("qll-room")
-      .on("broadcast", { event: "student_add_status" }, (payload) => {
-        const id = payload.payload?.id;
-        const action = payload.payload?.action;
-        if (id && (action === "done" || action === "cancel")) {
-          applyStatus(id, action);
-        }
-      })
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "class_schedule_requests",
-        },
-        (payload) => {
-          if (payload.eventType === "UPDATE") {
-            const updated = payload.new as Partial<StudentAddRequest>;
-            if (
-              updated.id !== undefined &&
-              (typeof updated.is_done === "boolean" ||
-                typeof updated.is_cancelled === "boolean")
-            ) {
-              setRequests((current) =>
-                current.map((request) =>
-                  String(request.id) === String(updated.id)
-                    ? { ...request, ...updated }
-                    : request,
-                ),
-              );
-            }
-          } else if (payload.eventType === "INSERT") {
-            const inserted = payload.new as StudentAddRequest;
-            setRequests((current) =>
-              current.some(
-                (request) => String(request.id) === String(inserted.id),
-              )
-                ? current
-                : [inserted, ...current],
-            );
-          } else if (payload.eventType === "DELETE") {
-            const deleted = payload.old as Partial<StudentAddRequest>;
-            if (deleted.id !== undefined) {
-              setRequests((current) =>
-                current.filter(
-                  (request) => String(request.id) !== String(deleted.id),
-                ),
-              );
-            }
-          }
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, []);
+  useClassScheduleRealtime(loadRequests);
 
   const pendingCount = useMemo(
     () => requests.filter((request) => !request.is_done && !request.is_cancelled).length,
@@ -303,11 +196,6 @@ export default function StudentAddRequestsPage({
       }
 
       setConfirmTarget(null);
-      await supabase.channel("qll-room").send({
-        type: "broadcast",
-        event: "student_add_status",
-        payload: { id, action },
-      });
       await loadRequests();
       await onCountsChanged();
     } catch (error) {

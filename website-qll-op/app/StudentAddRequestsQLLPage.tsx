@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useClassScheduleRealtime } from "./useClassScheduleRealtime";
 
 interface StudentAddRequest {
   id: number | string;
@@ -34,6 +35,7 @@ export default function StudentAddRequestsQLLPage({
   const [requests, setRequests] = useState<StudentAddRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const loadVersion = useRef(0);
   const [errorMessage, setErrorMessage] = useState("");
 
   const fetchRequests = useCallback(async () => {
@@ -54,10 +56,14 @@ export default function StudentAddRequestsQLLPage({
   }, [displayName]);
 
   const loadRequests = useCallback(async () => {
+    const version = ++loadVersion.current;
     try {
-      setRequests(await fetchRequests());
+      const data = await fetchRequests();
+      if (version !== loadVersion.current) return;
+      setRequests(data);
       setErrorMessage("");
     } catch (error) {
+      if (version !== loadVersion.current) return;
       console.error("Lỗi tải danh sách Add lớp của QLL:", error);
       setErrorMessage(
         error instanceof Error
@@ -65,46 +71,14 @@ export default function StudentAddRequestsQLLPage({
           : "Không thể tải danh sách Add lớp.",
       );
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (version === loadVersion.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, [fetchRequests]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = () => {
-      void fetchRequests()
-        .then((data) => {
-          if (!cancelled) {
-            setRequests(data);
-            setErrorMessage("");
-          }
-        })
-        .catch((error: unknown) => {
-          if (!cancelled) {
-            console.error("Lỗi tải danh sách Add lớp của QLL:", error);
-            setErrorMessage(
-              error instanceof Error
-                ? error.message
-                : "Không thể tải danh sách Add lớp.",
-            );
-          }
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
-    };
-
-    load();
-    const intervalId = window.setInterval(() => {
-      load();
-    }, 30_000);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [fetchRequests]);
+  useClassScheduleRealtime(loadRequests);
 
   const pendingCount = useMemo(
     () =>

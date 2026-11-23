@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUsername, hasAdminSession } from "../_lib/admin-session";
+import { CLASS_SCHEDULE_CHANGED, CLASS_SCHEDULE_TOPIC } from "../../classScheduleEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,25 @@ const SUPABASE_ENDPOINT =
 const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGciOiJIUzI1NiIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDU1sfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
+
+async function broadcastClassScheduleChange() {
+  try {
+    const response = await fetch(
+      new URL("/realtime/v1/api/broadcast", SUPABASE_ENDPOINT),
+      {
+        method: "POST",
+        headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ topic: CLASS_SCHEDULE_TOPIC, event: CLASS_SCHEDULE_CHANGED, payload: {} }],
+        }),
+        signal: AbortSignal.timeout(2000),
+      },
+    );
+    if (!response.ok) console.warn("Add lop broadcast failed:", response.status);
+  } catch (error) {
+    console.warn("Add lop broadcast failed:", error);
+  }
+}
 
 export async function GET(request: Request) {
   const searchParams = new URL(request.url).searchParams;
@@ -220,6 +240,7 @@ export async function POST(request: Request) {
       );
     }
 
+    await broadcastClassScheduleChange();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to save Add lớp request:", error);
@@ -313,6 +334,8 @@ export async function PATCH(request: Request) {
         { status: 502 },
       );
     }
+
+    await broadcastClassScheduleChange();
 
     if (action === "done") {
       const recordResponse = await fetch(
