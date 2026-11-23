@@ -46,10 +46,23 @@ async function readFreshOnlineUsers() {
   });
   try {
     const presence = await waitForFreshPresence(channel);
-    return presence === null ? null : { users: readOnlineUsers(presence), capturedAt: new Date() };
+    return presence === null ? null : { users: readOnlineUsers(presence), capturedAt: performance.now() };
   } finally {
     await trafficPresenceClient.removeChannel(channel);
   }
+}
+
+async function readTrafficClock() {
+  const startedAt = performance.now();
+  const response = await fetch("/api/traffic-clock", {
+    cache: "no-store",
+    signal: AbortSignal.timeout(4_000),
+  });
+  const arrivedAt = performance.now();
+  if (!response.ok) throw new Error("Traffic clock unavailable.");
+  const { now } = await response.json();
+  if (typeof now !== "number" || !Number.isFinite(now)) throw new Error("Invalid traffic clock.");
+  return now - (startedAt + arrivedAt) / 2;
 }
 
 // Lấy ngày (DD/MM/YYYY) + phút (HH:MM) theo giờ Việt Nam, độc lập múi giờ máy.
@@ -195,6 +208,7 @@ export default function Home() {
   const presenceWriterRef = useRef(false);
   const recordingTrafficRef = useRef(false);
   const recordedTrafficMinuteRef = useRef("");
+  const trafficClockOffsetRef = useRef<number | null>(null);
   const onlineCount = onlineUsers.length;
 
   const refreshOnlineUsers = useCallback(() => {
@@ -214,15 +228,19 @@ export default function Home() {
 
     const syncRealtimePresence = async () => {
       if (!presenceWriterRef.current || onlineCount === 0 || recordingTrafficRef.current) return;
-      const expected = getVNDateTime();
-      if (recordedTrafficMinuteRef.current === `${expected.dateStr} ${expected.timeSlot}`) return;
+      const offset = trafficClockOffsetRef.current;
+      if (offset !== null) {
+        const expected = getVNDateTime(new Date(offset + performance.now()));
+        if (recordedTrafficMinuteRef.current === `${expected.dateStr} ${expected.timeSlot}`) return;
+      }
 
       recordingTrafficRef.current = true;
       try {
-        const fresh = await readFreshOnlineUsers();
+        const [fresh, clockOffset] = await Promise.all([readFreshOnlineUsers(), readTrafficClock()]);
+        trafficClockOffsetRef.current = clockOffset;
         if (!presenceWriterRef.current || !fresh || fresh.users.length === 0) return;
         setOnlineUsers(fresh.users);
-        const { dateStr, timeSlot } = getVNDateTime(fresh.capturedAt);
+        const { dateStr, timeSlot } = getVNDateTime(new Date(clockOffset + fresh.capturedAt));
         const minuteKey = `${dateStr} ${timeSlot}`;
         if (recordedTrafficMinuteRef.current === minuteKey) return;
 
@@ -250,7 +268,9 @@ export default function Home() {
       timer = setTimeout(() => {
         void syncRealtimePresence();
         scheduleNextMinute();
-      }, 60_000 - (Date.now() % 60_000));
+      }, 60_000 - ((trafficClockOffsetRef.current === null
+        ? Date.now()
+        : trafficClockOffsetRef.current + performance.now()) % 60_000));
     };
     scheduleNextMinute();
 
