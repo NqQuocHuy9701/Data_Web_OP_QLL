@@ -53,24 +53,45 @@ export async function GET(request: Request) {
     // Có fallback: nếu xử lý lỗi -> trả CSV gốc để KHÔNG làm vỡ web.
     let outputCsv = text;
     try {
-      const parsed = Papa.parse<Record<string, string>>(text, {
-        header: true,
+      const parsed = Papa.parse<string[]>(text, {
+        header: false,
         skipEmptyLines: true,
-        transformHeader: (h) => h.trim(),
       });
 
       if (parsed.data && parsed.data.length > 0) {
-        const availableCols = parsed.meta.fields || [];
-        const cols = KEEP_COLUMNS.filter((c) => availableCols.includes(c));
+        const headers = parsed.data[0].map((header) => String(header || "").trim());
+        const columnIndexes = new Map<string, number>();
+
+        headers.forEach((header, index) => {
+          if (header && !columnIndexes.has(header)) {
+            columnIndexes.set(header, index);
+          }
+        });
+
+        // Sheet hiện có hai cột "Trình độ": cột G là cột cũ, cột N là cột mới.
+        // Cột N trong sheet tương ứng index 13 (A = 0).
+        const TRINH_DO_COLUMN_INDEX = 13;
+        if (headers[TRINH_DO_COLUMN_INDEX]?.trim() === "Trình độ") {
+          columnIndexes.set("Trình độ", TRINH_DO_COLUMN_INDEX);
+        }
+
+        const cols = KEEP_COLUMNS.filter((c) => columnIndexes.has(c));
 
         if (cols.length > 0) {
-          const slimRows = parsed.data
-            .filter((row) => (row["Mã lớp"] || "").toString().trim() !== "")
-            .map((row) => {
-              const o: Record<string, string> = {};
-              for (const c of cols) o[c] = row[c] ?? "";
-              return o;
-            });
+          const slimRows = parsed.data.slice(1).map((row) => {
+            const maLopIndex = columnIndexes.get("Mã lớp");
+            if (maLopIndex === undefined) return null;
+            if (!String(row[maLopIndex] || "").trim()) return null;
+
+            const outputRow: Record<string, string> = {};
+            for (const c of cols) {
+              const columnIndex = columnIndexes.get(c);
+              outputRow[c] = columnIndex === undefined
+                ? ""
+                : String(row[columnIndex] || "").trim();
+            }
+            return outputRow;
+          }).filter((row): row is Record<string, string> => row !== null);
 
           outputCsv = Papa.unparse(slimRows, { columns: cols });
         }
@@ -109,7 +130,7 @@ export async function GET(request: Request) {
         'Cache-Control': cacheControl,
       }
     });
-  } catch (error) {
+  } catch {
     return new NextResponse("Lỗi Server", {
       status: 500,
       headers: { 'Cache-Control': 'no-store' },
