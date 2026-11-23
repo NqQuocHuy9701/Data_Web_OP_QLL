@@ -20,6 +20,7 @@ const SUPABASE_KEY =
   "";
 
 const BCRYPT_ROUNDS = 10;
+const ADMIN_SESSION_COOKIE_MAX_AGE = 400 * 24 * 60 * 60;
 
 // Một chuỗi bcrypt hợp lệ bắt đầu bằng $2a$ / $2b$ / $2y$.
 function looksHashed(value: string | null | undefined): boolean {
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
       path: "/",
+      maxAge: ADMIN_SESSION_COOKIE_MAX_AGE,
     });
     return response;
   } catch {
