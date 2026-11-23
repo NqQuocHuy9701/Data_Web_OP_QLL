@@ -240,20 +240,25 @@ export default function Home() {
         trafficClockOffsetRef.current = clockOffset;
         if (!presenceWriterRef.current || !fresh || fresh.users.length === 0) return;
         setOnlineUsers(fresh.users);
-        const { dateStr, timeSlot } = getVNDateTime(new Date(clockOffset + fresh.capturedAt));
+        const observedAt = clockOffset + fresh.capturedAt;
+        const { dateStr, timeSlot } = getVNDateTime(new Date(observedAt));
         const minuteKey = `${dateStr} ${timeSlot}`;
         if (recordedTrafficMinuteRef.current === minuteKey) return;
 
-        // The existing unique index on (date_str, time_slot) protects the
-        // first sample even when two clients briefly elect themselves.
+        const sampleMinute = new Date(Math.floor(observedAt / 60_000) * 60_000).toISOString();
         const { error } = await supabase
-          .from("system_traffic_logs")
-          .upsert(
+          .from("online_presence_samples")
+          .insert({ sample_minute: sampleMinute, online_count: fresh.users.length });
+
+        if (error?.code === "PGRST205" || error?.code === "42P01") {
+          const fallback = await supabase.from("system_traffic_logs").upsert(
             { date_str: dateStr, time_slot: timeSlot, request_count: fresh.users.length },
             { onConflict: "date_str,time_slot", ignoreDuplicates: true },
           );
-
-        if (error) throw error;
+          if (fallback.error) throw fallback.error;
+        } else if (error && error.code !== "23505") {
+          throw error;
+        }
         recordedTrafficMinuteRef.current = minuteKey;
       } catch (error) {
         console.error("Lỗi đồng bộ CCU lên Supabase:", error);
