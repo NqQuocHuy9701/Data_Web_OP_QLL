@@ -27,6 +27,7 @@ interface StudentAddRequest {
 
 type StatusFilter = "Tất cả" | "Chờ xử lý" | "Đã xếp" | "Đã hủy";
 type RequestAction = "done" | "cancel";
+const MAX_WAIT_MS = 2 * 60 * 60 * 1000;
 
 interface StudentAddRequestsPageProps {
   theme: "light" | "dark";
@@ -34,18 +35,31 @@ interface StudentAddRequestsPageProps {
   onSessionExpired: () => void;
 }
 
-function formatTimestamp(timestamp: number | string) {
-  const date = new Date(
+function parseTimestamp(timestamp: number | string) {
+  return new Date(
     typeof timestamp === "number" || /^\d+$/.test(timestamp)
       ? Number(timestamp)
       : timestamp,
   );
+}
+
+function formatTimestamp(timestamp: number | string) {
+  const date = parseTimestamp(timestamp);
   if (Number.isNaN(date.getTime())) return "-";
 
   return new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "short",
     timeStyle: "medium",
   }).format(date);
+}
+
+function formatRemainingTime(milliseconds: number) {
+  const seconds = Math.ceil(milliseconds / 1000);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor(seconds / 60) % 60;
+  return [hours, minutes, seconds % 60]
+    .map((part) => String(part).padStart(2, "0"))
+    .join(":");
 }
 
 export default function StudentAddRequestsPage({
@@ -59,6 +73,7 @@ export default function StudentAddRequestsPage({
   const [errorMessage, setErrorMessage] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Chờ xử lý");
+  const [now, setNow] = useState(() => Date.now());
   const [confirmTarget, setConfirmTarget] = useState<{
     request: StudentAddRequest;
     action: RequestAction;
@@ -237,6 +252,19 @@ export default function StudentAddRequestsPage({
     });
   }, [requests, search, statusFilter]);
 
+  const hasPendingRequests = pendingCount > 0;
+  useEffect(() => {
+    if (!hasPendingRequests) return;
+
+    const tick = () => setNow(Date.now());
+    const initialTick = window.setTimeout(tick, 0);
+    const timer = window.setInterval(tick, 1000);
+    return () => {
+      window.clearTimeout(initialTick);
+      window.clearInterval(timer);
+    };
+  }, [hasPendingRequests]);
+
   const updateRequestStatus = async () => {
     if (!confirmTarget) return;
 
@@ -411,7 +439,7 @@ export default function StudentAddRequestsPage({
         )}
 
         <div className="flex-1 overflow-auto custom-scrollbar">
-          <table className="w-full min-w-[1050px] text-sm text-left whitespace-nowrap">
+          <table className="w-full min-w-[1200px] text-sm text-left whitespace-nowrap">
             <thead
               className={`sticky top-0 z-10 border-b text-[11px] uppercase tracking-wider ${
                 theme === "dark"
@@ -428,6 +456,7 @@ export default function StudentAddRequestsPage({
                 <th className="px-5 py-4">Team</th>
                 <th className="px-5 py-4">Người xử lý / thời gian</th>
                 <th className="px-5 py-4">Trạng thái</th>
+                <th className="px-5 py-4">Thời gian còn chờ</th>
                 <th className="px-5 py-4 text-right">Thao tác</th>
               </tr>
             </thead>
@@ -438,13 +467,13 @@ export default function StudentAddRequestsPage({
             >
               {loading ? (
                 <tr>
-                  <td colSpan={9} className={`px-5 py-16 text-center ${muted}`}>
+                  <td colSpan={10} className={`px-5 py-16 text-center ${muted}`}>
                     Đang tải danh sách...
                   </td>
                 </tr>
               ) : filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className={`px-5 py-16 text-center ${muted}`}>
+                  <td colSpan={10} className={`px-5 py-16 text-center ${muted}`}>
                     Không có yêu cầu phù hợp.
                   </td>
                 </tr>
@@ -452,6 +481,8 @@ export default function StudentAddRequestsPage({
                 filteredRequests.map((request) => {
                   const isPending =
                     !request.is_done && !request.is_cancelled;
+                  const deadline = parseTimestamp(request.timestamp).getTime() + MAX_WAIT_MS;
+                  const remainingMs = deadline - now;
 
                   return (
                     <tr
@@ -534,6 +565,25 @@ export default function StudentAddRequestsPage({
                             }`}
                           >
                             ⏳ Chờ xử lý
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-xs">
+                        {!isPending || !Number.isFinite(remainingMs) ? (
+                          <span className={muted}>-</span>
+                        ) : remainingMs <= 0 ? (
+                          <span
+                            className={`inline-flex rounded-md border px-2.5 py-1 font-bold ${
+                              theme === "dark"
+                                ? "border-rose-500/30 bg-rose-500/20 text-rose-300"
+                                : "border-rose-200 bg-rose-50 text-rose-700"
+                            }`}
+                          >
+                            Quá hạn 2 giờ
+                          </span>
+                        ) : (
+                          <span className={`font-semibold tabular-nums ${heading}`}>
+                            {formatRemainingTime(Math.min(remainingMs, MAX_WAIT_MS))}
                           </span>
                         )}
                       </td>
