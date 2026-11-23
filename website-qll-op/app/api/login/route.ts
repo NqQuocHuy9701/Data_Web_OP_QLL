@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import {
   ADMIN_SESSION_COOKIE,
   createAdminSessionToken,
+  getAdminSessionUsername,
   hasAdminSessionSecret,
 } from "../_lib/admin-session";
 
@@ -52,6 +53,18 @@ async function persistHash(username: string, hash: string) {
   } catch {
     // Bỏ qua: migrate hash là tối ưu dần, không được phá luồng đăng nhập.
   }
+}
+
+export async function GET(request: Request) {
+  const username = getAdminSessionUsername(request);
+  if (!username) {
+    return NextResponse.json(
+      { success: false, error: "Phiên Admin không còn hiệu lực." },
+      { status: 401 },
+    );
+  }
+
+  return NextResponse.json({ success: true, username });
 }
 
 // Xác thực tài khoản Admin phía server.

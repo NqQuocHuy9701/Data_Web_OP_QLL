@@ -1,7 +1,7 @@
 ﻿"use client";
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Papa from "papaparse";
 import LoginScreen from "./LoginScreen";
 import Sidebar from "./Sidebar";
@@ -577,17 +577,42 @@ export default function Home() {
       try {
         const parsed = JSON.parse(savedUser);
         if (parsed.role === "Admin") {
-          setAdminUsername(parsed.namecode || "");
           setLoginRole("Admin");
-          setTeamLead("Admin hệ thống");
+          setAdminUsername(parsed.namecode || "");
+          void fetch("/api/login", {
+            cache: "no-store",
+            credentials: "same-origin",
+          })
+            .then(async (response) => {
+              const result = await response.json();
+              if (!response.ok || !result.success || !result.username) {
+                localStorage.removeItem("qll_logged_user");
+                setLoginError("Phiên Admin đã hết hạn. Vui lòng đăng nhập lại.");
+                return;
+              }
+
+              const adminUser = {
+                namecode: result.username,
+                teamLead: "Admin hệ thống",
+                role: "Admin",
+              };
+              localStorage.setItem("qll_logged_user", JSON.stringify(adminUser));
+              setAdminUsername(result.username);
+              setTeamLead("Admin hệ thống");
+              setIsLoggedIn(true);
+            })
+            .catch((error) => {
+              console.error("Không thể khôi phục phiên Admin:", error);
+              setLoginError("Không thể xác minh phiên Admin. Vui lòng đăng nhập lại.");
+            });
         } else if (parsed.namecode) {
           setNamecode(parsed.namecode);
           setTeamLead(parsed.teamLead || "Lead LienDT");
           setLoginRole("QLL");
           setActiveNav("TrangCuaToi"); // QLL vào thẳng Trang của tôi
           setShowUsernameNotice(true);
+          setIsLoggedIn(true);
         }
-        setIsLoggedIn(true);
       } catch (e) {
         console.error(e);
       }
@@ -1007,16 +1032,16 @@ export default function Home() {
     }
   };
 
-  const handleLogout = () => {
-    void fetch("/api/logout", { method: "POST" })
-      .then((response) => {
-        if (!response.ok) {
-          console.error("Không thể kết thúc phiên Admin trên máy chủ.");
-        }
-      })
-      .catch((error) => {
-        console.error("Lỗi kết thúc phiên Admin:", error);
-      });
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/logout", { method: "POST" });
+      if (!response.ok) {
+        console.error("Không thể kết thúc phiên Admin trên máy chủ.");
+      }
+    } catch (error) {
+      console.error("Lỗi kết thúc phiên Admin:", error);
+    }
+
     localStorage.removeItem("qll_logged_user");
     setIsLoggedIn(false);
     setNamecode("");
@@ -1026,6 +1051,14 @@ export default function Home() {
     setTeamLead("Lead LienDT");
     setActiveNav("Giữ Slot");
   };
+
+  const handleAdminSessionExpired = useCallback(() => {
+    localStorage.removeItem("qll_logged_user");
+    setLoginRole("Admin");
+    setAdminPassword("");
+    setLoginError("Phiên Admin đã hết hạn. Vui lòng đăng nhập lại.");
+    setIsLoggedIn(false);
+  }, []);
 
   const handleAddAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2067,6 +2100,7 @@ const loadData = (forceFresh = false) => {
           <StudentAddRequestsPage
             theme={theme}
             onCountsChanged={loadClassScheduleCounts}
+            onSessionExpired={handleAdminSessionExpired}
           />
         ) : loginRole === "Admin" && activeNav === "NhatKy" ? (
           <AuditLog theme={theme} />

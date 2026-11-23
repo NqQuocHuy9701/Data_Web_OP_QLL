@@ -31,6 +31,7 @@ type RequestAction = "done" | "cancel";
 interface StudentAddRequestsPageProps {
   theme: "light" | "dark";
   onCountsChanged: () => Promise<void>;
+  onSessionExpired: () => void;
 }
 
 function formatTimestamp(timestamp: number | string) {
@@ -50,6 +51,7 @@ function formatTimestamp(timestamp: number | string) {
 export default function StudentAddRequestsPage({
   theme,
   onCountsChanged,
+  onSessionExpired,
 }: StudentAddRequestsPageProps) {
   const [requests, setRequests] = useState<StudentAddRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,12 +71,16 @@ export default function StudentAddRequestsPage({
     );
     const result = await response.json();
 
+    if (response.status === 401) {
+      onSessionExpired();
+    }
+
     if (!response.ok || !result.success || !Array.isArray(result.data)) {
       throw new Error(result.error || "Không thể tải danh sách Add lớp.");
     }
 
     return result.data as StudentAddRequest[];
-  }, []);
+  }, [onSessionExpired]);
 
   const loadRequests = useCallback(async () => {
     try {
@@ -258,6 +264,11 @@ export default function StudentAddRequestsPage({
         }),
       });
       const result = await response.json();
+
+      if (response.status === 401) {
+        onSessionExpired();
+        return;
+      }
 
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Không thể cập nhật trạng thái.");
