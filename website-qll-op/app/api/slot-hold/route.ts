@@ -13,19 +13,34 @@ export async function GET() {
     // client còn có fallback "|| ''" nên kể cả thiếu cột cũng không vỡ UI.
     const SELECT_COLS =
       "id,ma_lop,mon_hoc,nguoi_giu,team,note,timestamp,is_done,is_cancelled,ngay_bat_dau,ngay_het_han";
-    const res = await fetch(
-      `${SUPABASE_ENDPOINT}?select=${SELECT_COLS}&order=timestamp.desc`,
-      {
-        method: "GET",
-        headers: {
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+    const pageSize = 1000;
+    const data: unknown[] = [];
+
+    for (let offset = 0; ; offset += pageSize) {
+      const res = await fetch(
+        `${SUPABASE_ENDPOINT}?select=${SELECT_COLS}&order=timestamp.desc`,
+        {
+          method: "GET",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            Range: `${offset}-${offset + pageSize - 1}`,
+            "Range-Unit": "items",
+          },
+          cache: "no-store",
         },
-        cache: 'no-store'
+      );
+      if (!res.ok) throw new Error(await res.text());
+
+      const page: unknown = await res.json();
+      if (!Array.isArray(page)) {
+        throw new Error("Supabase trả về dữ liệu slot không hợp lệ.");
       }
-    );
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
+
+      data.push(...page);
+      if (page.length < pageSize) break;
+    }
+
     return NextResponse.json({ success: true, data });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
