@@ -126,10 +126,15 @@ export default function StudentAddRequestsPage({
         ? "Đã kết nối Realtime"
         : "Đang đồng bộ";
 
-  const pendingCount = useMemo(
-    () => requests.filter((request) => !request.is_done && !request.is_cancelled).length,
-    [requests],
-  );
+  const counts = useMemo(() => {
+    const totals = { "Tất cả": requests.length, "Chờ xử lý": 0, "Đã xếp": 0, "Đã hủy": 0 };
+    for (const request of requests) {
+      if (request.is_cancelled) totals["Đã hủy"]++;
+      else if (request.is_done) totals["Đã xếp"]++;
+      else totals["Chờ xử lý"]++;
+    }
+    return totals;
+  }, [requests]);
 
   const filteredRequests = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
@@ -141,7 +146,7 @@ export default function StudentAddRequestsPage({
       ) {
         return false;
       }
-      if (statusFilter === "Đã xếp" && !request.is_done) return false;
+      if (statusFilter === "Đã xếp" && (!request.is_done || request.is_cancelled)) return false;
       if (statusFilter === "Đã hủy" && !request.is_cancelled) return false;
 
       if (!query) return true;
@@ -158,7 +163,7 @@ export default function StudentAddRequestsPage({
     });
   }, [requests, search, statusFilter]);
 
-  const hasPendingRequests = pendingCount > 0;
+  const hasPendingRequests = counts["Chờ xử lý"] > 0;
   useEffect(() => {
     if (!hasPendingRequests) return;
 
@@ -249,15 +254,19 @@ export default function StudentAddRequestsPage({
             )}
           </div>
         </div>
-        <span
-          className={`font-extrabold px-3.5 py-2.5 rounded-xl border shadow-sm text-xs ${
-            theme === "dark"
-              ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
-              : "bg-orange-50 text-orange-600 border-orange-200"
-          }`}
+        <dl
+          aria-label="Thống kê yêu cầu Add lớp"
+          className={`grid grid-cols-2 gap-x-6 gap-y-3 rounded-xl border px-4 py-2.5 sm:grid-cols-4 ${panel}`}
         >
-          Đang chờ: {pendingCount}
-        </span>
+          {Object.entries(counts).map(([label, count]) => (
+            <div key={label}>
+              <dt className={`text-xs whitespace-nowrap ${muted}`}>{label}</dt>
+              <dd className={`mt-0.5 text-lg font-extrabold tabular-nums ${heading}`}>
+                {lastSyncedAt === null ? "–" : count}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
 
       <section

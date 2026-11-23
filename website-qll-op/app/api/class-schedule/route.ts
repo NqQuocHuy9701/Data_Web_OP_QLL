@@ -102,7 +102,11 @@ export async function GET(request: Request) {
         : isQllListView
           ? `&nguoi_tao=eq.${encodeURIComponent(namecode!)}`
           : "&is_done=eq.false&is_cancelled=eq.false";
-      const order = isQllListView ? "id.desc" : "id.asc";
+      const order = isListView
+        ? "timestamp.desc,id.desc"
+        : isQllListView
+          ? "id.desc"
+          : "id.asc";
       const response = await fetch(
         `${SUPABASE_ENDPOINT}?select=${selectedColumns}${activeFilters}&order=${order}`,
         {
