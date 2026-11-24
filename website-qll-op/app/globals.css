@@ -484,10 +484,11 @@ body {
     inset-block: 0;
     width: 16rem;
     overflow: hidden;
+    clip-path: inset(0 -1rem 0 0);
   }
 
-  .ops-sidebar:not(:hover, :has(:focus-visible)) {
-    width: 4rem;
+  .ops-sidebar-rail .ops-sidebar:not(:hover, :has(:focus-visible)) {
+    clip-path: inset(0 12rem 0 0);
   }
 
   .ops-sidebar :is(
@@ -514,10 +515,6 @@ body {
     background-repeat: no-repeat;
     background-position: right 0.5rem center;
     background-size: 0.375rem 100%;
-  }
-
-  .ops-sidebar:not(:hover, :has(:focus-visible)) nav {
-    background-size: 0 100%;
   }
 
   .ops-sidebar-indicator {
@@ -554,22 +551,26 @@ body {
   .ops-sidebar-footer > button {
     flex-shrink: 0;
   }
+
+  .ops-sidebar:not(:hover, :has(:focus-visible)) .ops-sidebar-footer > button {
+    translate: -12rem 0;
+  }
 }
 
 @media (width >= 64rem) and (hover: hover) and (prefers-reduced-motion: no-preference) {
   .ops-sidebar-rail .ops-sidebar {
-    --ops-sidebar-resize: 320ms cubic-bezier(0.25, 0.75, 0.25, 1);
-    transition: width var(--ops-sidebar-resize);
+    --ops-sidebar-reveal: 250ms cubic-bezier(0.22, 0.7, 0.25, 1);
+    transition: clip-path var(--ops-sidebar-reveal);
   }
 
-  .ops-sidebar nav {
-    transition: background-size var(--ops-sidebar-resize);
+  .ops-sidebar-footer > button {
+    transition: translate var(--ops-sidebar-reveal);
   }
 
   .ops-sidebar-indicator {
-    transition: inset-inline-start var(--ops-sidebar-resize),
-      inset-inline-end var(--ops-sidebar-resize),
-      border-radius var(--ops-sidebar-resize);
+    transition: inset-inline-start var(--ops-sidebar-reveal),
+      inset-inline-end var(--ops-sidebar-reveal),
+      border-radius var(--ops-sidebar-reveal);
   }
 
   .ops-sidebar :is(.ops-sidebar-brand, .ops-sidebar-label, .ops-sidebar-section, .ops-sidebar-profile) {
@@ -590,15 +591,7 @@ body {
 
 @media (prefers-reduced-motion: no-preference) {
   .ops-sidebar nav button {
-    transition-duration: 160ms;
-  }
-
-  .ops-sidebar nav button > span:first-of-type {
-    transition: transform 150ms ease-out;
-  }
-
-  .ops-sidebar nav button:is(:hover, :focus-visible) > span:first-of-type {
-    transform: translateX(2px);
+    transition-duration: 130ms;
   }
 }
 
