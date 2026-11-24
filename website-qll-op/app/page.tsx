@@ -1807,6 +1807,7 @@ const loadData = (forceFresh = false) => {
   ) => {
     return (
       <FilterDropdown
+        theme={theme}
         label={label}
         dropdownKey={key}
         currentValue={currentValue}
