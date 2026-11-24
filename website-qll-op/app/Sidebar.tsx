@@ -86,13 +86,13 @@ export default function Sidebar({
     const previousCenter = previousTop + previous.height / 2;
     const centerDistance = center - previousCenter;
     const stretchLimit = height * 0.55;
-    const easeEdge = (progress: number) => progress ** 2 * (3 - 2 * progress);
+    const easeEdge = (progress: number) => progress ** 3 * (10 + progress * (-15 + 6 * progress));
 
     // Ease the leading and trailing edges separately so the stretch settles continuously.
-    const frames = Array.from({ length: 25 }, (_, index) => {
-      const time = index / 24;
-      const leading = easeEdge(Math.min(time / 0.82, 1));
-      const trailing = easeEdge(Math.max((time - 0.18) / 0.82, 0));
+    const frames = Array.from({ length: 33 }, (_, index) => {
+      const time = index / 32;
+      const leading = easeEdge(Math.min(time / 0.86, 1));
+      const trailing = easeEdge(Math.max((time - 0.14) / 0.86, 0));
       const progress = (leading + trailing) / 2;
       const stretch = stretchLimit * Math.tanh(Math.abs(centerDistance) * (leading - trailing) / stretchLimit);
       const frameHeight = previous.height + (height - previous.height) * progress + stretch;
@@ -101,7 +101,7 @@ export default function Sidebar({
       return { transform: `translateY(${frameTop}px) scaleY(${frameHeight / height})` };
     });
 
-    indicator.animate(frames, Math.min(460, 310 + Math.abs(centerDistance) * 0.34));
+    indicator.animate(frames, Math.min(490, 345 + Math.abs(centerDistance) * 0.29));
   }, [activeNav, loginRole]);
 
   return (
@@ -117,6 +117,7 @@ export default function Sidebar({
 
       <div className="ops-sidebar-rail">
       <aside
+        data-theme={theme}
         onClick={() => setSidebarOpen?.(false)}
         className={`ops-sidebar w-64 flex flex-col z-40 shrink-0 motion-safe:transition-transform motion-safe:duration-200 fixed inset-y-0 left-0 lg:static ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"

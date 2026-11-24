@@ -424,6 +424,22 @@ body {
   display: contents;
 }
 
+@supports (backdrop-filter: blur(9px)) {
+  .ops-sidebar[data-theme="dark"] {
+    background-color: rgb(14 19 32 / 46%);
+    backdrop-filter: blur(9px);
+  }
+
+  .ops-sidebar[data-theme="light"] {
+    background-color: rgb(255 255 255 / 55%);
+    backdrop-filter: blur(9px);
+  }
+
+  .ops-sidebar[data-theme="dark"] .ops-sidebar-footer {
+    background-color: rgb(10 15 28 / 15%);
+  }
+}
+
 .ops-sidebar-indicator {
   position: absolute;
   inset-block-start: 0;
@@ -542,21 +558,28 @@ body {
 
 @media (width >= 64rem) and (hover: hover) and (prefers-reduced-motion: no-preference) {
   .ops-sidebar-rail .ops-sidebar {
-    transition: width 280ms cubic-bezier(0.2, 0.75, 0.25, 1);
+    --ops-sidebar-resize: 320ms cubic-bezier(0.25, 0.75, 0.25, 1);
+    transition: width var(--ops-sidebar-resize);
   }
 
   .ops-sidebar nav {
-    transition: background-size 220ms ease-out;
+    transition: background-size var(--ops-sidebar-resize);
   }
 
   .ops-sidebar-indicator {
-    transition: inset-inline-start 280ms cubic-bezier(0.2, 0.75, 0.25, 1),
-      inset-inline-end 280ms cubic-bezier(0.2, 0.75, 0.25, 1),
-      border-radius 220ms ease-out;
+    transition: inset-inline-start var(--ops-sidebar-resize),
+      inset-inline-end var(--ops-sidebar-resize),
+      border-radius var(--ops-sidebar-resize);
   }
 
   .ops-sidebar :is(.ops-sidebar-brand, .ops-sidebar-label, .ops-sidebar-section, .ops-sidebar-profile) {
-    transition: opacity 130ms ease-out;
+    transition: opacity 180ms ease-out 45ms;
+  }
+
+  .ops-sidebar:not(:hover, :has(:focus-visible)) :is(
+    .ops-sidebar-brand, .ops-sidebar-label, .ops-sidebar-section, .ops-sidebar-profile
+  ) {
+    transition-delay: 0ms;
   }
 }
 

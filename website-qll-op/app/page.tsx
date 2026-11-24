@@ -182,8 +182,8 @@ export default function Home() {
     if (!content || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const animation = content.animate(
-      [{ opacity: 0.65 }, { opacity: 1 }],
-      { duration: 220, easing: "ease-out" },
+      [{ opacity: 0.82 }, { opacity: 1 }],
+      { duration: 300, easing: "cubic-bezier(0.22, 0.55, 0.35, 1)" },
     );
 
     return () => animation.cancel();
@@ -245,10 +245,19 @@ export default function Home() {
         const minuteKey = `${dateStr} ${timeSlot}`;
         if (recordedTrafficMinuteRef.current === minuteKey) return;
 
-        const sampleMinute = new Date(Math.floor(observedAt / 60_000) * 60_000).toISOString();
-        const { error } = await supabase
-          .from("online_presence_samples")
-          .insert({ sample_minute: sampleMinute, online_count: fresh.users.length });
+        const minuteStart = Math.floor(observedAt / 60_000) * 60_000;
+        const sample = {
+          sample_minute: new Date(minuteStart).toISOString(),
+          online_count: fresh.users.length,
+        };
+        let { error } = await supabase.from("online_presence_samples").insert(sample);
+
+        // At the minute boundary, Postgres can still see this minute as being in the future.
+        if (error?.code === "42501" && observedAt - minuteStart < 5_000) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 2_000));
+          if (!presenceWriterRef.current) return;
+          ({ error } = await supabase.from("online_presence_samples").insert(sample));
+        }
 
         if (error?.code === "PGRST205" || error?.code === "42P01") {
           const fallback = await supabase.from("system_traffic_logs").upsert(
@@ -261,7 +270,10 @@ export default function Home() {
         }
         recordedTrafficMinuteRef.current = minuteKey;
       } catch (error) {
-        console.error("Lỗi đồng bộ CCU lên Supabase:", error);
+        const message = typeof error === "object" && error !== null && "message" in error
+          ? String(error.message)
+          : String(error);
+        console.warn("Lỗi đồng bộ CCU lên Supabase:", message);
       } finally {
         recordingTrafficRef.current = false;
       }
