@@ -1144,18 +1144,26 @@ const loadData = (forceFresh = false) => {
       loadSlotHistory();
       loadClassScheduleCounts();
 
-      // [TỐI ƯU BĂNG THÔNG] Giãn auto-refresh CSV từ 5 phút -> 30 phút để giảm
-      // Fast Origin Transfer. Người dùng vẫn bấm nút "Update" để tải tức thì khi cần.
-      const intervalId = setInterval(
-        () => {
-          loadData();
-        },
-        30 * 60 * 1000,
-      );
-      const classCountIntervalId = setInterval(
-        loadClassScheduleCounts,
-        30 * 1000,
-      );
+      const sheetRefreshMs = 30 * 60 * 1000;
+      const countRefreshMs = 60 * 1000;
+      let lastSheetRefresh = Date.now();
+      let lastCountRefresh = lastSheetRefresh;
+
+      const refreshVisibleData = () => {
+        if (document.visibilityState !== "visible") return;
+        const now = Date.now();
+        if (now - lastSheetRefresh >= sheetRefreshMs) {
+          lastSheetRefresh = now;
+          void loadData();
+        }
+        if (now - lastCountRefresh >= countRefreshMs) {
+          lastCountRefresh = now;
+          void loadClassScheduleCounts();
+        }
+      };
+
+      const refreshTimer = window.setInterval(refreshVisibleData, countRefreshMs);
+      document.addEventListener("visibilitychange", refreshVisibleData);
 
       // LẮNG NGHE REALTIME TỪ SUPABASE
       const slotHistorySubscription = supabase
@@ -1220,8 +1228,8 @@ const loadData = (forceFresh = false) => {
         .subscribe();
 
       return () => {
-        clearInterval(intervalId);
-        clearInterval(classCountIntervalId);
+        window.clearInterval(refreshTimer);
+        document.removeEventListener("visibilitychange", refreshVisibleData);
         supabase.removeChannel(slotHistorySubscription);
       };
     }
