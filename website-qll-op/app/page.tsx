@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } from "react";
 import Papa from "papaparse";
 import LoginScreen from "./LoginScreen";
+import TelegramUsernameNotice from "./TelegramUsernameNotice";
 import Sidebar, { navLabels, type NavKey } from "./Sidebar";
 import Header from "./Header";
 import AdminStats from "./AdminStats";
@@ -1860,42 +1861,7 @@ const loadData = (forceFresh = false) => {
       className={`flex h-screen font-vietnam overflow-hidden selection:bg-sky-500/30 relative z-0 transition-colors duration-0 ${theme === "dark" ? "bg-[#070b14] text-slate-300" : "bg-[#F4F7FE] text-slate-700"}`}
     >
       {showUsernameNotice && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-          <div
-            className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${
-              theme === "dark"
-                ? "border-white/10 bg-[#151b2b] text-slate-200"
-                : "border-slate-100 bg-white text-slate-700"
-            }`}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="username-notice-title"
-          >
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/15 text-3xl">
-              👤
-            </div>
-            <h3
-              id="username-notice-title"
-              className={`mb-3 text-center text-lg font-bold ${
-                theme === "dark" ? "text-white" : "text-slate-800"
-              }`}
-            >
-              Lưu ý đặt tên đăng nhập
-            </h3>
-            <p className="mb-6 text-center text-sm leading-relaxed">
-              Anh/chị QLL đăng nhâp website theo đúng USERNAME như trên TELEGRAM để nhận được thông báo từ hệ thống nhé ạ !
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setShowUsernameNotice(false);
-              }}
-              className="w-full rounded-xl bg-sky-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition-colors hover:bg-sky-600 active:scale-[0.98]"
-            >
-              Đã hiểu
-            </button>
-          </div>
-        </div>
+        <TelegramUsernameNotice onConfirm={() => setShowUsernameNotice(false)} />
       )}
 
       <div
