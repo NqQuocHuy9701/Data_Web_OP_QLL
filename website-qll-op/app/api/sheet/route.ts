@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import Papa from 'papaparse';
 import { createHash } from 'crypto';
 
+// Reuse the transformation only after fetching and comparing the full input.
+// Bound retained data per warm instance, including both input and output.
+const MAX_PREPARED_CSV_CHARS = 2_000_000;
+let preparedCsv: { source: string; output: string; etag: string } | undefined;
+
 // Các cột client THỰC SỰ dùng (quét từ toàn bộ code). Chỉ giữ các cột này
 // để giảm kích thước payload (bỏ cột thừa trong sheet). An toàn: nếu thiếu cột
 // nào thì client đã có fallback "|| ''" nên không vỡ UI.
@@ -51,60 +56,70 @@ export async function GET(request: Request) {
     // [TỐI ƯU MỨC 1] Lọc cột thừa + bỏ dòng rỗng NGAY TẠI SERVER để giảm payload.
     // Giữ nguyên định dạng CSV (client vẫn Papa.parse như cũ, không đổi gì phía client).
     // Có fallback: nếu xử lý lỗi -> trả CSV gốc để KHÔNG làm vỡ web.
-    let outputCsv = text;
-    try {
-      const parsed = Papa.parse<string[]>(text, {
-        header: false,
-        skipEmptyLines: true,
-      });
-
-      if (parsed.data && parsed.data.length > 0) {
-        const headers = parsed.data[0].map((header) => String(header || "").trim());
-        const columnIndexes = new Map<string, number>();
-
-        headers.forEach((header, index) => {
-          if (header && !columnIndexes.has(header)) {
-            columnIndexes.set(header, index);
-          }
+    const cached = preparedCsv?.source === text ? preparedCsv : undefined;
+    let outputCsv = cached?.output ?? text;
+    let canMemoize = true;
+    if (!cached) {
+      try {
+        const parsed = Papa.parse<string[]>(text, {
+          header: false,
+          skipEmptyLines: true,
         });
 
-        // Sheet hiện có hai cột "Trình độ": cột G là cột cũ, cột N là cột mới.
-        // Cột N trong sheet tương ứng index 13 (A = 0).
-        const TRINH_DO_COLUMN_INDEX = 13;
-        if (headers[TRINH_DO_COLUMN_INDEX]?.trim() === "Trình độ") {
-          columnIndexes.set("Trình độ", TRINH_DO_COLUMN_INDEX);
-        }
+        if (parsed.data && parsed.data.length > 0) {
+          const headers = parsed.data[0].map((header) => String(header || "").trim());
+          const columnIndexes = new Map<string, number>();
 
-        const cols = KEEP_COLUMNS.filter((c) => columnIndexes.has(c));
-
-        if (cols.length > 0) {
-          const slimRows = parsed.data.slice(1).map((row) => {
-            const maLopIndex = columnIndexes.get("Mã lớp");
-            if (maLopIndex === undefined) return null;
-            if (!String(row[maLopIndex] || "").trim()) return null;
-
-            const outputRow: Record<string, string> = {};
-            for (const c of cols) {
-              const columnIndex = columnIndexes.get(c);
-              outputRow[c] = columnIndex === undefined
-                ? ""
-                : String(row[columnIndex] || "").trim();
+          headers.forEach((header, index) => {
+            if (header && !columnIndexes.has(header)) {
+              columnIndexes.set(header, index);
             }
-            return outputRow;
-          }).filter((row): row is Record<string, string> => row !== null);
+          });
 
-          outputCsv = Papa.unparse(slimRows, { columns: cols });
+          // Sheet hiện có hai cột "Trình độ": cột G là cột cũ, cột N là cột mới.
+          // Cột N trong sheet tương ứng index 13 (A = 0).
+          const TRINH_DO_COLUMN_INDEX = 13;
+          if (headers[TRINH_DO_COLUMN_INDEX]?.trim() === "Trình độ") {
+            columnIndexes.set("Trình độ", TRINH_DO_COLUMN_INDEX);
+          }
+
+          const cols = KEEP_COLUMNS.filter((c) => columnIndexes.has(c));
+
+          if (cols.length > 0) {
+            const slimRows = parsed.data.slice(1).map((row) => {
+              const maLopIndex = columnIndexes.get("Mã lớp");
+              if (maLopIndex === undefined) return null;
+              if (!String(row[maLopIndex] || "").trim()) return null;
+
+              const outputRow: Record<string, string> = {};
+              for (const c of cols) {
+                const columnIndex = columnIndexes.get(c);
+                outputRow[c] = columnIndex === undefined
+                  ? ""
+                  : String(row[columnIndex] || "").trim();
+              }
+              return outputRow;
+            }).filter((row): row is Record<string, string> => row !== null);
+
+            outputCsv = Papa.unparse(slimRows, { columns: cols });
+          }
         }
+      } catch (e) {
+        canMemoize = false;
+        console.error("Lỗi lọc CSV, dùng bản gốc:", e);
+        outputCsv = text;
       }
-    } catch (e) {
-      console.error("Lỗi lọc CSV, dùng bản gốc:", e);
-      outputCsv = text;
     }
 
     // [CÁCH A - ETag/304] Tính "vân tay" (hash) của dữ liệu đã lọc.
     // Nếu client gửi If-None-Match khớp -> dữ liệu KHÔNG đổi -> trả 304 rỗng (0 byte body),
     // không tốn Fast Origin Transfer. Chỉ khi sheet thật sự thay đổi mới tải lại full.
-    const etag = '"' + createHash("sha1").update(outputCsv).digest("hex") + '"';
+    const etag = cached?.etag ?? '"' + createHash("sha1").update(outputCsv).digest("hex") + '"';
+    if (!cached) {
+      preparedCsv = canMemoize && text.length + outputCsv.length <= MAX_PREPARED_CSV_CHARS
+        ? { source: text, output: outputCsv, etag }
+        : undefined;
+    }
     const ifNoneMatch = request.headers.get("if-none-match");
 
     const cacheControl = forceFresh
