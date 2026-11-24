@@ -14,7 +14,7 @@ import CountdownTimer from "./CountdownTimer";
 import SlotHeldTable from "./SlotHeldTable";
 import AdminManagement from "./AdminManagement";
 import HistoryTable from "./HistoryTable";
-import SlotModal from "./SlotModal";
+import SlotModal, { type SlotModalHandle } from "./SlotModal";
 import StudentAddRequestsPage from "./StudentAddRequestsPage";
 import StudentAddRequestsQLLPage from "./StudentAddRequestsQLLPage";
 import ErrorPopup from "./ErrorPopup";
@@ -466,14 +466,7 @@ export default function Home() {
   const [isHoldingSlot, setIsHoldingSlot] = useState<string | null>(null);
   const [isAddingClass, setIsAddingClass] = useState<string | null>(null);
 
-  const [showModal, setShowModal] = useState(false);
-  const [selectedRowForSlot, setSelectedRowForSlot] = useState<any>(null);
-  const [slotActionMode, setSlotActionMode] = useState<"hold" | "add-class">(
-    "hold",
-  );
-  const [slotAvailableCount, setSlotAvailableCount] = useState(0);
-  const [inputValue, setInputValue] = useState("");
-  const [inputError, setInputError] = useState("");
+  const slotModalRef = useRef<SlotModalHandle>(null);
   const [successMessage, setSuccessMessage] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -1667,14 +1660,9 @@ const loadData = (forceFresh = false) => {
     return filteredHistoryData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredHistoryData, currentPage]);
 
-  const handleOpenPopup = (row: any, availableSlots: number) => {
+  const handleOpenPopup = (row: Record<string, unknown>, availableSlots: number) => {
     if (availableSlots <= 0) return;
-    setSlotActionMode("hold");
-    setSelectedRowForSlot(row);
-    setSlotAvailableCount(availableSlots);
-    setInputValue("");
-    setInputError("");
-    setShowModal(true);
+    slotModalRef.current?.open(row, "hold");
   };
 
   const handleOpenClassRequest = (
@@ -1682,34 +1670,16 @@ const loadData = (forceFresh = false) => {
     availableSlots: number,
   ) => {
     if (availableSlots <= 0) return;
-    setSlotActionMode("add-class");
-    setSelectedRowForSlot(row);
-    setInputValue("");
-    setInputError("");
-    setShowModal(true);
+    slotModalRef.current?.open(row, "add-class");
   };
 
-  const handleConfirmKeepSlot = async () => {
-    const cleanVal = inputValue.trim();
-    if (!cleanVal) {
-      setInputError("Vui lòng nhập SID hoặc CID!");
-      return;
-    }
-    if (!/^\d+$/.test(cleanVal)) {
-      setInputError("SID hoặc CID chỉ được phép chứa các chữ số!");
-      return;
-    }
-    if (cleanVal.length > 8) {
-      setInputError("Tối đa form 8 số!");
-      return;
-    }
-
-    const row = selectedRowForSlot;
-    if (!row) {
-      setInputError("Không tìm thấy thông tin lớp cần xử lý.");
-      return;
-    }
-    const maLop = row["Mã lớp"];
+  const handleConfirmKeepSlot = async (
+    row: Record<string, unknown>,
+    slotActionMode: "hold" | "add-class",
+    cleanVal: string,
+  ) => {
+    if (isSubmitting) return;
+    const maLop = String(row["Mã lớp"] ?? "");
 
     const currentHeldCount = getActiveHeldCount(maLop);
     const currentAvailable = calculateAvailableSlots(row, currentHeldCount);
@@ -1720,13 +1690,12 @@ const loadData = (forceFresh = false) => {
           ? `⚠️ Chậm chân mất rồi! Vừa có một QLL khác nhanh tay giữ slot cuối cùng của lớp ${maLop}. Vui lòng f5 hoặc chờ lớp khác nhé!`
           : `Lớp ${maLop} đã hết slot còn trống.`,
       );
-      setShowModal(false);
+      slotModalRef.current?.close();
       return;
     }
 
     // [TỐI ƯU V3] Bật trạng thái khóa nút để chống spam click
     setIsSubmitting(true);
-    setShowModal(false);
     if (slotActionMode === "hold") {
       setIsHoldingSlot(maLop);
     } else {
@@ -1770,6 +1739,10 @@ const loadData = (forceFresh = false) => {
       );
 
       const result = await response.json();
+      if (response.status === 409 && typeof result.error === "string") {
+        return result.error;
+      }
+      slotModalRef.current?.close();
 
       if (!result.success) {
         alert(
@@ -1796,6 +1769,7 @@ const loadData = (forceFresh = false) => {
       );
       setTimeout(() => setSuccessMessage(""), 4000);
     } catch (error) {
+      slotModalRef.current?.close();
       console.error("Lỗi kết nối:", error);
       alert(
         slotActionMode === "add-class"
@@ -1807,7 +1781,6 @@ const loadData = (forceFresh = false) => {
       setIsSubmitting(false);
       setIsHoldingSlot(null);
       setIsAddingClass(null);
-      setSelectedRowForSlot(null);
     }
   };
 
@@ -2186,20 +2159,12 @@ const loadData = (forceFresh = false) => {
         />
       </main>
 
-      {showModal && (
-        <SlotModal
-          theme={theme}
-          actionMode={slotActionMode}
-          selectedRowForSlot={selectedRowForSlot}
-          inputValue={inputValue}
-          setInputValue={setInputValue}
-          inputError={inputError}
-          setInputError={setInputError}
-          setShowModal={setShowModal}
-          handleConfirmKeepSlot={handleConfirmKeepSlot}
-          isSubmitting={isSubmitting}
-        />
-      )}
+      <SlotModal
+        ref={slotModalRef}
+        theme={theme}
+        onConfirm={handleConfirmKeepSlot}
+        isSubmitting={isSubmitting}
+      />
 
       <ConfirmDialog
         open={!!recallTarget}

@@ -222,7 +222,34 @@ export async function POST(request: Request) {
     timestamp,
   };
 
+  const duplicateResponse = () => NextResponse.json(
+    { success: false, error: "SID này đã được báo thêm vào lớp này." },
+    { status: 409 },
+  );
+
   try {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      return NextResponse.json(
+        { success: false, error: "Server chưa cấu hình kết nối để kiểm tra SID trùng." },
+        { status: 503 },
+      );
+    }
+    const lookup = new URL(SUPABASE_ENDPOINT);
+    lookup.search = new URLSearchParams({
+      select: "id",
+      ma_lop: `eq.${payload.ma_lop}`,
+      sid_cid: `eq.${sid_cid}`,
+      limit: "1",
+    }).toString();
+    const existing = await fetch(lookup, {
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+      cache: "no-store",
+    });
+    if (!existing.ok) throw new Error(`Supabase duplicate lookup failed (${existing.status}).`);
+    const matches: { id: number }[] = await existing.json();
+    if (matches.length) return duplicateResponse();
+
     const response = await fetch(SUPABASE_ENDPOINT, {
       method: "POST",
       headers: {
@@ -236,6 +263,13 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
+      if (response.status === 409) {
+        const error = await response.json();
+        if (error.code === "PT409" && error.message === "add_class_duplicate") {
+          return duplicateResponse();
+        }
+        throw new Error("Supabase rejected the Add lớp request.");
+      }
       const error = await response.text();
       console.error("Supabase rejected Add lớp request:", error);
       return NextResponse.json(

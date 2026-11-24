@@ -1,36 +1,69 @@
 "use client";
 
-import React from "react";
+import React, { useImperativeHandle, useState } from "react";
+
+type SlotActionMode = "hold" | "add-class";
+type SlotRow = Record<string, unknown>;
+
+export interface SlotModalHandle {
+  open: (row: SlotRow, actionMode: SlotActionMode) => void;
+  close: () => void;
+}
 
 interface SlotModalProps {
+  ref: React.Ref<SlotModalHandle>;
   theme: "light" | "dark";
-  actionMode: "hold" | "add-class";
-  selectedRowForSlot: any;
-  inputValue: string;
-  setInputValue: (val: string) => void;
-  inputError: string;
-  setInputError: (val: string) => void;
-  setShowModal: (val: boolean) => void;
-  handleConfirmKeepSlot: () => void;
+  onConfirm: (row: SlotRow, actionMode: SlotActionMode, sidCid: string) => Promise<string | void>;
   isSubmitting: boolean;
 }
 
 export default function SlotModal({
+  ref,
   theme,
-  actionMode,
-  selectedRowForSlot,
-  inputValue,
-  setInputValue,
-  inputError,
-  setInputError,
-  setShowModal,
-  handleConfirmKeepSlot,
+  onConfirm,
   isSubmitting,
 }: SlotModalProps) {
+  const [selection, setSelection] = useState<{ row: SlotRow; actionMode: SlotActionMode } | null>(null);
+  const [inputValue, setInputValue] = useState("");
+  const [inputError, setInputError] = useState("");
+
+  useImperativeHandle(ref, () => ({
+    open(row, actionMode) {
+      setInputValue("");
+      setInputError("");
+      setSelection({ row, actionMode });
+    },
+    close() {
+      setSelection(null);
+    },
+  }), []);
+
+  if (!selection) return null;
+  const { row, actionMode } = selection;
   const actionLabel = actionMode === "hold" ? "Giữ Slot" : "Add lớp";
 
+  async function confirm() {
+    const sidCid = inputValue.trim();
+    if (!sidCid) {
+      setInputError("Vui lòng nhập SID hoặc CID!");
+      return;
+    }
+    if (!/^\d+$/.test(sidCid)) {
+      setInputError("SID hoặc CID chỉ được phép chứa các chữ số!");
+      return;
+    }
+    if (sidCid.length > 8) {
+      setInputError("Tối đa form 8 số!");
+      return;
+    }
+    const error = await onConfirm(row, actionMode, sidCid);
+    if (error) setInputError(error);
+  }
+
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 ops-dialog-overlay">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 backdrop-blur-sm" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-slate-900/60 ops-dialog-overlay" />
       <div
         className={`ops-dialog-panel ${actionMode === "add-class" ? "ops-book-panel" : ""} rounded-3xl p-6 w-full max-w-md shadow-2xl border relative ${
           theme === "dark"
@@ -48,12 +81,12 @@ export default function SlotModal({
             <h3
               className={`text-lg font-bold transition-colors duration-0 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
             >
-              {actionMode === "hold" ? "Xác nhận Giữ Slot" : "Thêm lớp vào lịch"}
+              {actionMode === "hold" ? "Xác nhận Giữ Slot" : "Thêm HS vào lớp"}
             </h3>
             <p className="text-xs text-slate-500">
               Mã lớp:{" "}
               <strong className="text-sky-500">
-                {selectedRowForSlot?.["Mã lớp"]}
+                {String(row["Mã lớp"] ?? "")}
               </strong>
             </p>
           </div>
@@ -64,7 +97,8 @@ export default function SlotModal({
             <label
               className={`block text-xs font-bold uppercase tracking-wider mb-1.5 transition-colors duration-0 ${theme === "dark" ? "text-slate-400" : "text-slate-700"}`}
             >
-              Nhập SID hoặc CID học sinh <span className="text-red-500">*</span>
+              {actionMode === "hold" ? "Nhập SID hoặc CID học sinh" : "Nhập SID học sinh"}{" "}
+              <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -86,7 +120,7 @@ export default function SlotModal({
               autoFocus
             />
             {inputError && (
-              <p className="text-[11px] font-bold text-red-500 mt-1.5">
+              <p role="alert" className="text-[11px] font-bold text-red-500 mt-1.5">
                 {inputError}
               </p>
             )}
@@ -96,7 +130,8 @@ export default function SlotModal({
         <div className="flex items-center justify-end gap-3 mt-6">
           <button
             type="button"
-            onClick={() => setShowModal(false)}
+            disabled={isSubmitting}
+            onClick={() => setSelection(null)}
             className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-colors duration-0 cursor-pointer border ${
               theme === "dark"
                 ? "bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/5"
@@ -108,7 +143,7 @@ export default function SlotModal({
           {/* [TỐI ƯU V3] Khóa nút bấm khi đang Submitting */}
           <button
             type="button"
-            onClick={handleConfirmKeepSlot}
+            onClick={confirm}
             disabled={isSubmitting}
             className={`ops-action px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-bold text-xs shadow-lg shadow-orange-500/30 cursor-pointer ${
               isSubmitting ? "opacity-50 cursor-not-allowed" : ""

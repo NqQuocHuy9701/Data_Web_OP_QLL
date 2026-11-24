@@ -64,18 +64,72 @@ export async function GET(request: Request) {
 
 // 2. GIỮ SLOT MỚI
 export async function POST(request: Request) {
+  const body = await request.json().catch(() => null);
+  const sid = typeof body?.note === "string"
+    ? /^SID\/CID:\s*(\d{1,8})\s*$/i.exec(body.note)?.[1]
+    : undefined;
+  if (!sid || typeof body?.ma_lop !== "string" || !body.ma_lop.trim()) {
+    return NextResponse.json(
+      { success: false, error: "Thiếu mã lớp hoặc SID/CID không hợp lệ." },
+      { status: 400 },
+    );
+  }
+
+  const classCode = body.ma_lop.trim();
+  const duplicateResponse = (sameClass: boolean) => NextResponse.json({
+    success: false,
+    error: sameClass
+      ? "Học sinh này đang giữ lớp này trong vòng 24 giờ."
+      : "SID/CID này đã giữ một lớp khác trong vòng 24 giờ.",
+  }, { status: 409 });
+
   try {
-    const body = await request.json();
+    const now = Date.now();
+    const lookup = new URL(SUPABASE_ENDPOINT);
+    lookup.search = new URLSearchParams({
+      select: "ma_lop",
+      note: `ilike.SID/CID: ${sid}`,
+      timestamp: `gt.${now - 86_400_000}`,
+      or: "(is_cancelled.is.null,is_cancelled.eq.false)",
+    }).toString();
+    const headers = {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    };
+    const existing = await fetch(lookup, { headers, cache: "no-store" });
+    if (!existing.ok) throw new Error(await existing.text());
+    const holds: { ma_lop: string }[] = await existing.json();
+    if (holds.length) {
+      return duplicateResponse(holds.some(
+        (hold) => hold.ma_lop?.trim().toUpperCase() === classCode.toUpperCase(),
+      ));
+    }
+
     const res = await fetch(SUPABASE_ENDPOINT, {
       method: "POST",
       headers: {
+        ...headers,
         "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
         "Prefer": "return=minimal"
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        ma_lop: classCode,
+        mon_hoc: body.mon_hoc,
+        nguoi_giu: body.nguoi_giu,
+        team: body.team,
+        ngay_bat_dau: body.ngay_bat_dau,
+        ngay_het_han: body.ngay_het_han,
+        note: `SID/CID: ${sid}`,
+        timestamp: now,
+      }),
     });
+    if (res.status === 409) {
+      const error = await res.json();
+      if (error.code === "PT409" && ["hold_same_class", "hold_other_class"].includes(error.message)) {
+        return duplicateResponse(error.message === "hold_same_class");
+      }
+      throw new Error("Supabase rejected the slot hold.");
+    }
     if (!res.ok) throw new Error(await res.text());
     return NextResponse.json({ success: true });
   } catch (err: any) {
