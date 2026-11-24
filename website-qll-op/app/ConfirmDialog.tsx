@@ -62,7 +62,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className={`px-5 py-2.5 rounded-xl font-bold text-xs cursor-pointer border transition-colors ${
+            className={`ops-action px-5 py-2.5 rounded-full font-bold text-xs cursor-pointer border ${
               theme === "dark"
                 ? "bg-[#0a0f1c] border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/5"
                 : "bg-slate-100 hover:bg-slate-200 text-slate-600 border-transparent"
@@ -75,7 +75,7 @@ export default function ConfirmDialog({
             onClick={onConfirm}
             disabled={pending}
             aria-busy={pending}
-            className="ops-action inline-grid place-items-center px-5 py-2.5 bg-rose-500 enabled:hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-rose-500/30 enabled:cursor-pointer disabled:opacity-75"
+            className="ops-action inline-grid place-items-center px-5 py-2.5 bg-rose-500 enabled:hover:bg-rose-600 text-white rounded-full font-bold text-xs shadow-lg shadow-rose-500/30 enabled:cursor-pointer disabled:opacity-75"
           >
             <span className={pending ? "invisible [grid-area:1/1]" : "[grid-area:1/1]"}>{confirmText}</span>
             {pending && (

@@ -129,7 +129,7 @@ export default function MyDashboard({
 
         <button
           onClick={onGoKeepSlot}
-          className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-colors cursor-pointer active:scale-95 flex items-center gap-2 shrink-0"
+          className="ops-action px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-bold text-sm shadow-lg shadow-orange-500/30 cursor-pointer flex items-center gap-2 shrink-0"
         >
           📌 Giữ slot mới
         </button>
@@ -196,7 +196,7 @@ export default function MyDashboard({
                   </span>
                   <button
                     onClick={() => onRequestRecall(m.row)}
-                    className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-sm transition-colors cursor-pointer active:scale-95"
+                    className="ops-action ops-action-soft ops-action-danger px-3 py-1.5 rounded-full font-bold text-xs cursor-pointer"
                   >
                     🔄 Thu hồi
                   </button>
@@ -244,7 +244,7 @@ export default function MyDashboard({
                   </span>
                   <button
                     onClick={() => onRequestRecall(m.row)}
-                    className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-sm transition-colors cursor-pointer active:scale-95"
+                    className="ops-action ops-action-soft ops-action-danger px-3 py-1.5 rounded-full font-bold text-xs cursor-pointer"
                   >
                     🔄 Thu hồi
                   </button>

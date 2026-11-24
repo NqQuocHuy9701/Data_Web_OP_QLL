@@ -308,7 +308,7 @@ export default function StudentAddRequestsPage({
                 type="button"
                 aria-pressed={statusFilter === filter}
                 onClick={() => setStatusFilter(filter)}
-                className={`inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-lg border px-2.5 text-xs font-semibold motion-safe:transition-colors motion-safe:duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                className={`ops-action inline-flex min-h-9 items-center gap-2 whitespace-nowrap rounded-full border px-2.5 text-xs font-semibold motion-safe:transition-colors motion-safe:duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
                   statusFilter === filter
                     ? theme === "dark"
                       ? "border-orange-500/50 bg-orange-500/15 text-orange-200"
@@ -332,7 +332,7 @@ export default function StudentAddRequestsPage({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm mã lớp, SID/CID, QLL..."
-              className={`w-52 min-w-0 px-3 py-2 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-orange-500/30 xl:w-64 ${
+              className={`ops-field w-52 min-w-0 px-3 py-2 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-orange-500/30 xl:w-64 ${
                 theme === "dark"
                   ? "bg-[#0a0f1c] border-white/10 text-white placeholder:text-slate-500"
                   : "bg-white border-slate-200 text-slate-700 placeholder:text-slate-400"
@@ -350,7 +350,7 @@ export default function StudentAddRequestsPage({
                   setRefreshing(false);
                 }
               }}
-              className={`inline-flex w-32 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-xs font-bold disabled:opacity-70 ${
+              className={`ops-action inline-flex w-32 shrink-0 items-center justify-center gap-1.5 rounded-full border px-2 py-2 text-xs font-bold disabled:opacity-70 ${
                 theme === "dark"
                   ? "border-white/10 text-slate-300 hover:bg-white/5"
                   : "border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -542,7 +542,7 @@ export default function StudentAddRequestsPage({
                               onClick={() =>
                                 setConfirmTarget({ request, action: "done" })
                               }
-                              className="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold disabled:opacity-50"
+                              className="ops-action ops-action-soft ops-action-success px-3 py-2 rounded-full text-xs font-bold disabled:opacity-50"
                             >
                               Đã xếp
                             </button>
@@ -552,7 +552,7 @@ export default function StudentAddRequestsPage({
                               onClick={() =>
                                 setConfirmTarget({ request, action: "cancel" })
                               }
-                              className="px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold disabled:opacity-50"
+                              className="ops-action ops-action-soft ops-action-danger px-3 py-2 rounded-full text-xs font-bold disabled:opacity-50"
                             >
                               Hủy
                             </button>

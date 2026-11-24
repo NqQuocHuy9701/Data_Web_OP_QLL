@@ -175,15 +175,15 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<string>("");
 
   const [activeNav, setActiveNav] = useState<NavKey>("Giữ Slot");
-  const mainRef = useRef<HTMLElement>(null);
+  const navigationFadeRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    const content = mainRef.current?.querySelector(":scope > header + *");
-    if (!content || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const fade = navigationFadeRef.current;
+    if (!fade || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const animation = content.animate(
-      [{ opacity: 0.82 }, { opacity: 1 }],
-      { duration: 300, easing: "cubic-bezier(0.22, 0.55, 0.35, 1)" },
+    const animation = fade.animate(
+      [{ opacity: 0.14 }, { opacity: 0 }],
+      { duration: 220, easing: "ease-out" },
     );
 
     return () => animation.cancel();
@@ -326,6 +326,7 @@ export default function Home() {
   }, [words]);
 
   const [slotHistoryData, setSlotHistoryData] = useState<any[]>([]);
+  const hasLoadedSlotHistoryRef = useRef(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   const [completedSlots, setCompletedSlots] = useState<Record<string, boolean>>(
@@ -1118,6 +1119,7 @@ const loadData = (forceFresh = false) => {
       const result = await response.json();
 
       if (result.success && result.data) {
+        hasLoadedSlotHistoryRef.current = true;
         setSlotHistoryData((prevData) => {
           const doneIds = new Set(
             prevData.filter((item) => item.is_done).map((item) => item.id),
@@ -1998,13 +2000,13 @@ const loadData = (forceFresh = false) => {
         adminUsername={adminUsername}
         namecode={namecode}
         teamLead={teamLead}
-        loadSlotHistory={loadSlotHistory}
+        loadSlotHistory={() => void loadSlotHistory(hasLoadedSlotHistoryRef.current)}
         handleLogout={handleLogout}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
 
-      <main ref={mainRef} className="ops-main flex-1 flex flex-col h-screen overflow-hidden relative z-10 min-w-0">
+      <main data-theme={theme} className="ops-main flex-1 flex flex-col h-screen overflow-hidden relative z-10 min-w-0">
         <Header
           theme={theme}
           toggleTheme={toggleTheme}
@@ -2177,6 +2179,11 @@ const loadData = (forceFresh = false) => {
             handleOpenClassRequest={handleOpenClassRequest}
           />
         )}
+        <div
+          ref={navigationFadeRef}
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-0 z-10 opacity-0 ${theme === "dark" ? "bg-[#0e1320]" : "bg-white"}`}
+        />
       </main>
 
       {showModal && (

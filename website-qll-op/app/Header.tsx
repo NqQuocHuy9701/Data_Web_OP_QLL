@@ -70,7 +70,7 @@ export default function Header({
         {title}
       </div>
 
-      <div className="relative min-w-0 max-w-[24rem] flex-1 group">
+      <div className="ops-field relative min-w-0 max-w-[24rem] flex-1 rounded-full group">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <span className="text-slate-400 group-focus-within:text-sky-500 transition-colors">
             🔍
@@ -78,6 +78,7 @@ export default function Header({
         </div>
         <input
           type="text"
+          aria-label="Tìm kiếm"
           placeholder=""
           className={`h-8 w-full pl-9 pr-3 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-colors duration-0 text-xs font-medium ${
             theme === "dark"

@@ -424,15 +424,15 @@ body {
   display: contents;
 }
 
-@supports (backdrop-filter: blur(9px)) {
+@supports (backdrop-filter: blur(5px)) {
   .ops-sidebar[data-theme="dark"] {
     background-color: rgb(14 19 32 / 46%);
-    backdrop-filter: blur(9px);
+    backdrop-filter: blur(5px);
   }
 
   .ops-sidebar[data-theme="light"] {
     background-color: rgb(255 255 255 / 55%);
-    backdrop-filter: blur(9px);
+    backdrop-filter: blur(5px);
   }
 
   .ops-sidebar[data-theme="dark"] .ops-sidebar-footer {
@@ -606,6 +606,63 @@ body {
   animation: none;
 }
 
+.ops-action-soft {
+  color: var(--ops-action-text);
+  background-color: rgb(var(--ops-action-tint) / 10%);
+  border: 1px solid rgb(var(--ops-action-tint) / 30%);
+}
+
+.ops-action-soft:enabled:is(:hover, :focus-visible) {
+  background-color: rgb(var(--ops-action-tint) / 18%);
+  border-color: rgb(var(--ops-action-tint) / 50%);
+}
+
+.ops-action-success {
+  --ops-action-tint: 5 150 105;
+  --ops-action-text: #065f46;
+}
+
+.ops-action-danger {
+  --ops-action-tint: 225 29 72;
+  --ops-action-text: #9f1239;
+}
+
+.ops-main[data-theme="dark"] .ops-action-success {
+  --ops-action-tint: 52 211 153;
+  --ops-action-text: #6ee7b7;
+}
+
+.ops-main[data-theme="dark"] .ops-action-danger {
+  --ops-action-tint: 251 113 133;
+  --ops-action-text: #fda4af;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ops-field {
+    --ops-field-scale: 1.015;
+    transition: translate 180ms ease-out, scale 180ms ease-out, box-shadow 180ms ease-out,
+      border-color 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out;
+  }
+
+  button.ops-field {
+    --ops-field-scale: 1.045;
+  }
+
+  .ops-field:is(:focus-within, [aria-expanded="true"]) {
+    translate: 0 -2px;
+    scale: var(--ops-field-scale);
+    box-shadow: 0 5px 12px rgb(15 23 42 / 24%);
+  }
+
+  @media (hover: hover) {
+    .ops-field:hover {
+      translate: 0 -2px;
+      scale: var(--ops-field-scale);
+      box-shadow: 0 5px 12px rgb(15 23 42 / 24%);
+    }
+  }
+}
+
 @keyframes class-schedule-book {
   0%, 100% { transform: rotate(0); }
   50% { transform: rotate(-12deg); }
@@ -666,8 +723,31 @@ body {
   :is(.ops-dialog-panel, .ops-online-row) { animation: ops-enter 200ms ease-out; }
   .ops-online-row-leaving { display: table-row; animation: ops-leave 180ms ease-in both; }
   .ops-success-message { animation: ops-notification 260ms ease-out; }
-  .ops-action { transition: transform 130ms ease-out, background-color 130ms ease-out; }
-  .ops-action:enabled:active { transform: translateY(1px) scale(.98); }
+  .ops-action {
+    transition: translate 180ms cubic-bezier(0.2, 0.75, 0.25, 1),
+      scale 180ms cubic-bezier(0.2, 0.75, 0.25, 1),
+      background-color 150ms ease-out, border-color 150ms ease-out, box-shadow 180ms ease-out;
+  }
+
+  .ops-action:enabled:focus-visible {
+    translate: 0 -2px;
+    scale: 1.07;
+    box-shadow: 0 5px 12px rgb(15 23 42 / 24%);
+  }
+
+  @media (hover: hover) {
+    .ops-action:enabled:hover {
+      translate: 0 -2px;
+      scale: 1.07;
+      box-shadow: 0 5px 12px rgb(15 23 42 / 24%);
+    }
+  }
+
+  .ops-action:enabled:active {
+    translate: 0 1px;
+    scale: 0.97;
+    transition-duration: 80ms;
+  }
   .ops-action-icon { transition: transform 150ms ease-out; }
   .ops-action:enabled:active .ops-action-icon { transform: translateY(-2px); }
 }

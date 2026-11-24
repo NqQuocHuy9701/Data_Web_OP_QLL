@@ -63,7 +63,7 @@ export default function SlotHeldTable({
             disabled={refreshing}
             aria-busy={refreshing}
             onClick={onRefresh}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
+            className={`ops-action rounded-full border px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
               theme === "dark" ? "border-white/10 text-slate-300 hover:bg-white/5" : "border-slate-200 text-slate-700 hover:bg-slate-50"
             }`}
           >
@@ -220,7 +220,7 @@ export default function SlotHeldTable({
                         {canRecall ? (
                           <button
                             onClick={() => onRequestRecall?.(row)}
-                            className="px-4 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-sm transition-colors cursor-pointer active:scale-95"
+                            className="ops-action ops-action-soft ops-action-danger px-4 py-1.5 rounded-full font-bold text-xs cursor-pointer"
                           >
                             🔄 Thu hồi
                           </button>

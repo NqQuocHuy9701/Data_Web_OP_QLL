@@ -434,7 +434,7 @@ export default function HistoryTable({
                         ) : (
                           <button
                             onClick={() => handleMarkAsDone(row.id)}
-                            className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-sm transition-colors cursor-pointer active:scale-95"
+                            className="ops-action ops-action-soft ops-action-success px-4 py-1.5 rounded-full font-bold text-xs cursor-pointer"
                           >
                             Đã xếp (Done)
                           </button>

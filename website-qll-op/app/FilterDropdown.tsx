@@ -39,7 +39,7 @@ export default function FilterDropdown({
         type="button"
         aria-expanded={isOpen}
         onClick={() => setOpenDropdown(isOpen ? null : dropdownKey)}
-        className={`px-3.5 py-2 border rounded-xl font-semibold shadow-sm text-xs flex items-center gap-2 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 ${
+        className={`ops-field px-3.5 py-2 border rounded-xl font-semibold shadow-sm text-xs flex items-center gap-2 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 ${
           isDark
             ? isActive
               ? "border-sky-500/60 bg-sky-500/10 text-sky-200"

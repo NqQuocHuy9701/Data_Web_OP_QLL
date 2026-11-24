@@ -100,7 +100,7 @@ export default function AdminManagement({
 
         <button
           type="submit"
-          className="ops-action w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 cursor-pointer"
+          className="ops-action w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-bold text-sm shadow-lg shadow-orange-500/30 cursor-pointer"
         >
           <span aria-hidden="true" className="ops-action-icon inline-block mr-2">＋</span>
           Thêm Tài Khoản Admin

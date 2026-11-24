@@ -300,8 +300,9 @@ export default function MainDataTable({
 
               <button
                 type="button"
+                aria-pressed={filterToday}
                 onClick={() => setFilterToday(!filterToday)}
-                className={`px-4 py-2 border rounded-xl font-bold text-xs flex items-center gap-2 focus:outline-none transition-colors duration-0 active:scale-95 ${
+                className={`ops-field px-4 py-2 border rounded-xl font-bold text-xs flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
                   filterToday
                     ? theme === "dark"
                       ? "bg-orange-500/20 border-orange-500/30 text-orange-400"

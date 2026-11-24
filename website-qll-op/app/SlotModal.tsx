@@ -110,7 +110,7 @@ export default function SlotModal({
             type="button"
             onClick={handleConfirmKeepSlot}
             disabled={isSubmitting}
-            className={`ops-action px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-orange-500/30 cursor-pointer ${
+            className={`ops-action px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-bold text-xs shadow-lg shadow-orange-500/30 cursor-pointer ${
               isSubmitting ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
