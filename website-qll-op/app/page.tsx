@@ -368,6 +368,7 @@ export default function Home() {
   // TẢI VÀ VẼ LƯU VẾT TRUY CẬP (TRAFFIC ANALYTICS) TỪ SUPABASE
   // =====================================================================
   const [todayChartData, setTodayChartData] = useState<OnlinePeakPoint[]>([]);
+  const [trafficLoaded, setTrafficLoaded] = useState(false);
   const [usingMinuteSamples, setUsingMinuteSamples] = useState(false);
   const [historicalChartData, setHistoricalChartData] = useState<{ date: string; total: number | null }[]>([]);
 
@@ -431,6 +432,7 @@ export default function Home() {
         console.error("Traffic chart refresh failed:", error);
       } finally {
         loadingTraffic = false;
+        if (active) setTrafficLoaded(true);
       }
     };
 
@@ -1937,7 +1939,7 @@ const loadData = (forceFresh = false) => {
       {successMessage && (
         <>
           {/* Toast thành công (nâng cấp: gradient + icon tròn + pop) */}
-          <div className="fixed top-6 right-8 bg-gradient-to-r from-emerald-500 to-teal-500 text-white pl-3 pr-5 py-3 rounded-2xl shadow-[0_8px_30px_rgba(16,185,129,0.4)] z-[60] flex items-center gap-3 font-bold text-sm animate-toast-pop">
+          <div role="status" className="ops-success-message fixed top-6 right-8 bg-gradient-to-r from-emerald-500 to-teal-500 text-white pl-3 pr-5 py-3 rounded-2xl shadow-[0_8px_30px_rgba(16,185,129,0.4)] z-[60] flex items-center gap-3 font-bold text-sm">
             <span className="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center text-base shrink-0">
               ✅
             </span>
@@ -1945,7 +1947,7 @@ const loadData = (forceFresh = false) => {
           </div>
 
           {/* Confetti nhẹ ăn mừng giữ slot thành công */}
-          <div className="fixed inset-x-0 top-0 flex justify-center pointer-events-none z-[55]">
+          <div className="fixed inset-x-0 top-0 flex justify-center pointer-events-none z-[55] motion-reduce:hidden">
             <div className="relative w-0 h-0">
               {Array.from({ length: 14 }).map((_, i) => {
                 const colors = [
@@ -2073,6 +2075,7 @@ const loadData = (forceFresh = false) => {
             className="flex-1 px-8 pt-5 pb-6 min-h-0 flex flex-col animate-fade-slide-up"
           >
             <TrafficCharts
+              loading={!trafficLoaded}
               todayChartData={todayChartData}
               usingMinuteSamples={usingMinuteSamples}
               historicalChartData={historicalChartData}
@@ -2269,7 +2272,9 @@ const loadData = (forceFresh = false) => {
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-slide-down { animation: fadeSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-fade-slide-up { animation: fadeSlideUpStagger 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @media (prefers-reduced-motion: no-preference) {
+          .animate-fade-slide-up { animation: fadeSlideUpStagger 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        }
       `,
         }}
       />

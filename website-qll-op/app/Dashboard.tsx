@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import CountUp from "./CountUp";
 import {
   BarChart,
@@ -94,6 +94,18 @@ export default function Dashboard({
   }, [slotHistoryData]);
 
   const topQll = useMemo(() => qllStats.slice(0, 10), [qllStats]);
+  const previousDoneRate = useRef(doneRate);
+  const progressIcon = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const increased = doneRate > previousDoneRate.current;
+    previousDoneRate.current = doneRate;
+    if (!increased || !window.matchMedia("(prefers-reduced-motion: no-preference)").matches) return;
+    const animation = progressIcon.current?.animate(
+      [{ transform: "scale(1)" }, { transform: "scale(1.35)", filter: "brightness(1.4)" }, { transform: "scale(1)" }],
+      { duration: 380, easing: "ease-out" },
+    );
+    return () => animation?.cancel();
+  }, [doneRate]);
 
   const cardBase =
     theme === "dark"
@@ -112,9 +124,10 @@ export default function Dashboard({
     <div className="flex-1 px-8 pt-5 pb-6 min-h-0 overflow-y-auto custom-scrollbar animate-fade-slide-up">
       {/* 4 THẺ KPI TỔNG */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
-        <div className={`border rounded-2xl py-3 px-4 ${cardBase}`}>
+        <div className={`ops-kpi-card border rounded-2xl py-3 px-4 ${cardBase}`}>
           <p className="text-sky-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
             Tổng Slot
+            <span key={totals.total} aria-hidden="true" className="ops-kpi-icon ml-1 inline-block">✦</span>
           </p>
           <span
             className={`text-2xl font-extrabold ${theme === "dark" ? "text-white" : "text-slate-900"}`}
@@ -122,34 +135,37 @@ export default function Dashboard({
             <CountUp value={totals.total} />
           </span>
         </div>
-        <div className={`border rounded-2xl py-3 px-4 ${cardBase}`}>
+        <div className={`ops-kpi-card border rounded-2xl py-3 px-4 ${cardBase}`}>
           <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
             Tỉ Lệ Xử Lý
+            <span ref={progressIcon} aria-hidden="true" className="ops-kpi-icon ml-1 inline-block">✦</span>
           </p>
           <span className="text-2xl font-extrabold text-emerald-500">
             <CountUp value={doneRate} />%
           </span>
           <div className="mt-2 h-2 w-full rounded-full bg-slate-200/40 overflow-hidden">
             <div
-              className="h-full bg-emerald-500 rounded-full transition-all"
+              className="h-full bg-emerald-500 rounded-full motion-safe:transition-[width]"
               style={{ width: `${doneRate}%` }}
             ></div>
           </div>
         </div>
-        <div className={`border rounded-2xl py-3 px-4 ${cardBase}`}>
+        <div className={`ops-kpi-card border rounded-2xl py-3 px-4 ${cardBase}`}>
           <p className="text-amber-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
             Đang Chờ
+            <span key={totals.pending} aria-hidden="true" className="ops-kpi-icon ml-1 inline-block">✦</span>
           </p>
           <span className="text-2xl font-extrabold text-amber-500">
             <CountUp value={totals.pending} />
           </span>
         </div>
-        <div className={`border rounded-2xl py-3 px-4 ${cardBase}`}>
+        <div className={`ops-kpi-card border rounded-2xl py-3 px-4 ${cardBase}`}>
           <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">
             Quá Hạn
           </p>
           <span className="text-2xl font-extrabold text-red-500">
             <CountUp value={totals.expired} />
+            <span key={totals.expired} aria-hidden="true" className="ops-kpi-icon ml-1 inline-block text-xs">✦</span>
           </span>
         </div>
       </div>

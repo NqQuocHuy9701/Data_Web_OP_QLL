@@ -92,7 +92,7 @@ export default function AdminManagement({
             </p>
           )}
           {adminAddSuccess && (
-            <p className="text-xs font-bold text-emerald-500 mt-1.5">
+            <p role="status" className="text-xs font-bold text-emerald-500 mt-1.5 ops-success-message">
               {adminAddSuccess}
             </p>
           )}
@@ -100,8 +100,9 @@ export default function AdminManagement({
 
         <button
           type="submit"
-          className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 transition-colors cursor-pointer active:scale-95"
+          className="ops-action w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-500/30 cursor-pointer"
         >
+          <span aria-hidden="true" className="ops-action-icon inline-block mr-2">＋</span>
           Thêm Tài Khoản Admin
         </button>
       </form>
@@ -113,16 +114,16 @@ export default function AdminManagement({
           Danh sách tài khoản Admin ({adminList.length})
         </h4>
         <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
-          {adminList.map((acc, idx) => (
+          {adminList.map((acc) => (
             <div
-              key={idx}
-              className={`flex items-center justify-between px-4 py-2.5 border rounded-xl text-xs font-bold transition-colors duration-0 ${
+              key={acc.username}
+              className={`ops-admin-member flex items-center justify-between px-4 py-2.5 border rounded-xl text-xs font-bold transition-colors duration-0 ${
                 theme === "dark"
                   ? "bg-[#0a0f1c] border-white/5 text-slate-300"
                   : "bg-slate-50 border-slate-100 text-slate-700"
               }`}
             >
-              <span>👤 {acc.username}</span>
+              <span className="flex min-w-0 items-center gap-2"><span aria-hidden="true" className="ops-member-avatar grid size-6 shrink-0 place-items-center rounded-full bg-sky-500/10">👤</span>{acc.username}</span>
               <span
                 className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${theme === "dark" ? "text-emerald-400 bg-emerald-500/10" : "text-emerald-600 bg-emerald-50"}`}
               >

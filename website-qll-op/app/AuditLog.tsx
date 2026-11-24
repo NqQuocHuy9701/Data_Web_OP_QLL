@@ -158,9 +158,19 @@ export default function AuditLog({ theme }: AuditLogProps) {
             <tbody
               className={`divide-y ${theme === "dark" ? "divide-white/5" : "divide-slate-50"}`}
             >
+              {loading && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-3 text-center text-xs text-slate-500">
+                    <span role="status" className="inline-flex items-center gap-2">
+                      <span aria-hidden="true" className="ops-report-pencil inline-block">✎</span>
+                      Đang tải nhật ký…
+                    </span>
+                  </td>
+                </tr>
+              )}
               {loading ? (
                 Array.from({ length: 6 }).map((_, r) => (
-                  <tr key={r} className="animate-pulse">
+                  <tr key={r} className="motion-safe:animate-pulse">
                     {Array.from({ length: 5 }).map((__, c) => (
                       <td key={c} className="px-6 py-4">
                         <div

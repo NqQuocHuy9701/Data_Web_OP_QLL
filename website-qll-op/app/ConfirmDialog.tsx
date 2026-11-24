@@ -27,9 +27,9 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4 ops-dialog-overlay">
       <div
-        className={`rounded-3xl p-6 w-full max-w-md shadow-2xl border relative motion-safe:transition-colors motion-safe:animate-[class-schedule-enter_180ms_ease-out] ${
+        className={`ops-dialog-panel rounded-3xl p-6 w-full max-w-md shadow-2xl border relative ${
           theme === "dark"
             ? "bg-[#151b2b] border-white/10 text-slate-200"
             : "bg-white border-slate-100"
@@ -75,7 +75,7 @@ export default function ConfirmDialog({
             onClick={onConfirm}
             disabled={pending}
             aria-busy={pending}
-            className="inline-grid place-items-center px-5 py-2.5 bg-rose-500 enabled:hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-rose-500/30 motion-safe:transition-colors enabled:cursor-pointer disabled:opacity-75"
+            className="ops-action inline-grid place-items-center px-5 py-2.5 bg-rose-500 enabled:hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-rose-500/30 enabled:cursor-pointer disabled:opacity-75"
           >
             <span className={pending ? "invisible [grid-area:1/1]" : "[grid-area:1/1]"}>{confirmText}</span>
             {pending && (

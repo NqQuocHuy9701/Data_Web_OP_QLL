@@ -382,7 +382,7 @@ export default function Sidebar({
       <div
         className={`ops-sidebar-footer p-4 border-t shrink-0 flex items-center justify-between transition-colors duration-0 ${theme === "dark" ? "bg-[#0a0f1c] border-white/5" : "bg-slate-50/30 border-slate-100"}`}
       >
-        <div className="ops-sidebar-profile flex items-center gap-3 px-1 cursor-pointer group">
+        <div className="ops-sidebar-profile ops-profile-welcome flex items-center gap-3 px-1 cursor-pointer group">
           <div
             className={`w-9 h-9 rounded-full border flex items-center justify-center font-bold text-xs shadow-sm transition-colors duration-0 ${
               theme === "dark"

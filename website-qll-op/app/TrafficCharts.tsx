@@ -18,6 +18,7 @@ import {
 interface TrafficChartsProps {
   todayChartData: OnlinePeakPoint[];
   usingMinuteSamples?: boolean;
+  loading?: boolean;
   historicalChartData: { date: string; total: number | null }[];
   theme: "light" | "dark";
 }
@@ -25,6 +26,7 @@ interface TrafficChartsProps {
 export default function TrafficCharts({
   todayChartData,
   usingMinuteSamples = false,
+  loading = false,
   historicalChartData,
   theme,
 }: TrafficChartsProps) {
@@ -43,7 +45,17 @@ export default function TrafficCharts({
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 shrink-0">
+    <div aria-busy={loading} className="relative grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 shrink-0">
+      {loading && (
+        <div role="status" className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
+          <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold shadow-sm ${
+            theme === "dark" ? "border-white/10 bg-[#151b2b] text-slate-200" : "border-slate-200 bg-white text-slate-700"
+          }`}>
+            <span aria-hidden="true" className="motion-safe:animate-[class-schedule-book_1.2s_ease-in-out_infinite]">📖</span>
+            Đang tải biểu đồ…
+          </div>
+        </div>
+      )}
       <div
         className={`rounded-3xl p-6 shadow-sm border transition-colors duration-0 ${theme === "dark" ? "bg-[#151b2b] border-white/5" : "bg-white border-slate-100"}`}
       >

@@ -504,6 +504,82 @@ body {
   outline-offset: -2px;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .ops-sidebar nav button > span:first-of-type {
+    transition: transform 150ms ease-out;
+  }
+
+  .ops-sidebar nav button:is(:hover, :focus-visible) > span:first-of-type {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes class-schedule-book {
+  0%, 100% { transform: rotate(0); }
+  50% { transform: rotate(-12deg); }
+}
+
+.ops-online-row-leaving { display: none; }
+
+@keyframes ops-fade { from { opacity: 0; } }
+@keyframes ops-enter {
+  from { opacity: 0; transform: translateY(6px); }
+}
+@keyframes ops-leave {
+  to { opacity: 0; transform: translateX(6px); }
+}
+@keyframes ops-notification {
+  from { opacity: 0; transform: translateX(10px) scale(.98); }
+  70% { transform: translateX(-2px) scale(1.01); }
+}
+
+.ops-class-chevron { opacity: .55; }
+.ops-class-details[open] .ops-class-chevron { transform: rotate(180deg); opacity: 1; }
+.ops-class-details summary:is(:hover, :focus-visible) .ops-class-chevron { opacity: 1; }
+
+@keyframes ops-role-select {
+  50% { transform: scale(1.2) rotate(-8deg); }
+}
+@keyframes ops-welcome {
+  from { opacity: 0; transform: translateX(8px); }
+}
+@keyframes ops-book-open {
+  from { opacity: 0; transform: perspective(700px) rotateY(-10deg) translateX(-5px); }
+}
+@keyframes ops-avatar-halo {
+  from { box-shadow: 0 0 0 0 rgb(56 189 248 / 45%); }
+  to { box-shadow: 0 0 0 7px rgb(56 189 248 / 0%); }
+}
+@keyframes ops-pencil {
+  50% { transform: translateX(2px) rotate(-10deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ops-role[aria-pressed="true"] .ops-role-icon { animation: ops-role-select 240ms ease-out; }
+  .ops-profile-welcome { animation: ops-welcome 230ms ease-out; }
+  .ops-kpi-card { transition: box-shadow 160ms ease-out, border-color 160ms ease-out; }
+  .ops-kpi-card:hover { box-shadow: 0 7px 18px rgb(14 165 233 / 12%); border-color: rgb(14 165 233 / 28%); }
+  .ops-kpi-icon { animation: ops-role-select 260ms ease-out; }
+  .ops-kpi-card:hover .ops-kpi-icon { filter: brightness(1.45); }
+  .ops-dialog-panel.ops-book-panel { animation: ops-book-open 240ms ease-out; transform-origin: left center; }
+  .ops-class-chevron { transition: opacity 150ms ease-out, transform 170ms ease-out; }
+  .ops-class-details[open] .ops-class-details-body { animation: ops-enter 160ms ease-out; }
+  .ops-admin-member { animation: ops-enter 200ms ease-out; }
+  .ops-member-avatar { animation: ops-avatar-halo 450ms ease-out; }
+  .ops-report-pencil { animation: ops-pencil 900ms ease-in-out infinite; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ops-dialog-overlay { animation: ops-fade 150ms ease-out; }
+  :is(.ops-dialog-panel, .ops-online-row) { animation: ops-enter 200ms ease-out; }
+  .ops-online-row-leaving { display: table-row; animation: ops-leave 180ms ease-in both; }
+  .ops-success-message { animation: ops-notification 260ms ease-out; }
+  .ops-action { transition: transform 130ms ease-out, background-color 130ms ease-out; }
+  .ops-action:enabled:active { transform: translateY(1px) scale(.98); }
+  .ops-action-icon { transition: transform 150ms ease-out; }
+  .ops-action:enabled:active .ops-action-icon { transform: translateY(-2px); }
+}
+
 .ops-table-container {
   container: ops-table / inline-size;
 }

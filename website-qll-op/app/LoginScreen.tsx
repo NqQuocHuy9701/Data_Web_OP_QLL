@@ -185,13 +185,14 @@ export default function LoginScreen({
                   setLoginRole("QLL");
                   setLoginError("");
                 }}
-                className={`py-3.5 text-xs font-medium rounded-xl transition-all ${
+                aria-pressed={loginRole === "QLL"}
+                className={`ops-role py-3.5 text-xs font-medium rounded-xl transition-colors ${
                   loginRole === "QLL"
                     ? "bg-white/10 text-white shadow-md border border-white/10"
                     : "text-slate-500 hover:text-white"
                 }`}
               >
-                👩‍💻 Quản Lý Lớp (QLL)
+                <span aria-hidden="true" className="ops-role-icon inline-block">👩‍💻</span>{" "} Quản Lý Lớp (QLL)
               </button>
               <button
                 type="button"
@@ -199,13 +200,14 @@ export default function LoginScreen({
                   setLoginRole("Admin");
                   setLoginError("");
                 }}
-                className={`py-3.5 text-xs font-medium rounded-xl transition-all ${
+                aria-pressed={loginRole === "Admin"}
+                className={`ops-role py-3.5 text-xs font-medium rounded-xl transition-colors ${
                   loginRole === "Admin"
                     ? "bg-white/10 text-white shadow-md border border-white/10"
                     : "text-slate-500 hover:text-white"
                 }`}
               >
-                🔐 Quản Trị (Admin)
+                <span aria-hidden="true" className="ops-role-icon inline-block">🔐</span>{" "} Quản Trị (Admin)
               </button>
             </div>
 

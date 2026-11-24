@@ -62,6 +62,10 @@ export default function StudentAddRequestsPage({
 }: StudentAddRequestsPageProps) {
   const [requests, setRequests] = useState<StudentAddRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showLoadingIcon, setShowLoadingIcon] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [success, setSuccess] = useState<{ text: string } | null>(null);
+  const actionPending = useRef(false);
   const loadVersion = useRef(0);
   const knownRequestIds = useRef<Set<string> | null>(null);
   const [newRequestIds, setNewRequestIds] = useState<Set<string> | null>(null);
@@ -128,6 +132,17 @@ export default function StudentAddRequestsPage({
 
   const connection = useClassScheduleRealtime(loadRequests);
   useEffect(() => {
+    if (!loading) return;
+    const timer = window.setTimeout(() => setShowLoadingIcon(true), 250);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
+
+  useEffect(() => {
+    if (!success) return;
+    const timer = window.setTimeout(() => setSuccess(null), 3000);
+    return () => window.clearTimeout(timer);
+  }, [success]);
+  useEffect(() => {
     if (!newRequestIds) return;
     const timer = window.setTimeout(() => setNewRequestIds(null), 900);
     return () => window.clearTimeout(timer);
@@ -191,7 +206,8 @@ export default function StudentAddRequestsPage({
   }, [hasPendingRequests]);
 
   const updateRequestStatus = async () => {
-    if (!confirmTarget || updatingId) return;
+    if (!confirmTarget || actionPending.current) return;
+    actionPending.current = true;
 
     const id = String(confirmTarget.request.id);
     const action = confirmTarget.action;
@@ -226,6 +242,7 @@ export default function StudentAddRequestsPage({
       }
 
       setConfirmTarget(null);
+      setSuccess({ text: action === "done" ? "Đã xếp lớp" : "Đã hủy yêu cầu" });
       await loadRequests();
       await onCountsChanged();
     } catch (error) {
@@ -237,6 +254,7 @@ export default function StudentAddRequestsPage({
           : "Không thể cập nhật trạng thái yêu cầu.",
       );
     } finally {
+      actionPending.current = false;
       setUpdatingId(null);
     }
   };
@@ -250,6 +268,14 @@ export default function StudentAddRequestsPage({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-3 pb-3 pt-3 sm:px-4 xl:px-6 2xl:px-8 motion-safe:animate-[class-schedule-enter_180ms_ease-out]">
+      <div role="status" className="fixed right-3 top-16 z-[60] pointer-events-none">
+        {success && (
+          <div className="ops-success-message flex items-center gap-2 rounded-xl border border-emerald-700 bg-emerald-800 px-3 py-2 text-sm font-semibold text-white shadow-lg">
+            <span aria-hidden="true">✓</span>
+            {success.text}
+          </div>
+        )}
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div>
           <h1
@@ -314,17 +340,24 @@ export default function StudentAddRequestsPage({
             />
             <button
               type="button"
-              onClick={() => {
-                setLoading(true);
-                void loadRequests();
+              disabled={loading || refreshing}
+              aria-busy={refreshing}
+              onClick={async () => {
+                setRefreshing(true);
+                try {
+                  await loadRequests();
+                } finally {
+                  setRefreshing(false);
+                }
               }}
-              className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold border ${
+              className={`inline-flex w-32 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-xs font-bold disabled:opacity-70 ${
                 theme === "dark"
                   ? "border-white/10 text-slate-300 hover:bg-white/5"
                   : "border-slate-200 text-slate-600 hover:bg-slate-50"
               }`}
             >
-              Làm mới
+              <span aria-hidden="true" className={refreshing ? "motion-safe:animate-spin" : ""}>↻</span>
+              {refreshing ? "Đang cập nhật…" : "Làm mới"}
             </button>
           </div>
         </div>
@@ -378,7 +411,12 @@ export default function StudentAddRequestsPage({
               {loading ? (
                 <tr>
                   <td colSpan={10} className={`px-5 py-16 text-center ${muted}`}>
-                    Đang tải danh sách...
+                    <span role="status" className="inline-flex items-center gap-2">
+                      {showLoadingIcon && (
+                        <span aria-hidden="true" className="motion-safe:animate-[class-schedule-book_1.2s_ease-in-out_infinite]">📖</span>
+                      )}
+                      Đang tải danh sách…
+                    </span>
                   </td>
                 </tr>
               ) : filteredRequests.length === 0 ? (
@@ -415,7 +453,7 @@ export default function StudentAddRequestsPage({
                     <tr
                       key={request.id}
                       data-new-request={newRequestIds?.has(String(request.id)) || undefined}
-                      className={`class-schedule-row motion-safe:transition-colors ${
+                      className={`class-schedule-row motion-safe:transition-colors motion-safe:duration-150 ${
                         theme === "dark"
                           ? "hover:bg-[#1e293b] even:bg-[#1a2235]/50"
                           : "hover:bg-sky-50/50 even:bg-slate-50/60"

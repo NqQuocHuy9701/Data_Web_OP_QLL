@@ -451,7 +451,17 @@ export default function MainDataTable({
                         }`}
                       >
                         <td className="px-6 py-4 font-bold text-sky-500">
-                          {maLop}
+                          <details className="ops-class-details">
+                            <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded focus-visible:outline-2 focus-visible:outline-sky-500 [&::-webkit-details-marker]:hidden">
+                              {maLop}
+                              <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" className="ops-class-chevron size-3.5">
+                                <path d="m4 6 4 4 4-4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </summary>
+                            <div className={`ops-class-details-body mt-1 text-xs font-medium ${theme === "dark" ? "text-slate-300" : "text-slate-600"}`}>
+                              {[displaySubject, row["Loại lớp"], row["Khối"]].filter(Boolean).join(" · ")}
+                            </div>
+                          </details>
                         </td>
                         <td className="px-6 py-4">
                           <span

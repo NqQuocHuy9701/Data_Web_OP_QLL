@@ -30,9 +30,9 @@ export default function SlotModal({
   const actionLabel = actionMode === "hold" ? "Giữ Slot" : "Add lớp";
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-slide-up">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 ops-dialog-overlay">
       <div
-        className={`rounded-3xl p-6 w-full max-w-md shadow-2xl border relative transition-colors duration-0 ${
+        className={`ops-dialog-panel ${actionMode === "add-class" ? "ops-book-panel" : ""} rounded-3xl p-6 w-full max-w-md shadow-2xl border relative ${
           theme === "dark"
             ? "bg-[#151b2b] border-white/10 text-slate-200"
             : "bg-white border-slate-100"
@@ -110,10 +110,11 @@ export default function SlotModal({
             type="button"
             onClick={handleConfirmKeepSlot}
             disabled={isSubmitting}
-            className={`px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-orange-500/30 transition-colors duration-0 cursor-pointer active:scale-95 ${
+            className={`ops-action px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-orange-500/30 cursor-pointer ${
               isSubmitting ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
+            <span aria-hidden="true" className="ops-action-icon inline-block mr-1.5">✓</span>
             {isSubmitting ? "Đang xử lý..." : `Xác nhận ${actionLabel}`}
           </button>
         </div>

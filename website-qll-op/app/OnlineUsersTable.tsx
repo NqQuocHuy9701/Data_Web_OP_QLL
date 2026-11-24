@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 interface OnlineUser {
   namecode: string;
@@ -21,6 +21,24 @@ export default function OnlineUsersTable({
   onRefresh,
   theme,
 }: OnlineUsersTableProps) {
+  const [previousUsers, setPreviousUsers] = useState(onlineUsers);
+  const [departed, setDeparted] = useState<{ user: OnlineUser; index: number }[]>([]);
+  if (previousUsers !== onlineUsers) {
+    const currentNames = new Set(onlineUsers.map((user) => user.namecode.toLowerCase()));
+    setPreviousUsers(onlineUsers);
+    setDeparted(previousUsers.map((user, index) => ({ user, index }))
+      .filter(({ user }) => !currentNames.has(user.namecode.toLowerCase())));
+  }
+
+  useEffect(() => {
+    if (departed.length === 0) return;
+    const timer = window.setTimeout(() => setDeparted([]), 200);
+    return () => window.clearTimeout(timer);
+  }, [departed]);
+
+  const rows = onlineUsers.map((user, index) => ({ user, index, leaving: false }));
+  for (const entry of departed) rows.splice(entry.index, 0, { ...entry, leaving: true });
+
   return (
     <div
       className={`flex-1 rounded-3xl flex flex-col h-full overflow-hidden transition-colors duration-0 ${
@@ -91,11 +109,12 @@ export default function OnlineUsersTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/20 text-sm">
-            {onlineUsers && onlineUsers.length > 0 ? (
-              onlineUsers.map((user, index) => (
+            {rows.length > 0 ? (
+              rows.map(({ user, index, leaving }) => (
                 <tr
-                  key={index}
-                  className={`transition-colors duration-200 ${theme === "dark" ? "hover:bg-slate-800/40 text-slate-300" : "hover:bg-slate-50 text-slate-700"}`}
+                  key={user.namecode.toLowerCase()}
+                  aria-hidden={leaving || undefined}
+                  className={`${leaving ? "ops-online-row-leaving" : "ops-online-row"} transition-colors duration-200 ${theme === "dark" ? "hover:bg-slate-800/40 text-slate-300" : "hover:bg-slate-50 text-slate-700"}`}
                 >
                   <td className="py-3.5 px-6 font-medium text-slate-400 text-center w-24">
                     #{index + 1}
