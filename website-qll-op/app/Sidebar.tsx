@@ -58,6 +58,52 @@ export default function Sidebar({
   sidebarOpen = false,
   setSidebarOpen,
 }: SidebarProps) {
+  const navigationRef = React.useRef<HTMLElement>(null);
+  const indicatorRef = React.useRef<HTMLSpanElement>(null);
+
+  React.useLayoutEffect(() => {
+    const navigation = navigationRef.current;
+    const indicator = indicatorRef.current;
+    if (!navigation || !indicator) return;
+
+    const selected = navigation.querySelector<HTMLButtonElement>('button[aria-current="page"]');
+    const previous = indicator.getBoundingClientRect();
+    const wasVisible = !indicator.hidden;
+    indicator.getAnimations().forEach((animation) => animation.cancel());
+    indicator.hidden = !selected;
+    if (!selected) return;
+
+    const center = selected.offsetTop + selected.offsetHeight / 2;
+    const height = indicator.offsetHeight;
+    const top = center - height / 2;
+    indicator.style.transform = `translateY(${top}px)`;
+    if (!wasVisible || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const previousTop = previous.top - indicator.getBoundingClientRect().top + top;
+    const distance = top - previousTop;
+    if (Math.abs(distance) < 1 && Math.abs(previous.height - height) < 1) return;
+
+    const previousCenter = previousTop + previous.height / 2;
+    const centerDistance = center - previousCenter;
+    const stretchLimit = height * 0.55;
+    const easeEdge = (progress: number) => progress ** 2 * (3 - 2 * progress);
+
+    // Ease the leading and trailing edges separately so the stretch settles continuously.
+    const frames = Array.from({ length: 25 }, (_, index) => {
+      const time = index / 24;
+      const leading = easeEdge(Math.min(time / 0.82, 1));
+      const trailing = easeEdge(Math.max((time - 0.18) / 0.82, 0));
+      const progress = (leading + trailing) / 2;
+      const stretch = stretchLimit * Math.tanh(Math.abs(centerDistance) * (leading - trailing) / stretchLimit);
+      const frameHeight = previous.height + (height - previous.height) * progress + stretch;
+      const frameTop = previousCenter + centerDistance * progress - frameHeight / 2;
+
+      return { transform: `translateY(${frameTop}px) scaleY(${frameHeight / height})` };
+    });
+
+    indicator.animate(frames, Math.min(460, 310 + Math.abs(centerDistance) * 0.34));
+  }, [activeNav, loginRole]);
+
   return (
     <>
       {/* [MOBILE] Lớp nền tối: chỉ hiện khi drawer mở, bấm để đóng. Ẩn trên desktop. */}
@@ -99,7 +145,8 @@ export default function Sidebar({
         </div>
       </div>
 
-      <nav id="ops-sidebar-navigation" aria-label="Điều hướng chính" className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+      <nav ref={navigationRef} id="ops-sidebar-navigation" aria-label="Điều hướng chính" className="relative flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <span ref={indicatorRef} className="ops-sidebar-indicator" aria-hidden="true" hidden />
         {/* Trang chủ cá nhân — chỉ QLL */}
         {loginRole === "QLL" && (
           <button
@@ -117,9 +164,6 @@ export default function Sidebar({
                   : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
             }`}
           >
-            <div
-              className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-0 ${activeNav === "TrangCuaToi" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
-            ></div>
             <span className="text-lg">🏠</span>
             <span className="ops-sidebar-label text-xs truncate">Trang của tôi</span>
           </button>
@@ -144,9 +188,6 @@ export default function Sidebar({
                 : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
           }`}
         >
-          <div
-            className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-0 ${activeNav === "Đang học" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
-          ></div>
           <span className="text-lg">📚</span>
           <span className="ops-sidebar-label text-xs truncate">Lớp Đang Học</span>
         </button>
@@ -166,9 +207,6 @@ export default function Sidebar({
                 : "text-slate-500 hover:bg-slate-50 hover:text-sky-500 font-medium"
           }`}
         >
-          <div
-            className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-sky-500 rounded-r-full transition-all duration-0 ${activeNav === "Khai giảng" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
-          ></div>
           <span className="text-lg">🚀</span>
           <span className="ops-sidebar-label text-xs truncate">Chờ Khai Giảng</span>
         </button>
@@ -192,9 +230,6 @@ export default function Sidebar({
                 : "text-slate-500 hover:bg-orange-50/50 hover:text-orange-500 font-medium"
           }`}
         >
-          <div
-            className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-500 rounded-r-full transition-all duration-0 ${activeNav === "Giữ Slot" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
-          ></div>
           <span className="text-lg">📌</span>
           <span className="ops-sidebar-label text-xs truncate">Giữ Slot Lớp</span>
         </button>
@@ -217,9 +252,6 @@ export default function Sidebar({
                 : "text-slate-500 hover:bg-amber-50/50 hover:text-amber-500 font-medium"
           }`}
         >
-          <div
-            className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-amber-500 rounded-r-full transition-all duration-0 ${activeNav === "SlotDaGiu" ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"}`}
-          ></div>
           <span className="text-lg">🕒</span>
           <span className="ops-sidebar-label text-xs truncate">Slot Đã Giữ</span>
         </button>

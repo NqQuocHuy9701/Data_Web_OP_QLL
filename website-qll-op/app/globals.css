@@ -424,6 +424,36 @@ body {
   display: contents;
 }
 
+.ops-sidebar-indicator {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 1rem;
+  inset-inline-end: 1rem;
+  height: 2.25rem;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--ops-sidebar-accent);
+  box-shadow: 0 2px 8px rgb(234 88 12 / 25%);
+  pointer-events: none;
+  transform-origin: top;
+}
+
+.ops-sidebar nav {
+  --ops-sidebar-accent: #fb923c;
+  isolation: isolate;
+}
+
+.ops-sidebar nav button {
+  z-index: 1;
+}
+
+.ops-sidebar nav button[aria-current="page"] {
+  color: #431407;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
 @media (width >= 64rem) and (hover: hover) {
   .ops-sidebar-rail {
     display: block;
@@ -464,6 +494,27 @@ body {
 
   .ops-sidebar nav {
     padding-inline: 0.5rem;
+    background-image: linear-gradient(var(--ops-sidebar-accent), var(--ops-sidebar-accent));
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 0.375rem 100%;
+  }
+
+  .ops-sidebar:not(:hover, :has(:focus-visible)) nav {
+    background-size: 0 100%;
+  }
+
+  .ops-sidebar-indicator {
+    inset-inline-start: 0.5rem;
+    inset-inline-end: 0.5rem;
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+
+  .ops-sidebar:not(:hover, :has(:focus-visible)) .ops-sidebar-indicator {
+    inset-inline-start: 0.75rem;
+    inset-inline-end: calc(100% - 3rem);
+    border-radius: 999px;
   }
 
   .ops-sidebar nav button {
@@ -491,7 +542,17 @@ body {
 
 @media (width >= 64rem) and (hover: hover) and (prefers-reduced-motion: no-preference) {
   .ops-sidebar-rail .ops-sidebar {
-    transition: width 220ms cubic-bezier(0.2, 0.75, 0.25, 1);
+    transition: width 280ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  }
+
+  .ops-sidebar nav {
+    transition: background-size 220ms ease-out;
+  }
+
+  .ops-sidebar-indicator {
+    transition: inset-inline-start 280ms cubic-bezier(0.2, 0.75, 0.25, 1),
+      inset-inline-end 280ms cubic-bezier(0.2, 0.75, 0.25, 1),
+      border-radius 220ms ease-out;
   }
 
   .ops-sidebar :is(.ops-sidebar-brand, .ops-sidebar-label, .ops-sidebar-section, .ops-sidebar-profile) {
@@ -505,6 +566,10 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .ops-sidebar nav button {
+    transition-duration: 160ms;
+  }
+
   .ops-sidebar nav button > span:first-of-type {
     transition: transform 150ms ease-out;
   }
@@ -512,6 +577,10 @@ body {
   .ops-sidebar nav button:is(:hover, :focus-visible) > span:first-of-type {
     transform: translateX(2px);
   }
+}
+
+.ops-main > header + .animate-fade-slide-up {
+  animation: none;
 }
 
 @keyframes class-schedule-book {

@@ -1,10 +1,10 @@
 ﻿"use client";
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } from "react";
 import Papa from "papaparse";
 import LoginScreen from "./LoginScreen";
-import Sidebar, { navLabels } from "./Sidebar";
+import Sidebar, { navLabels, type NavKey } from "./Sidebar";
 import Header from "./Header";
 import AdminStats from "./AdminStats";
 import TrafficCharts from "./TrafficCharts";
@@ -174,20 +174,20 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>("");
 
-  const [activeNav, setActiveNav] = useState<
-    | "Đang học"
-    | "Khai giảng"
-    | "Giữ Slot"
-    | "SlotDaGiu"
-    | "DanhSachAddLopQLL"
-    | "DanhSachHSAddLop"
-    | "QuanTriAdmin"
-    | "LichSuSlotAdmin"
-    | "ThongKeAdmin"
-    | "Dashboard"
-    | "TrangCuaToi"
-    | "NhatKy"
-  >("Giữ Slot");
+  const [activeNav, setActiveNav] = useState<NavKey>("Giữ Slot");
+  const mainRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const content = mainRef.current?.querySelector(":scope > header + *");
+    if (!content || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const animation = content.animate(
+      [{ opacity: 0.65 }, { opacity: 1 }],
+      { duration: 220, easing: "ease-out" },
+    );
+
+    return () => animation.cancel();
+  }, [activeNav]);
   const [onlineUsers, setOnlineUsers] = useState<
     { namecode: string; teamLead: string; onlineAt: number }[]
   >([]);
@@ -1992,7 +1992,7 @@ const loadData = (forceFresh = false) => {
         setSidebarOpen={setSidebarOpen}
       />
 
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10 min-w-0">
+      <main ref={mainRef} className="ops-main flex-1 flex flex-col h-screen overflow-hidden relative z-10 min-w-0">
         <Header
           theme={theme}
           toggleTheme={toggleTheme}
