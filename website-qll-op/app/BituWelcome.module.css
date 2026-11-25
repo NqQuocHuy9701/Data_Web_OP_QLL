@@ -1,14 +1,19 @@
+.videoLayer,
 .crossScreen {
-  animation: crossScreen 10s linear both;
+  will-change: transform;
+}
+
+.crossScreen {
+  animation: crossScreen 8s linear both;
 }
 
 @keyframes crossScreen {
-  0%, 47.2% {
-    transform: translateX(0);
+  0%, 59% {
+    transform: translate3d(0, 0, 0);
   }
 
-  /* The source starts cropping BiTu at its left edge near 8.5s. */
-  83%, 100% {
-    transform: translateX(calc(100% - 100vw));
+  /* Align the clip with the left edge before the source crops BiTu near 7.1s. */
+  86.875%, 100% {
+    transform: translate3d(calc(100% - 100vw), 0, 0);
   }
 }

@@ -11,6 +11,7 @@ interface StudentAddRequest {
   timestamp: number | string;
   is_done: boolean;
   is_cancelled: boolean;
+  cancel_reason: string | null;
 }
 
 export function formatTimestamp(timestamp: number | string) {

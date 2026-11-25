@@ -14,6 +14,7 @@ interface StudentAddRequest {
   timestamp: number | string;
   is_done: boolean;
   is_cancelled: boolean;
+  cancel_reason: string | null;
   processed_by: string | null;
   processed_at: string | null;
 }
@@ -405,6 +406,7 @@ export default function StudentAddRequestsPage({
                 <th className="ops-table-wide-column px-5 py-4">Team</th>
                 <th className="px-5 py-4">Người xử lý / thời gian</th>
                 <th className="px-5 py-4">Trạng thái</th>
+                <th className="px-5 py-4">Note</th>
                 <th className="ops-table-wide-column px-5 py-4">Thời gian còn chờ</th>
                 <th className="px-5 py-4 text-right">Thao tác</th>
               </tr>
@@ -416,7 +418,7 @@ export default function StudentAddRequestsPage({
             >
               {loading ? (
                 <tr>
-                  <td colSpan={10} className={`px-5 py-16 text-center ${muted}`}>
+                  <td colSpan={11} className={`px-5 py-16 text-center ${muted}`}>
                     <span role="status" className="inline-flex items-center gap-2">
                       {showLoadingIcon && (
                         <span aria-hidden="true" className="motion-safe:animate-[class-schedule-book_1.2s_ease-in-out_infinite]">📖</span>
@@ -427,7 +429,7 @@ export default function StudentAddRequestsPage({
                 </tr>
               ) : filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className={`px-5 py-16 text-center ${muted}`}>
+                  <td colSpan={11} className={`px-5 py-16 text-center ${muted}`}>
                     Không có yêu cầu phù hợp.
                   </td>
                 </tr>
@@ -535,6 +537,9 @@ export default function StudentAddRequestsPage({
                           </span>
                         )}
                         <div className="ops-table-compact-field text-xs">{waitIndicator}</div>
+                      </td>
+                      <td className={`max-w-[240px] px-5 py-4 text-xs whitespace-pre-wrap wrap-anywhere ${muted}`}>
+                        {request.is_cancelled && request.cancel_reason ? request.cancel_reason : "—"}
                       </td>
                       <td className="ops-table-wide-column px-5 py-4 text-xs">
                         {waitIndicator}

@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import ActionButton from "./ActionButton";
 
 interface MainDataTableProps {
@@ -141,16 +140,16 @@ export default function MainDataTable({
             </div>
           </div>
 
-          {/* Animation thư giãn — nằm bên phải trong cùng, né đoạn chữ chạy.
-              pointer-events-none để không vướng thao tác. Ẩn trên mobile. */}
-          <div className="hidden lg:block ml-auto shrink-0 h-14 w-40 pointer-events-none select-none">
-            <DotLottieReact
-              src="https://lottie.host/ff770bc9-a952-4a8c-b6d2-c20940ca5dbf/tsB3MRK0AC.json"
-              loop
-              autoplay
-              style={{ width: "100%", height: "100%" }}
+          <picture className="pointer-events-none ml-auto hidden h-14 w-40 shrink-0 select-none items-center justify-center lg:flex" aria-hidden="true">
+            <source media="(prefers-reduced-motion: reduce)" srcSet="/bitu/bitu-football-still.webp" />
+            <img
+              src="/bitu/bitu-football.webp"
+              alt=""
+              width={84}
+              height={40}
+              className="h-10 w-[84px] object-contain"
             />
-          </div>
+          </picture>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

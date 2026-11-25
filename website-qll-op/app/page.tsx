@@ -6,6 +6,7 @@ import Image from "next/image";
 import Papa from "papaparse";
 import LoginScreen from "./LoginScreen";
 import BituWelcome from "./BituWelcome";
+import ClassScheduleCancellationNotice from "./ClassScheduleCancellationNotice";
 import TelegramUsernameNotice from "./TelegramUsernameNotice";
 import Sidebar, { navLabels, type NavKey } from "./Sidebar";
 import Header from "./Header";
@@ -120,6 +121,25 @@ export default function Home() {
   const [showUsernameNotice, setShowUsernameNotice] = useState(false);
   const [showBituWelcome, setShowBituWelcome] = useState(false);
   const finishBituWelcome = useCallback(() => setShowBituWelcome(false), []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const handleVisibilityChange = () => {
+      setShowBituWelcome(document.visibilityState === "visible");
+    };
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted && document.visibilityState === "visible") {
+        setShowBituWelcome(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pageshow", handlePageShow);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, [isLoggedIn]);
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [filterTeam, setFilterTeam] = useState("Tất cả");
@@ -545,6 +565,7 @@ export default function Home() {
               localStorage.setItem("qll_logged_user", JSON.stringify(adminUser));
               setAdminUsername(result.username);
               setTeamLead("Admin hệ thống");
+              setShowBituWelcome(true);
               setIsLoggedIn(true);
             })
             .catch((error) => {
@@ -557,6 +578,7 @@ export default function Home() {
           setLoginRole("QLL");
           setActiveNav("TrangCuaToi"); // QLL vào thẳng Trang của tôi
           setShowUsernameNotice(true);
+          setShowBituWelcome(true);
           setIsLoggedIn(true);
         }
       } catch (e) {
@@ -1777,6 +1799,13 @@ const loadData = (forceFresh = false) => {
         return;
       }
 
+      setSlotSuccess((previous) => ({
+        text: isClassRequest
+          ? "Đã gửi yêu cầu Add lớp thành công!"
+          : "Đã lưu giữ slot thành công!",
+        sequence: (previous?.sequence ?? 0) + 1,
+      }));
+
       if (!isClassRequest) {
         await loadSlotHistory();
 
@@ -1785,13 +1814,6 @@ const loadData = (forceFresh = false) => {
       } else {
         await loadClassScheduleCounts();
       }
-
-      setSlotSuccess((previous) => ({
-        text: isClassRequest
-          ? "Đã gửi yêu cầu Add lớp thành công!"
-          : "Đã lưu giữ slot thành công!",
-        sequence: (previous?.sequence ?? 0) + 1,
-      }));
     } catch (error) {
       slotModalRef.current?.close();
       console.error("Lỗi kết nối:", error);
@@ -1886,6 +1908,13 @@ const loadData = (forceFresh = false) => {
       {showUsernameNotice && (
         <TelegramUsernameNotice onConfirm={() => setShowUsernameNotice(false)} />
       )}
+      {loginRole === "QLL" && displayName && (
+        <ClassScheduleCancellationNotice
+          key={displayName}
+          displayName={displayName}
+          onOpenList={() => setActiveNav("DanhSachAddLopQLL")}
+        />
+      )}
 
       <div
         className={`absolute inset-0 pointer-events-none -z-10 transition-opacity duration-0 ${theme === "dark" ? "opacity-100" : "opacity-0"}`}
@@ -1924,16 +1953,21 @@ const loadData = (forceFresh = false) => {
           </div>
 
           {loginRole === "QLL" ? (
-            <Image
-              alt=""
-              aria-hidden="true"
-              src="/bitu/bitu-wink-once.webp"
-              width={320}
-              height={320}
-              unoptimized
-              loading="eager"
-              className="pointer-events-none fixed top-1/2 left-1/2 z-[55] h-auto w-[clamp(144px,24vw,240px)] -translate-x-1/2 -translate-y-1/2 motion-reduce:hidden"
-            />
+            <picture aria-hidden="true">
+              <source
+                media="(prefers-reduced-motion: reduce)"
+                srcSet="/bitu/bitu-wink-still.webp"
+              />
+              <Image
+                alt=""
+                src="/bitu/bitu-wink-once.webp"
+                width={320}
+                height={320}
+                unoptimized
+                loading="eager"
+                className="pointer-events-none fixed top-1/2 left-1/2 z-[55] h-auto w-[clamp(144px,24vw,240px)] -translate-x-1/2 -translate-y-1/2"
+              />
+            </picture>
           ) : (
             <div className="fixed inset-x-0 top-0 flex justify-center pointer-events-none z-[55] motion-reduce:hidden">
               <div className="relative w-0 h-0">

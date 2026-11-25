@@ -227,6 +227,9 @@ function RecentStudentRequests({ displayName, onOpenList }: { displayName: strin
                 <div className={styles.classInfo}>
                   <strong>{request.ma_lop}</strong>
                   <p>{request.mon_hoc && `${request.mon_hoc} · `}SID {request.sid_cid}</p>
+                  {request.is_cancelled && request.cancel_reason && (
+                    <p className="whitespace-pre-wrap">Note: {request.cancel_reason}</p>
+                  )}
                 </div>
                 <span className={styles.requestDate}>{formatTimestamp(request.timestamp)}</span>
                 <span className={styles.requestStatus} data-status={status}>

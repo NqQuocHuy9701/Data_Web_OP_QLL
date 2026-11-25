@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUsername, hasAdminSession } from "../_lib/admin-session";
-import { CLASS_SCHEDULE_CHANGED, CLASS_SCHEDULE_TOPIC } from "../../classScheduleEvents";
+import { CLASS_SCHEDULE_CANCELLED_TOPIC, CLASS_SCHEDULE_CHANGED, CLASS_SCHEDULE_TOPIC } from "../../classScheduleEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -10,15 +10,18 @@ const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGciOiJIUzI1NiIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDU1sfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E";
 
-async function broadcastClassScheduleChange() {
+async function broadcastClassScheduleChange(cancelled = false) {
   try {
+    const topics = cancelled
+      ? [CLASS_SCHEDULE_TOPIC, CLASS_SCHEDULE_CANCELLED_TOPIC]
+      : [CLASS_SCHEDULE_TOPIC];
     const response = await fetch(
       new URL("/realtime/v1/api/broadcast", SUPABASE_ENDPOINT),
       {
         method: "POST",
         headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [{ topic: CLASS_SCHEDULE_TOPIC, event: CLASS_SCHEDULE_CHANGED, payload: {} }],
+          messages: topics.map((topic) => ({ topic, event: CLASS_SCHEDULE_CHANGED, payload: {} })),
         }),
         signal: AbortSignal.timeout(2000),
       },
@@ -52,9 +55,15 @@ export async function GET(request: Request) {
     );
   }
 
+  const cancelledSince = isQllListView ? searchParams.get("cancelledSince") : null;
+  const cancelledAfter = cancelledSince === null ? null : new Date(cancelledSince);
+  if (cancelledAfter && Number.isNaN(cancelledAfter.getTime())) {
+    return NextResponse.json({ success: false, error: "Thời điểm thông báo không hợp lệ." }, { status: 400 });
+  }
+
   const isDetailedList = isListView || isQllListView;
   const requestedLimit = searchParams.get("limit");
-  const previewLimit = isQllListView && requestedLimit && /^(?:[1-9]|10)$/.test(requestedLimit)
+  const previewLimit = cancelledAfter ? 10 : isQllListView && requestedLimit && /^(?:[1-9]|10)$/.test(requestedLimit)
     ? Number(requestedLimit)
     : null;
   const supabaseKey = isDetailedList
@@ -97,9 +106,9 @@ export async function GET(request: Request) {
 
     for (let offset = 0; ; offset += pageSize) {
       const selectedColumns = isListView
-        ? "id,ma_lop,mon_hoc,nguoi_tao,team,sid_cid,timestamp,is_done,is_cancelled,created_at,processed_by,processed_at"
+        ? "id,ma_lop,mon_hoc,nguoi_tao,team,sid_cid,timestamp,is_done,is_cancelled,created_at,processed_by,processed_at,cancel_reason"
         : isQllListView
-          ? "id,ma_lop,mon_hoc,sid_cid,timestamp,is_done,is_cancelled"
+          ? "id,ma_lop,mon_hoc,sid_cid,timestamp,is_done,is_cancelled,cancel_reason"
           : "ma_lop";
       const activeFilters = isListView
         ? ""
@@ -108,11 +117,16 @@ export async function GET(request: Request) {
           : "&is_done=eq.false&is_cancelled=eq.false";
       const order = isListView
         ? "timestamp.desc,id.desc"
-        : isQllListView
+        : cancelledAfter
+          ? "processed_at.desc,id.desc"
+          : isQllListView
           ? "id.desc"
           : "id.asc";
+      const cancellationFilters = cancelledAfter
+        ? `&is_cancelled=eq.true&cancel_reason=not.is.null&processed_at=gte.${encodeURIComponent(cancelledAfter.toISOString())}`
+        : "";
       const response = await fetch(
-        `${SUPABASE_ENDPOINT}?select=${selectedColumns}${activeFilters}&order=${order}`,
+        `${SUPABASE_ENDPOINT}?select=${selectedColumns}${activeFilters}${cancellationFilters}&order=${order}`,
         {
           headers: {
             apikey: supabaseKey,
@@ -401,7 +415,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    await broadcastClassScheduleChange();
+    await broadcastClassScheduleChange(action === "cancel");
 
     const record = updated[0];
     try {

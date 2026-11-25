@@ -75,7 +75,7 @@ export default function StudentAddRequestsQLLPage({
         )}
 
         <div className="flex-1 overflow-auto custom-scrollbar">
-          <table className="w-full min-w-[760px] text-sm text-left whitespace-nowrap">
+          <table className="w-full min-w-[900px] text-sm text-left whitespace-nowrap">
             <thead
               className={`sticky top-0 z-10 border-b text-[11px] uppercase tracking-wider ${
                 theme === "dark"
@@ -89,6 +89,7 @@ export default function StudentAddRequestsQLLPage({
                 <th className="px-5 py-4">Môn học</th>
                 <th className="px-5 py-4">SID/CID</th>
                 <th className="px-5 py-4">Trạng thái vận hành</th>
+                <th className="px-5 py-4">Note</th>
               </tr>
             </thead>
             <tbody
@@ -98,13 +99,13 @@ export default function StudentAddRequestsQLLPage({
             >
               {loading ? (
                 <tr>
-                  <td colSpan={5} className={`px-5 py-16 text-center ${muted}`}>
+                  <td colSpan={6} className={`px-5 py-16 text-center ${muted}`}>
                     Đang tải danh sách...
                   </td>
                 </tr>
               ) : requests.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className={`px-5 py-16 text-center ${muted}`}>
+                  <td colSpan={6} className={`px-5 py-16 text-center ${muted}`}>
                     Bạn chưa gửi yêu cầu Add lớp nào.
                   </td>
                 </tr>
@@ -162,6 +163,9 @@ export default function StudentAddRequestsQLLPage({
                           ⏳ Đang chờ vận hành xử lý
                         </span>
                       )}
+                    </td>
+                    <td className={`max-w-[360px] px-5 py-4 text-xs whitespace-pre-wrap wrap-anywhere ${muted}`}>
+                      {request.is_cancelled && request.cancel_reason ? request.cancel_reason : "—"}
                     </td>
                   </tr>
                 ))

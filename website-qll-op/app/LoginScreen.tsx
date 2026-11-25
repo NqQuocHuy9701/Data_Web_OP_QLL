@@ -260,6 +260,9 @@ export default function LoginScreen({
                       <option value="Khác" className="bg-[#151a28] text-white">
                         Khác / QLL chung
                       </option>
+                      <option value="Sale" className="bg-[#151a28] text-white">
+                        Sale
+                      </option>
                     </select>
                   </div>
                 </>

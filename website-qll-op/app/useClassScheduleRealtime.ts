@@ -11,7 +11,10 @@ const supabase = createClient(
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E",
 );
 
-export function useClassScheduleRealtime(refresh: () => Promise<void>, { poll = true } = {}) {
+export function useClassScheduleRealtime(
+  refresh: () => Promise<void>,
+  { poll = true, topic = CLASS_SCHEDULE_TOPIC } = {},
+) {
   const [connection, setConnection] = useState<"connecting" | "connected" | "reconnecting">("connecting");
 
   useEffect(() => {
@@ -45,7 +48,7 @@ export function useClassScheduleRealtime(refresh: () => Promise<void>, { poll = 
     };
 
     const channel = supabase
-      .channel(CLASS_SCHEDULE_TOPIC)
+      .channel(topic)
       .on("broadcast", { event: CLASS_SCHEDULE_CHANGED }, queueRefresh)
       .subscribe((status) => {
         if (!active) return;
@@ -71,7 +74,7 @@ export function useClassScheduleRealtime(refresh: () => Promise<void>, { poll = 
       document.removeEventListener("visibilitychange", refreshIfVisible);
       void supabase.removeChannel(channel);
     };
-  }, [refresh, poll]);
+  }, [refresh, poll, topic]);
 
   return connection;
 }

@@ -329,7 +329,7 @@ Deno.serve(async (request) => {
     const requestDetails = [
       `🆔 SID/CID: ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
       `Mã lớp: ${escapeHtml(record.ma_lop)}`,
-      `QLL: ${mention}`,
+      `${cancelled && record.team?.trim().toLowerCase() === "sale" ? "Sale" : "QLL"}: ${mention}`,
     ];
     message = (cancelled
       ? [
