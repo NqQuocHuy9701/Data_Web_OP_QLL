@@ -141,8 +141,8 @@ export default function LoginScreen({
             <div className="absolute -bottom-2 left-8 w-4 h-4 bg-[#1a1f33]/90 border-r border-b border-white/10 rotate-45 backdrop-blur-md"></div>
           </div>
 
-          <div className="flex w-[360px] justify-center xl:w-[420px]">
-            <BituGreeting className="h-[min(44vh,390px)] w-auto object-contain" />
+          <div className="flex w-[min(36vw,400px)] justify-center xl:w-[420px]">
+            <BituGreeting className="h-[min(62dvh,550px)] w-auto max-w-full object-contain" />
           </div>
         </div>
 
