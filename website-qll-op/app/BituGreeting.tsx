@@ -6,9 +6,9 @@ export default function BituGreeting({ className }: { className?: string }) {
       alt=""
       aria-hidden="true"
       className={className}
-      src="/bitu/bitu-wave-loop.webp"
-      width={360}
-      height={600}
+      src="/bitu/bitu-chot-loop.webp"
+      width={396}
+      height={550}
       unoptimized
     />
   );

@@ -1,0 +1,13 @@
+.crossScreen {
+  animation: crossScreen 10s linear both;
+}
+
+@keyframes crossScreen {
+  0%, 47.2% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-100vw);
+  }
+}

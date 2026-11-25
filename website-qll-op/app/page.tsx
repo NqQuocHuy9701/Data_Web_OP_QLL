@@ -2,8 +2,10 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } from "react";
+import Image from "next/image";
 import Papa from "papaparse";
 import LoginScreen from "./LoginScreen";
+import BituWelcome from "./BituWelcome";
 import TelegramUsernameNotice from "./TelegramUsernameNotice";
 import Sidebar, { navLabels, type NavKey } from "./Sidebar";
 import Header from "./Header";
@@ -116,6 +118,8 @@ export default function Home() {
   const [loginError, setLoginError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [showUsernameNotice, setShowUsernameNotice] = useState(false);
+  const [showBituWelcome, setShowBituWelcome] = useState(false);
+  const finishBituWelcome = useCallback(() => setShowBituWelcome(false), []);
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [filterTeam, setFilterTeam] = useState("Tất cả");
@@ -468,7 +472,13 @@ export default function Home() {
   const [isAddingClass, setIsAddingClass] = useState<string | null>(null);
 
   const slotModalRef = useRef<SlotModalHandle>(null);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [slotSuccess, setSlotSuccess] = useState<{ text: string; sequence: number } | null>(null);
+
+  useEffect(() => {
+    if (!slotSuccess) return;
+    const timer = window.setTimeout(() => setSlotSuccess(null), 4_000);
+    return () => window.clearTimeout(timer);
+  }, [slotSuccess]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
@@ -916,6 +926,7 @@ export default function Home() {
       localStorage.setItem("qll_logged_user", JSON.stringify(userData));
       setActiveNav("TrangCuaToi"); // QLL vào thẳng Trang của tôi
       setShowUsernameNotice(true);
+      setShowBituWelcome(true);
       setIsLoggedIn(true);
     } else {
       if (!adminUsername.trim() || !adminPassword.trim()) {
@@ -950,6 +961,7 @@ export default function Home() {
         };
         localStorage.setItem("qll_logged_user", JSON.stringify(userData));
         setTeamLead("Admin hệ thống");
+        setShowBituWelcome(true);
         setIsLoggedIn(true);
       } catch (err) {
         setLoginError("Lỗi kết nối khi xác thực Admin!");
@@ -968,6 +980,8 @@ export default function Home() {
     }
 
     localStorage.removeItem("qll_logged_user");
+    setShowBituWelcome(false);
+    setSlotSuccess(null);
     setIsLoggedIn(false);
     setNamecode("");
     setAdminUsername("");
@@ -982,6 +996,7 @@ export default function Home() {
     setLoginRole("Admin");
     setAdminPassword("");
     setLoginError("Phiên Admin đã hết hạn. Vui lòng đăng nhập lại.");
+    setShowBituWelcome(false);
     setIsLoggedIn(false);
   }, []);
 
@@ -1771,12 +1786,12 @@ const loadData = (forceFresh = false) => {
         await loadClassScheduleCounts();
       }
 
-      setSuccessMessage(
-        isClassRequest
+      setSlotSuccess((previous) => ({
+        text: isClassRequest
           ? "Đã gửi yêu cầu Add lớp thành công!"
           : "Đã lưu giữ slot thành công!",
-      );
-      setTimeout(() => setSuccessMessage(""), 4000);
+        sequence: (previous?.sequence ?? 0) + 1,
+      }));
     } catch (error) {
       slotModalRef.current?.close();
       console.error("Lỗi kết nối:", error);
@@ -1898,45 +1913,57 @@ const loadData = (forceFresh = false) => {
         ></div>
       </div>
 
-      {successMessage && (
-        <>
+      {slotSuccess && (
+        <React.Fragment key={slotSuccess.sequence}>
           {/* Toast thành công (nâng cấp: gradient + icon tròn + pop) */}
           <div role="status" className="ops-success-message fixed top-6 right-8 bg-gradient-to-r from-emerald-500 to-teal-500 text-white pl-3 pr-5 py-3 rounded-2xl shadow-[0_8px_30px_rgba(16,185,129,0.4)] z-[60] flex items-center gap-3 font-bold text-sm">
             <span className="w-7 h-7 rounded-full bg-white/25 flex items-center justify-center text-base shrink-0">
               ✅
             </span>
-            {successMessage}
+            {slotSuccess.text}
           </div>
 
-          {/* Confetti nhẹ ăn mừng giữ slot thành công */}
-          <div className="fixed inset-x-0 top-0 flex justify-center pointer-events-none z-[55] motion-reduce:hidden">
-            <div className="relative w-0 h-0">
-              {Array.from({ length: 14 }).map((_, i) => {
-                const colors = [
-                  "#f97316",
-                  "#0ea5e9",
-                  "#10b981",
-                  "#f59e0b",
-                  "#ec4899",
-                  "#8b5cf6",
-                ];
-                const left = (i - 7) * 22;
-                const delay = (i % 5) * 0.06;
-                return (
-                  <span
-                    key={i}
-                    className="absolute top-10 block w-2 h-3 rounded-sm animate-confetti-fall"
-                    style={{
-                      left: `${left}px`,
-                      backgroundColor: colors[i % colors.length],
-                      animationDelay: `${delay}s`,
-                    }}
-                  />
-                );
-              })}
+          {loginRole === "QLL" ? (
+            <Image
+              alt=""
+              aria-hidden="true"
+              src="/bitu/bitu-wink-once.webp"
+              width={320}
+              height={320}
+              unoptimized
+              loading="eager"
+              className="pointer-events-none fixed top-1/2 left-1/2 z-[55] h-auto w-[clamp(144px,24vw,240px)] -translate-x-1/2 -translate-y-1/2 motion-reduce:hidden"
+            />
+          ) : (
+            <div className="fixed inset-x-0 top-0 flex justify-center pointer-events-none z-[55] motion-reduce:hidden">
+              <div className="relative w-0 h-0">
+                {Array.from({ length: 14 }).map((_, i) => {
+                  const colors = [
+                    "#f97316",
+                    "#0ea5e9",
+                    "#10b981",
+                    "#f59e0b",
+                    "#ec4899",
+                    "#8b5cf6",
+                  ];
+                  const left = (i - 7) * 22;
+                  const delay = (i % 5) * 0.06;
+                  return (
+                    <span
+                      key={i}
+                      className="absolute top-10 block w-2 h-3 rounded-sm animate-confetti-fall"
+                      style={{
+                        left: `${left}px`,
+                        backgroundColor: colors[i % colors.length],
+                        animationDelay: `${delay}s`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </>
+          )}
+        </React.Fragment>
       )}
 
       <Sidebar
@@ -2133,6 +2160,9 @@ const loadData = (forceFresh = false) => {
           className={`pointer-events-none absolute inset-0 z-10 opacity-0 ${theme === "dark" ? "bg-[#0e1320]" : "bg-white"}`}
         />
       </main>
+      {showBituWelcome && !showUsernameNotice && (
+        <BituWelcome onComplete={finishBituWelcome} />
+      )}
 
       <SlotModal
         ref={slotModalRef}
