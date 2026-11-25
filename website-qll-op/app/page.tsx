@@ -1984,6 +1984,7 @@ const loadData = (forceFresh = false) => {
             checkIsExpired={checkIsExpired}
             onRequestRecall={(row) => setRecallTarget(row)}
             onGoKeepSlot={() => setActiveNav("Giữ Slot")}
+            onGoStudentRequests={() => setActiveNav("DanhSachAddLopQLL")}
             theme={theme}
           />
         ) : loginRole === "QLL" && activeNav === "DanhSachAddLopQLL" ? (

@@ -11,7 +11,7 @@ const supabase = createClient(
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlaHZhdGt0cnF0Z3NubXZlYm1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzE5NzEsImV4cCI6MjEwNjUwNzk3MX0.hmQpRDUxsfP_LSWVE96nFEH85Qqw-z9LG3AQU1VXe0E",
 );
 
-export function useClassScheduleRealtime(refresh: () => Promise<void>) {
+export function useClassScheduleRealtime(refresh: () => Promise<void>, { poll = true } = {}) {
   const [connection, setConnection] = useState<"connecting" | "connected" | "reconnecting">("connecting");
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function useClassScheduleRealtime(refresh: () => Promise<void>) {
       if (document.visibilityState === "visible") queueRefresh();
     };
     queueRefresh();
-    const fallback = window.setInterval(refreshIfVisible, 30_000);
+    const fallback = poll ? window.setInterval(refreshIfVisible, 30_000) : undefined;
     document.addEventListener("visibilitychange", refreshIfVisible);
 
     return () => {
@@ -71,7 +71,7 @@ export function useClassScheduleRealtime(refresh: () => Promise<void>) {
       document.removeEventListener("visibilitychange", refreshIfVisible);
       void supabase.removeChannel(channel);
     };
-  }, [refresh]);
+  }, [refresh, poll]);
 
   return connection;
 }

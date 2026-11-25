@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import BituGreeting from "./BituGreeting";
 
 interface LoginScreenProps {
   loginRole: "QLL" | "Admin";
@@ -40,14 +41,6 @@ export default function LoginScreen({
           __html: `
           @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
           .font-sora { font-family: 'Sora', sans-serif !important; }
-
-          @keyframes floatBitu {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-12px) rotate(2deg); }
-          }
-          .animate-float-bitu {
-            animation: floatBitu 4s ease-in-out infinite;
-          }
 
           @keyframes typing {
             from { width: 0; }
@@ -140,7 +133,7 @@ export default function LoginScreen({
       ></div>
 
       <div className="w-full max-w-[1400px] px-6 lg:px-16 flex items-center justify-between">
-        <div className="hidden lg:flex flex-col items-start relative animate-float-bitu z-20 pointer-events-none select-none pl-6 xl:pl-12">
+        <div className="hidden lg:flex flex-col items-start relative z-20 pointer-events-none select-none pl-6 xl:pl-12">
           <div className="mb-4 ml-6 bg-[#1a1f33]/90 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl shadow-2xl relative">
             <p className="text-white font-medium text-base tracking-wide">
               <span className="typing-effect">Vận hành xin chào! ✨</span>
@@ -148,15 +141,9 @@ export default function LoginScreen({
             <div className="absolute -bottom-2 left-8 w-4 h-4 bg-[#1a1f33]/90 border-r border-b border-white/10 rotate-45 backdrop-blur-md"></div>
           </div>
 
-          <img
-            src="/Chào hỏi_2.png"
-            alt="Nhân vật Bitu Vuihoc"
-            className="w-[360px] xl:w-[420px] h-auto object-contain filter drop-shadow-[0_25px_60px_rgba(0,0,0,0.6)]"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                "/Ch%C3%A0o%20h%E1%BB%8Fi_2.png";
-            }}
-          />
+          <div className="flex w-[360px] justify-center xl:w-[420px]">
+            <BituGreeting className="h-[min(44vh,390px)] w-auto object-contain" />
+          </div>
         </div>
 
         <div className="animated-border-box w-full max-w-[540px] mx-auto lg:mx-0">

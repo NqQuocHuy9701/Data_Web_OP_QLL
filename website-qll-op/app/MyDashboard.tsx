@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import styles from "./MyDashboard.module.css";
 import CountdownTimer from "./CountdownTimer";
+import BituGreeting from "./BituGreeting";
+import { formatTimestamp, useMyStudentAddRequests } from "./useMyStudentAddRequests";
 
 interface MyDashboardProps {
   slotHistoryData: any[];
@@ -11,6 +13,7 @@ interface MyDashboardProps {
   checkIsExpired: (timeString: string) => boolean;
   onRequestRecall: (row: any) => void;
   onGoKeepSlot: () => void;
+  onGoStudentRequests: () => void;
   theme: "light" | "dark";
 }
 
@@ -54,6 +57,7 @@ export default function MyDashboard({
   checkIsExpired,
   onRequestRecall,
   onGoKeepSlot,
+  onGoStudentRequests,
   theme,
 }: MyDashboardProps) {
   // Chuẩn hóa slot của chính QLL + phân loại trạng thái.
@@ -96,169 +100,147 @@ export default function MyDashboard({
   const soonList = mine.filter((m) => m.soon);
   const doneCount = mine.filter((m) => m.isDone).length;
 
-  const cardBase =
-    theme === "dark"
-      ? "bg-[#151b2b] border-white/10"
-      : "bg-white border-slate-200";
+  const metrics = [
+    { label: "Đang giữ", count: activeList.length, tone: "amber", icon: "◷" },
+    { label: "Sắp hết hạn", count: soonList.length, tone: "rose", icon: "!" },
+    { label: "Đã xếp xong", count: doneCount, tone: "green", icon: "✓" },
+  ];
 
   return (
-    <div className="flex-1 px-5 sm:px-8 pt-5 pb-6 min-h-0 overflow-y-auto custom-scrollbar animate-fade-slide-up">
-      {/* Lời chào */}
-      <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-        <div>
-          <h2
-            className={`text-xl sm:text-2xl font-extrabold ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-          >
-            👋 Xin chào,{" "}
-            <span className="text-sky-500">{displayName || "QLL"}</span>
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Tổng quan nhanh các slot bạn đang giữ
-          </p>
-        </div>
-
-        {/* Animation thư giãn ở khung trống giữa — không bắt sự kiện (pointer-events-none) */}
-        <div className="hidden md:block flex-1 h-20 pointer-events-none select-none">
-          <DotLottieReact
-            src="https://lottie.host/ff770bc9-a952-4a8c-b6d2-c20940ca5dbf/tsB3MRK0AC.json"
-            loop
-            autoplay
-            style={{ width: "100%", height: "100%" }}
-          />
-        </div>
-
-        <button
-          onClick={onGoKeepSlot}
-          className="ops-action px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-bold text-sm shadow-lg shadow-orange-500/30 cursor-pointer flex items-center gap-2 shrink-0"
-        >
-          📌 Giữ slot mới
-        </button>
-      </div>
-
-      {/* 3 thẻ KPI cá nhân */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className={`border rounded-2xl py-3 px-4 ${cardBase}`}>
-          <p className="text-amber-500 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-0.5">
-            Đang giữ
-          </p>
-          <span className="text-2xl font-extrabold text-amber-500">
-            {activeList.length}
-          </span>
-        </div>
-        <div className={`border rounded-2xl py-3 px-4 ${cardBase}`}>
-          <p className="text-red-500 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-0.5">
-            Sắp hết hạn
-          </p>
-          <span className="text-2xl font-extrabold text-red-500">
-            {soonList.length}
-          </span>
-        </div>
-        <div className={`border rounded-2xl py-3 px-4 ${cardBase}`}>
-          <p className="text-emerald-500 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-0.5">
-            Đã xếp xong
-          </p>
-          <span className="text-2xl font-extrabold text-emerald-500">
-            {doneCount}
-          </span>
-        </div>
-      </div>
-
-      {/* Khối sắp hết hạn */}
-      <div className={`border rounded-3xl p-5 mb-5 ${cardBase}`}>
-        <h3
-          className={`font-bold flex items-center gap-2 text-sm mb-4 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-        >
-          <span className="w-1.5 h-5 bg-red-500 rounded-full"></span>
-          ⚠️ Slot sắp hết hạn (dưới 2 giờ)
-        </h3>
-        {soonList.length > 0 ? (
-          <div className="space-y-2">
-            {soonList.map((m, i) => (
-              <div
-                key={m.row.id || i}
-                className={`animate-soon-glow flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border ${
-                  theme === "dark"
-                    ? "bg-red-900/15 border-red-500/20"
-                    : "bg-red-50/60 border-red-100"
-                }`}
-              >
-                <div className="min-w-0">
-                  <p className="font-bold text-sky-500 truncate">{m.maLop}</p>
-                  <p className="text-xs text-slate-400 truncate">
-                    {m.monHoc} · {m.note}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span
-                    className={`px-3 py-1.5 border font-bold rounded-xl text-xs inline-flex justify-center min-w-[110px] ${theme === "dark" ? "bg-[#0a0f1c] text-amber-400 border-amber-500/30" : "bg-white text-amber-600 border-amber-200"}`}
-                  >
-                    <CountdownTimer timeString={m.timeStr} />
-                  </span>
-                  <button
-                    onClick={() => onRequestRecall(m.row)}
-                    className="ops-action ops-action-soft ops-action-danger px-3 py-1.5 rounded-full font-bold text-xs cursor-pointer"
-                  >
-                    🔄 Thu hồi
-                  </button>
-                </div>
-              </div>
-            ))}
+    <div className={`flex-1 min-h-0 min-w-0 overflow-y-auto custom-scrollbar ${styles.dashboard}`} data-theme={theme}>
+      <div className={styles.layout}>
+        <header className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <h1>Xin chào, <span>{displayName || "QLL"}</span></h1>
+            <p>Theo dõi các slot bạn đang giữ và ưu tiên những lớp sắp hết hạn.</p>
           </div>
-        ) : (
-          <p className="text-sm text-slate-400 py-4 text-center">
-            Không có slot nào sắp hết hạn ✅
-          </p>
-        )}
-      </div>
-
-      {/* Khối đang giữ */}
-      <div className={`border rounded-3xl p-5 ${cardBase}`}>
-        <h3
-          className={`font-bold flex items-center gap-2 text-sm mb-4 ${theme === "dark" ? "text-white" : "text-slate-800"}`}
-        >
-          <span className="w-1.5 h-5 bg-amber-500 rounded-full"></span>
-          🕒 Slot bạn đang giữ ({activeList.length})
-        </h3>
-        {activeList.length > 0 ? (
-          <div className="space-y-2">
-            {activeList.map((m, i) => (
-              <div
-                key={m.row.id || i}
-                className={`flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border ${
-                  theme === "dark"
-                    ? "bg-[#0e1320] border-white/5"
-                    : "bg-slate-50/60 border-slate-100"
-                }`}
-              >
-                <div className="min-w-0">
-                  <p className="font-bold text-sky-500 truncate">{m.maLop}</p>
-                  <p className="text-xs text-slate-400 truncate">
-                    {m.monHoc} · {m.note}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span
-                    className={`px-3 py-1.5 border font-bold rounded-xl text-xs inline-flex justify-center min-w-[110px] ${theme === "dark" ? "bg-[#0a0f1c] text-amber-400 border-amber-500/30" : "bg-white text-amber-600 border-amber-200"}`}
-                  >
-                    <CountdownTimer timeString={m.timeStr} />
-                  </span>
-                  <button
-                    onClick={() => onRequestRecall(m.row)}
-                    className="ops-action ops-action-soft ops-action-danger px-3 py-1.5 rounded-full font-bold text-xs cursor-pointer"
-                  >
-                    🔄 Thu hồi
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className={styles.heroArt} aria-hidden="true">
+            <BituGreeting />
           </div>
-        ) : (
-          <p className="text-sm text-slate-400 py-6 text-center">
-            Bạn chưa giữ slot nào đang còn hiệu lực. Bấm "📌 Giữ slot mới" để
-            bắt đầu.
-          </p>
-        )}
+          <button type="button" onClick={onGoKeepSlot} className={`ops-action ${styles.primary}`}>
+            <span aria-hidden="true">+</span> Giữ slot mới
+          </button>
+        </header>
+
+        <dl className={styles.metrics} aria-label="Tổng quan slot của tôi">
+          {metrics.map((metric) => (
+            <div key={metric.label} className={styles.metric} data-tone={metric.tone}>
+              <dt>{metric.label}</dt>
+              <dd>{metric.count}</dd>
+              <span className={styles.metricIcon} aria-hidden="true">{metric.icon}</span>
+            </div>
+          ))}
+        </dl>
+
+        <div className={styles.columns}>
+          <section className={styles.panel} aria-labelledby="my-active-slots">
+            <div className={styles.panelHeading}>
+              <h2 id="my-active-slots">Slot đang giữ</h2>
+              <span className={styles.badge}>{activeList.length} slot</span>
+            </div>
+            {activeList.length ? (
+              <ul className={styles.list}>
+                {activeList.map((slot, index) => (
+                  <li key={slot.row.id ?? index} className={styles.row}>
+                    <div className={styles.classInfo}>
+                      <strong>{slot.maLop}</strong>
+                      <p>{slot.monHoc}{slot.note !== "-" && ` · ${slot.note}`}</p>
+                    </div>
+                    <div className={styles.rowActions}>
+                      <span className={styles.timer} data-soon={slot.soon}>
+                        <CountdownTimer timeString={slot.timeStr} />
+                      </span>
+                      <button type="button" onClick={() => onRequestRecall(slot.row)} className="ops-action ops-action-soft ops-action-danger rounded-full px-3 py-1.5 text-xs font-bold">
+                        Thu hồi
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className={styles.empty}>
+                <span aria-hidden="true">◷</span>
+                <strong>Bạn chưa giữ slot nào</strong>
+                <p>Chọn Giữ slot mới để tìm lớp còn chỗ.</p>
+              </div>
+            )}
+          </section>
+
+          <section className={styles.panel} aria-labelledby="my-expiring-slots">
+            <div className={styles.panelHeading}>
+              <h2 id="my-expiring-slots">Sắp hết hạn</h2>
+              <span className={`${styles.badge} ${styles.urgentBadge}`}>Dưới 2 giờ</span>
+            </div>
+            {soonList.length ? (
+              <ul className={styles.list}>
+                {soonList.map((slot, index) => (
+                  <li key={slot.row.id ?? index} className={`${styles.row} ${styles.urgentRow}`}>
+                    <div className={styles.classInfo}>
+                      <strong>{slot.maLop}</strong>
+                      <p>{slot.monHoc}{slot.note !== "-" && ` · ${slot.note}`}</p>
+                    </div>
+                    <button type="button" onClick={() => onRequestRecall(slot.row)} className="ops-action ops-action-soft ops-action-danger shrink-0 rounded-full px-3 py-1.5 text-xs font-bold">
+                      Thu hồi
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className={`${styles.empty} ${styles.clear}`}>
+                <span aria-hidden="true">✓</span>
+                <strong>Không có slot sắp hết hạn</strong>
+              </div>
+            )}
+          </section>
+        </div>
+        <RecentStudentRequests displayName={displayName} onOpenList={onGoStudentRequests} />
       </div>
     </div>
+  );
+}
+
+function RecentStudentRequests({ displayName, onOpenList }: { displayName: string; onOpenList: () => void }) {
+  const { requests, loading, errorMessage, loadRequests } = useMyStudentAddRequests(displayName, 5);
+
+  return (
+    <section className={styles.panel} aria-labelledby="my-recent-add-requests" aria-busy={loading}>
+      <div className={styles.panelHeading}>
+        <div>
+          <h2 id="my-recent-add-requests">Yêu cầu thêm học sinh</h2>
+          <p className={styles.panelSubtitle}>Các yêu cầu bạn gửi gần đây</p>
+        </div>
+        <button type="button" onClick={onOpenList} className={`ops-action ${styles.listLink}`}>
+          Xem tất cả <span aria-hidden="true">→</span>
+        </button>
+      </div>
+      {errorMessage && (
+        <p className={styles.requestError} role="status">
+          Không thể cập nhật yêu cầu. <button type="button" onClick={() => void loadRequests()}>Thử lại</button>
+        </p>
+      )}
+      {requests.length > 0 ? (
+        <ul className={styles.list}>
+          {requests.map((request) => {
+            const status = request.is_cancelled ? "cancelled" : request.is_done ? "done" : "pending";
+            return (
+              <li key={request.id} className={`${styles.row} ${styles.requestRow}`}>
+                <div className={styles.classInfo}>
+                  <strong>{request.ma_lop}</strong>
+                  <p>{request.mon_hoc && `${request.mon_hoc} · `}SID {request.sid_cid}</p>
+                </div>
+                <span className={styles.requestDate}>{formatTimestamp(request.timestamp)}</span>
+                <span className={styles.requestStatus} data-status={status}>
+                  {status === "cancelled" ? "Đã hủy" : status === "done" ? "Đã xếp" : "Chờ xử lý"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : !errorMessage && (
+        <div className={styles.empty}>
+          <strong>{loading ? "Đang tải yêu cầu…" : "Bạn chưa gửi yêu cầu nào"}</strong>
+        </div>
+      )}
+    </section>
   );
 }

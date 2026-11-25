@@ -53,6 +53,10 @@ export async function GET(request: Request) {
   }
 
   const isDetailedList = isListView || isQllListView;
+  const requestedLimit = searchParams.get("limit");
+  const previewLimit = isQllListView && requestedLimit && /^(?:[1-9]|10)$/.test(requestedLimit)
+    ? Number(requestedLimit)
+    : null;
   const supabaseKey = isDetailedList
     ? process.env.SUPABASE_SERVICE_ROLE_KEY
     : SUPABASE_ANON_KEY;
@@ -65,7 +69,7 @@ export async function GET(request: Request) {
 
   const counts: Record<string, number> = Object.create(null);
   const requests: unknown[] = [];
-  const pageSize = 1000;
+  const pageSize = previewLimit ?? 1000;
 
   try {
     if (!isDetailedList) {
@@ -152,6 +156,7 @@ export async function GET(request: Request) {
       const contentRange = response.headers.get("content-range");
       const total = Number(contentRange?.split("/")[1]);
       if (
+        previewLimit !== null ||
         rows.length < pageSize ||
         (Number.isFinite(total) && offset + rows.length >= total)
       ) {
