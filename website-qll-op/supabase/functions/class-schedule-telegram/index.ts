@@ -337,6 +337,8 @@ Deno.serve(async (request) => {
           ...requestDetails,
           "Trạng thái: <b>HỦY YÊU CẦU</b>",
           `Lý do: ${escapeHtml(reason)}`,
+          "",
+          "<b><i>⚠️ NOTE: QLL không reply tin nhắn này. Vui lòng gửi lại yêu cầu trên web OP !</i></b>",
         ]
       : [
           ...requestDetails,
