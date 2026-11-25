@@ -76,11 +76,9 @@ export async function POST(request: Request) {
   }
 
   const classCode = body.ma_lop.trim();
-  const duplicateResponse = (sameClass: boolean) => NextResponse.json({
+  const duplicateResponse = () => NextResponse.json({
     success: false,
-    error: sameClass
-      ? "Học sinh này đang giữ lớp này trong vòng 24 giờ."
-      : "SID/CID này đã giữ một lớp khác trong vòng 24 giờ.",
+    error: "SID/CID này đang giữ mã lớp này trong vòng 24 giờ.",
   }, { status: 409 });
 
   try {
@@ -99,10 +97,8 @@ export async function POST(request: Request) {
     const existing = await fetch(lookup, { headers, cache: "no-store" });
     if (!existing.ok) throw new Error(await existing.text());
     const holds: { ma_lop: string }[] = await existing.json();
-    if (holds.length) {
-      return duplicateResponse(holds.some(
-        (hold) => hold.ma_lop?.trim().toUpperCase() === classCode.toUpperCase(),
-      ));
+    if (holds.some((hold) => hold.ma_lop?.trim().toUpperCase() === classCode.toUpperCase())) {
+      return duplicateResponse();
     }
 
     const res = await fetch(SUPABASE_ENDPOINT, {
@@ -125,8 +121,8 @@ export async function POST(request: Request) {
     });
     if (res.status === 409) {
       const error = await res.json();
-      if (error.code === "PT409" && ["hold_same_class", "hold_other_class"].includes(error.message)) {
-        return duplicateResponse(error.message === "hold_same_class");
+      if (error.code === "PT409" && error.message === "hold_same_class") {
+        return duplicateResponse();
       }
       throw new Error("Supabase rejected the slot hold.");
     }
