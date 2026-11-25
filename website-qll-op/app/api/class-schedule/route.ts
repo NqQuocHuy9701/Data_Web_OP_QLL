@@ -339,9 +339,17 @@ export async function PATCH(request: Request) {
   const body = parsedBody as Record<string, unknown>;
   const id = String(body.id || "");
   const action = body.action;
-  if (!/^\d+$/.test(id) || !["done", "cancel"].includes(String(action))) {
+  if (!/^\d+$/.test(id) || (action !== "done" && action !== "cancel")) {
     return NextResponse.json(
       { success: false, error: "ID hoặc thao tác cập nhật không hợp lệ." },
+      { status: 400 },
+    );
+  }
+
+  const cancelReason = typeof body.cancelReason === "string" ? body.cancelReason.trim() : "";
+  if (action === "cancel" && (!cancelReason || cancelReason.length > 500)) {
+    return NextResponse.json(
+      { success: false, error: "Vui lòng nhập lý do hủy từ 1 đến 500 ký tự." },
       { status: 400 },
     );
   }
@@ -351,11 +359,15 @@ export async function PATCH(request: Request) {
     is_cancelled: action === "cancel",
     processed_by: adminUsername,
     processed_at: new Date().toISOString(),
+    ...(action === "cancel" ? { cancel_reason: cancelReason } : {}),
   };
+  const recordFields =
+    "id,ma_lop,mon_hoc,nguoi_tao,team,sid_cid,timestamp,created_at,is_done,is_cancelled" +
+    (action === "cancel" ? ",cancel_reason" : "");
 
   try {
     const response = await fetch(
-      `${SUPABASE_ENDPOINT}?id=eq.${encodeURIComponent(id)}&is_done=eq.false&is_cancelled=eq.false&select=id`,
+      `${SUPABASE_ENDPOINT}?id=eq.${encodeURIComponent(id)}&is_done=eq.false&is_cancelled=eq.false&select=${recordFields}`,
       {
         method: "PATCH",
         headers: {
@@ -391,56 +403,38 @@ export async function PATCH(request: Request) {
 
     await broadcastClassScheduleChange();
 
-    if (action === "done") {
-      const recordResponse = await fetch(
-        `${SUPABASE_ENDPOINT}?select=id,ma_lop,mon_hoc,nguoi_tao,team,sid_cid,timestamp,created_at,is_done&id=eq.${encodeURIComponent(id)}`,
+    const record = updated[0];
+    try {
+      const notificationResponse = await fetch(
+        new URL("/functions/v1/class-schedule-telegram", SUPABASE_ENDPOINT),
         {
+          method: "POST",
           headers: {
-            apikey: serviceRoleKey,
-            Authorization: `Bearer ${serviceRoleKey}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            ...(action === "cancel" ? { "x-class-schedule-service-key": serviceRoleKey } : {}),
           },
+          body: JSON.stringify({
+            type: "UPDATE",
+            schema: "public",
+            table: "class_schedule_requests",
+            record,
+            old_record: { ...record, is_done: false, is_cancelled: false },
+          }),
           cache: "no-store",
+          signal: AbortSignal.timeout(10_000),
         },
       );
-
-      if (recordResponse.ok) {
-        const records = await recordResponse.json();
-        const record = Array.isArray(records) ? records[0] : null;
-        if (record?.is_done === true) {
-          const notificationResponse = await fetch(
-            "https://sehvatktrqtgsnmvebmm.supabase.co/functions/v1/class-schedule-telegram",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({
-                type: "UPDATE",
-                schema: "public",
-                table: "class_schedule_requests",
-                record,
-                old_record: { ...record, is_done: false },
-              }),
-              cache: "no-store",
-              signal: AbortSignal.timeout(10_000),
-            },
-          );
-
-          if (!notificationResponse.ok) {
-            const notificationError = await notificationResponse.text();
-            console.error(
-              "Failed to notify Telegram done group:",
-              notificationError,
-            );
-          }
-        }
-      } else {
-        console.error(
-          "Failed to read Add lớp record after Done:",
-          await recordResponse.text(),
-        );
+      const notification = await notificationResponse.json();
+      if (!notificationResponse.ok || notification?.success !== true || notification.ignored) {
+        throw new Error(`Telegram notification failed (HTTP ${notificationResponse.status}).`);
       }
+    } catch (error) {
+      console.error("Failed to notify QLL about Add lớp status:", error);
+      return NextResponse.json({
+        success: true,
+        notificationWarning: "Đã lưu trạng thái nhưng chưa gửi được thông báo Telegram cho nhóm QLL.",
+      });
     }
 
     return NextResponse.json({ success: true });

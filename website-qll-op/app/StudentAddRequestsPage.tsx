@@ -20,6 +20,7 @@ interface StudentAddRequest {
 
 type StatusFilter = "Tất cả" | "Chờ xử lý" | "Đã xếp" | "Đã hủy";
 type RequestAction = "done" | "cancel";
+const MAX_CANCEL_REASON_LENGTH = 500;
 const MAX_WAIT_MS = 2 * 60 * 60 * 1000;
 
 interface StudentAddRequestsPageProps {
@@ -81,6 +82,7 @@ export default function StudentAddRequestsPage({
     request: StudentAddRequest;
     action: RequestAction;
   } | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   const fetchRequests = useCallback(async () => {
     const response = await fetch(
@@ -207,6 +209,8 @@ export default function StudentAddRequestsPage({
 
   const updateRequestStatus = async () => {
     if (!confirmTarget || actionPending.current) return;
+    const reason = cancelReason.trim();
+    if (confirmTarget.action === "cancel" && !reason) return;
     actionPending.current = true;
 
     const id = String(confirmTarget.request.id);
@@ -220,6 +224,7 @@ export default function StudentAddRequestsPage({
         body: JSON.stringify({
           id,
           action,
+          ...(action === "cancel" ? { cancelReason: reason } : {}),
         }),
       });
       const result = await response.json();
@@ -245,6 +250,7 @@ export default function StudentAddRequestsPage({
       setSuccess({ text: action === "done" ? "Đã xếp lớp" : "Đã hủy yêu cầu" });
       await loadRequests();
       await onCountsChanged();
+      if (result.notificationWarning) setErrorMessage(result.notificationWarning);
     } catch (error) {
       console.error("Lỗi cập nhật yêu cầu Add lớp:", error);
       await loadRequests();
@@ -549,9 +555,10 @@ export default function StudentAddRequestsPage({
                             <button
                               type="button"
                               disabled={updatingId === String(request.id)}
-                              onClick={() =>
-                                setConfirmTarget({ request, action: "cancel" })
-                              }
+                              onClick={() => {
+                                setCancelReason("");
+                                setConfirmTarget({ request, action: "cancel" });
+                              }}
                               className="ops-action ops-action-soft ops-action-danger px-3 py-2 rounded-full text-xs font-bold disabled:opacity-50"
                             >
                               Hủy
@@ -586,9 +593,32 @@ export default function StudentAddRequestsPage({
             : ""
         }
         pending={updatingId !== null}
+        confirmText={confirmTarget?.action === "cancel" ? "Đồng ý" : undefined}
+        confirmDisabled={confirmTarget?.action === "cancel" && !cancelReason.trim()}
         onConfirm={() => void updateRequestStatus()}
-        onCancel={() => setConfirmTarget(null)}
-      />
+        onCancel={() => {
+          if (!actionPending.current) setConfirmTarget(null);
+        }}
+      >
+        {confirmTarget?.action === "cancel" && (
+          <label className="mb-5 block text-sm font-medium">
+            Lý do hủy
+            <textarea
+              autoFocus
+              required
+              rows={3}
+              maxLength={MAX_CANCEL_REASON_LENGTH}
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              disabled={updatingId !== null}
+              placeholder="Nhập lý do để gửi cho QLL"
+              className={`mt-2 block w-full resize-y rounded-xl border px-3 py-2.5 font-normal outline-none focus:border-sky-500 ${
+                theme === "dark" ? "border-white/15 bg-[#0a0f1c]" : "border-slate-300 bg-slate-50"
+              }`}
+            />
+          </label>
+        )}
+      </ConfirmDialog>
     </div>
   );
 }

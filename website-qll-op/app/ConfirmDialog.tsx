@@ -10,6 +10,8 @@ interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   pending?: boolean;
+  confirmDisabled?: boolean;
+  children?: React.ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -22,6 +24,8 @@ export default function ConfirmDialog({
   confirmText = "Xác nhận",
   cancelText = "Hủy bỏ",
   pending = false,
+  confirmDisabled = false,
+  children,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -58,6 +62,7 @@ export default function ConfirmDialog({
           {message}
         </p>
 
+        {children}
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
@@ -73,7 +78,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            disabled={pending}
+            disabled={pending || confirmDisabled}
             aria-busy={pending}
             className="ops-action inline-grid place-items-center px-5 py-2.5 bg-rose-500 enabled:hover:bg-rose-600 text-white rounded-full font-bold text-xs shadow-lg shadow-rose-500/30 enabled:cursor-pointer disabled:opacity-75"
           >

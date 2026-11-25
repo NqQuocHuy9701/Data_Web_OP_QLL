@@ -5,6 +5,8 @@ interface ClassScheduleRecord {
   sid_cid?: string | null;
   team?: string | null;
   is_done?: boolean | null;
+  is_cancelled?: boolean | null;
+  cancel_reason?: string | null;
   timestamp?: number | string | null;
   created_at?: string | null;
 }
@@ -277,14 +279,32 @@ Deno.serve(async (request) => {
       "@OP_LinhDK6 @OP_LinhDTT1",
     ].join("\n");
   } else {
-    if (record.is_done !== true) {
-      return jsonResponse({ success: true, ignored: "not_done" });
+    const cancelled = record.is_cancelled === true;
+    if (!cancelled && record.is_done !== true) {
+      return jsonResponse({ success: true, ignored: "not_processed" });
     }
     if (
       isRecord(payload.old_record) &&
-      payload.old_record.is_done === true
+      (payload.old_record.is_done === true || payload.old_record.is_cancelled === true)
     ) {
-      return jsonResponse({ success: true, ignored: "already_done" });
+      return jsonResponse({ success: true, ignored: "already_processed" });
+    }
+
+    const reason = typeof record.cancel_reason === "string" ? record.cancel_reason.trim() : "";
+    if (cancelled) {
+      const callerKey = request.headers.get("x-class-schedule-service-key");
+      const expectedHash = Deno.env.get("CLASS_SCHEDULE_CANCEL_KEY_SHA256");
+      if (!callerKey || !expectedHash) {
+        return jsonResponse({ success: false, error: "Unauthorized." }, 401);
+      }
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(callerKey));
+      const callerHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      if (callerHash !== expectedHash) {
+        return jsonResponse({ success: false, error: "Unauthorized." }, 401);
+      }
+      if (!reason || reason.length > 500) {
+        return jsonResponse({ success: false, error: "Invalid cancellation reason." }, 400);
+      }
     }
 
     targetChatId = Deno.env.get("TELEGRAM_DONE_CHAT_ID") || "-1002273179613";
@@ -306,15 +326,26 @@ Deno.serve(async (request) => {
           : "@KhongRo",
     );
     const subjectHashtag = formatSubjectHashtag(record.ma_lop);
-    message = [
+    const requestDetails = [
       `🆔 SID/CID: ${escapeHtml(record.sid_cid?.trim() || "Không rõ")}`,
       `Mã lớp: ${escapeHtml(record.ma_lop)}`,
       `QLL: ${mention}`,
-      subjectHashtag,
-      "",
-      "VH đã add lớp theo thông tin mã lớp QLL báo trên web.",
-      "Nhờ QLL kiểm tra lại thông tin lớp học (lịch học, khối lớp) và thông báo đến PH đồng thời hướng dẫn PH nhắn OA để VH hỗ trợ, hướng dẫn học tập cho HS nhé!",
-    ].join("\n");
+    ];
+    message = (cancelled
+      ? [
+          escapeHtml(subjectHashtag),
+          ...requestDetails,
+          "Trạng thái: <b>HỦY YÊU CẦU</b>",
+          `Lý do: ${escapeHtml(reason)}`,
+        ]
+      : [
+          ...requestDetails,
+          subjectHashtag,
+          "",
+          "VH đã add lớp theo thông tin mã lớp QLL báo trên web.",
+          "Nhờ QLL kiểm tra lại thông tin lớp học (lịch học, khối lớp) và thông báo đến PH đồng thời hướng dẫn PH nhắn OA để VH hỗ trợ, hướng dẫn học tập cho HS nhé!",
+        ]
+    ).join("\n");
   }
 
   return sendTelegram(botToken, targetChatId, targetThreadId, message);
