@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-const GREETING_DURATION_MS = 6_000;
+const GREETING_DURATION_MS = 4_900;
 const LOAD_TIMEOUT_MS = 6_000;
 const VIDEO_START_TIMEOUT_MS = 3_500;
 const VIDEO_PLAY_TIMEOUT_MS = 8_000;
@@ -63,7 +63,7 @@ export default function BituWelcome({ onComplete }: { onComplete: () => void }) 
       <video
         ref={videoRef}
         aria-hidden="true"
-        src="/bitu/bitu-welcome-wave.webm"
+        src="/bitu/bitu-welcome-wave.webm?v=16"
         width={304}
         height={288}
         autoPlay
@@ -84,7 +84,7 @@ export default function BituWelcome({ onComplete }: { onComplete: () => void }) 
     <Image
       alt=""
       aria-hidden="true"
-      src="/bitu/bitu-welcome-wave.webp"
+      src="/bitu/bitu-welcome-wave.webp?v=16"
       width={304}
       height={288}
       unoptimized
