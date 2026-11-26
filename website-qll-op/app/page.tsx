@@ -31,6 +31,11 @@ import { createClient } from "@supabase/supabase-js";
 
 import { buildMinuteTrafficPoints, buildOnlinePeakPoints, readOnlineUsers, selectTrafficWriter, waitForFreshPresence, type OnlinePeakPoint } from "./trafficMetrics";
 
+const NGU_VAN_CAPACITY = new Map([
+  ["1:4", 4],
+  ["1:6", 6],
+]);
+
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://sehvatktrqtgsnmvebmm.supabase.co";
@@ -1435,7 +1440,7 @@ const loadData = (forceFresh = false) => {
       monHoc.includes("ngu van") ||
       monHoc.includes("văn")
     ) {
-      if (loaiLop === "1:4") maxAllowed = 4;
+      maxAllowed = NGU_VAN_CAPACITY.get(loaiLop) ?? 0;
     }
 
     const remaining = maxAllowed - dangHoc - heldCount;
@@ -1467,7 +1472,7 @@ const loadData = (forceFresh = false) => {
       monHoc.includes("ngu van") ||
       monHoc.includes("văn")
     ) {
-      if (loaiLop === "1:4") threshold = 1;
+      if (NGU_VAN_CAPACITY.has(loaiLop)) threshold = 1;
     }
 
     if (dangHoc <= threshold) {
@@ -1509,7 +1514,8 @@ const loadData = (forceFresh = false) => {
         monHocRule.includes("ngu van") ||
         monHocRule.includes("văn")
       ) {
-        if (loaiLopRule === "1:4") isPassRule = dangHocRule <= 3;
+        const maxAllowed = NGU_VAN_CAPACITY.get(loaiLopRule);
+        if (maxAllowed !== undefined) isPassRule = dangHocRule < maxAllowed;
       }
 
       if (!isPassRule) return false;
