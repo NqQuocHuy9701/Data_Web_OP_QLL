@@ -479,6 +479,20 @@ body {
     flex: 0 0 4rem;
   }
 
+  .ops-sidebar-rail[data-theme="dark"] {
+    background: #101827;
+    box-shadow: inset -1px 0 0 rgb(148 163 184 / 20%);
+  }
+
+  .ops-sidebar-rail[data-theme="light"] {
+    background: #f8fafc;
+    box-shadow: inset -1px 0 0 #dbe3ee;
+  }
+
+  .ops-sidebar-rail[data-theme="dark"] .ops-sidebar {
+    border-right-color: rgb(148 163 184 / 20%);
+  }
+
   .ops-sidebar-rail .ops-sidebar {
     position: absolute;
     inset-block: 0;

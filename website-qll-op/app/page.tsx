@@ -25,6 +25,7 @@ import StudentAddRequestsQLLPage from "./StudentAddRequestsQLLPage";
 import ErrorPopup from "./ErrorPopup";
 import MainDataTable from "./MainDataTable";
 import Dashboard from "./Dashboard";
+import ClassScheduleDashboard from "./ClassScheduleDashboard";
 import MyDashboard from "./MyDashboard";
 import ConfirmDialog from "./ConfirmDialog";
 import AuditLog from "./AuditLog";
@@ -2042,6 +2043,7 @@ const loadData = (forceFresh = false) => {
           loadData={loadData}
           loadSlotHistory={loadSlotHistory}
           onOpenSidebar={() => setSidebarOpen(true)}
+          hideDataControls={activeNav === "ClassScheduleDashboard"}
         />
         {QLL_NOTICES_ENABLED && loginRole === "QLL" && displayName && (
           <QllNoticeInbox key={displayName} namecode={displayName} theme={theme} realtime={supabase} />
@@ -2076,6 +2078,8 @@ const loadData = (forceFresh = false) => {
             slotHistoryData={slotHistoryData}
             theme={theme}
           />
+        ) : loginRole === "Admin" && activeNav === "ClassScheduleDashboard" ? (
+          <ClassScheduleDashboard theme={theme} onSessionExpired={handleAdminSessionExpired} />
         ) : loginRole === "Admin" && activeNav === "LichSuSlotAdmin" ? (
           <div
             key="LichSuSlotAdmin"

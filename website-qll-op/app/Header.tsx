@@ -16,6 +16,7 @@ interface HeaderProps {
   loadData: (forceFresh?: boolean) => void;
   loadSlotHistory: (isSilent?: boolean) => void;
   onOpenSidebar?: () => void;
+  hideDataControls?: boolean;
 }
 
 export default function Header({
@@ -31,6 +32,7 @@ export default function Header({
   loadData,
   loadSlotHistory,
   onOpenSidebar,
+  hideDataControls = false,
 }: HeaderProps) {
   return (
     <header
@@ -66,11 +68,11 @@ export default function Header({
         </svg>
       </button>
 
-      <div className={`max-w-[22%] min-w-0 shrink-0 truncate text-sm font-bold ${theme === "dark" ? "text-slate-100" : "text-slate-800"}`} title={title}>
+      <div className={`min-w-0 truncate text-sm font-bold ${hideDataControls ? "flex-1" : "max-w-[22%] shrink-0"} ${theme === "dark" ? "text-slate-100" : "text-slate-800"}`} title={title}>
         {title}
       </div>
 
-      <div className="ops-field relative min-w-0 max-w-[24rem] flex-1 rounded-full group">
+      {!hideDataControls && <div className="ops-field relative min-w-0 max-w-[24rem] flex-1 rounded-full group">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <span className="text-slate-400 group-focus-within:text-sky-500 transition-colors">
             🔍
@@ -88,7 +90,7 @@ export default function Header({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-      </div>
+      </div>}
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <div className="header-theme-toggle flex items-center">
@@ -99,7 +101,7 @@ export default function Header({
             Cập nhật {lastUpdated}
           </span>
         )}
-        <button
+        {!hideDataControls && <button
           onClick={() => {
             loadData(true); // Bấm Update -> ép tải data tươi, bỏ qua cache
             if (loginRole === "Admin") loadSlotHistory();
@@ -147,7 +149,7 @@ export default function Header({
               <span className="relative z-10">Update</span>
             </>
           )}
-        </button>
+        </button>}
       </div>
     </header>
   );

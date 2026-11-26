@@ -13,6 +13,7 @@ export type NavKey =
   | "LichSuSlotAdmin"
   | "ThongKeAdmin"
   | "Dashboard"
+  | "ClassScheduleDashboard"
   | "TrangCuaToi"
   | "NhatKy";
 
@@ -27,6 +28,7 @@ export const navLabels: Record<NavKey, string> = {
   LichSuSlotAdmin: "DS Giữ Slot",
   ThongKeAdmin: "Theo dõi truy cập",
   Dashboard: "Dashboard book Slots",
+  ClassScheduleDashboard: "Báo cáo yêu cầu Add lớp",
   TrangCuaToi: "Trang của tôi",
   NhatKy: "Nhật ký",
 };
@@ -115,7 +117,7 @@ export default function Sidebar({
         />
       )}
 
-      <div className="ops-sidebar-rail">
+      <div className="ops-sidebar-rail" data-theme={theme}>
       <aside
         data-theme={theme}
         onClick={() => setSidebarOpen?.(false)}
@@ -331,6 +333,32 @@ export default function Sidebar({
             >
               <span className="text-lg">📈</span>
               <span className="ops-sidebar-label text-xs truncate">Dashboard book Slots</span>
+            </button>
+
+            <button
+              type="button"
+              title={navLabels.ClassScheduleDashboard}
+              aria-label={navLabels.ClassScheduleDashboard}
+              aria-current={activeNav === "ClassScheduleDashboard" ? "page" : undefined}
+              onClick={() => setActiveNav("ClassScheduleDashboard")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors duration-0 focus:outline-none relative group ${
+                activeNav === "ClassScheduleDashboard"
+                  ? "bg-orange-500 text-white font-bold shadow-[0_4px_15px_rgba(249,115,22,0.3)]"
+                  : theme === "dark"
+                    ? "text-slate-400 hover:bg-white/5 hover:text-orange-400 font-medium"
+                    : "text-slate-600 hover:bg-orange-50 hover:text-orange-600 font-medium"
+              }`}
+            >
+              <span aria-hidden="true" className={`grid size-6 shrink-0 place-items-center rounded-md ${
+                activeNav === "ClassScheduleDashboard" ? "bg-white/40 text-[#431407]"
+                  : theme === "dark" ? "bg-sky-400/15 text-sky-300" : "bg-sky-100 text-sky-700"
+              }`}>
+                <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="3" width="14" height="18" rx="2" />
+                  <path d="m8 9 1.5 1.5L12 8m2 1h2m-8 5 1.5 1.5L12 13m2 1h2" />
+                </svg>
+              </span>
+              <span className="ops-sidebar-label text-xs truncate">Báo cáo Add lớp</span>
             </button>
 
             <button
