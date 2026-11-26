@@ -123,9 +123,9 @@ export default function ClassScheduleDashboard({ theme, onSessionExpired }: {
   const chartText = dark ? "#f1f5f9" : "#0f172a";
 
   return (
-    <div className={`min-h-0 flex-1 overflow-auto px-4 py-5 [scrollbar-gutter:stable] sm:px-6 ${dark ? "text-slate-100" : "text-slate-900"}`}
+    <div className={`min-h-0 min-w-0 flex-1 overflow-auto px-4 py-5 [scrollbar-gutter:stable] sm:px-6 2xl:px-8 ${dark ? "text-slate-100" : "text-slate-900"}`}
       style={{ colorScheme: theme }}>
-      <div className="mx-auto max-w-[1440px]">
+      <div className="w-full min-w-0">
         <p className={`text-sm ${muted}`}>Thống kê theo ngày tạo yêu cầu (giờ Việt Nam)</p>
 
         <div className={`my-4 flex flex-wrap items-end gap-2.5 text-sm ${muted}`}>
