@@ -6,26 +6,43 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:vinext": "vite dev --port 3001",
+    "build:vinext": "vite build",
+    "start:vinext": "vite preview",
+    "deploy:vinext": "vinext-cloudflare deploy"
   },
   "dependencies": {
     "@lottiefiles/dotlottie-react": "^0.20.0",
+    "@supabase/supabase-js": "^2.119.2",
+    "@vinext/cloudflare": "^1.4.0",
     "bcryptjs": "^3.0.3",
     "next": "16.3.8",
     "papaparse": "^5.7.0",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-server-dom-webpack": "^19.3.1",
+    "recharts": "^3.11.1",
+    "vinext": "^1.4.6"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^2.0.0-rc.5",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@vitejs/plugin-rsc": "^0.5.39",
+    "cf": "^1.0.0-rc.6",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "postcss": "^8.5.33",
     "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+    "typescript": "^5",
+    "vite": "^8.3.0",
+    "vite-css-modules": "^1.16.1"
+  },
+  "type": "module"
 }
