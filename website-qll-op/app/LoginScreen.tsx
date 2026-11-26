@@ -257,6 +257,12 @@ export default function LoginScreen({
                       >
                         Lead XuanNT14
                       </option>
+                      <option
+                        value="Lead YenDH"
+                        className="bg-[#151a28] text-white"
+                      >
+                        Lead YenDH
+                      </option>
                       <option value="Khác" className="bg-[#151a28] text-white">
                         Khác / QLL chung
                       </option>
