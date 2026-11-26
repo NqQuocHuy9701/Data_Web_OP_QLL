@@ -12,6 +12,7 @@ interface OnlineUsersTableProps {
   onlineUsers: OnlineUser[];
   formatOnlineDuration: (timestamp: number) => string;
   onRefresh?: () => void;
+  onNotify?: (namecode: string) => void;
   theme: "light" | "dark";
 }
 
@@ -19,6 +20,7 @@ export default function OnlineUsersTable({
   onlineUsers,
   formatOnlineDuration,
   onRefresh,
+  onNotify,
   theme,
 }: OnlineUsersTableProps) {
   const [previousUsers, setPreviousUsers] = useState(onlineUsers);
@@ -106,6 +108,7 @@ export default function OnlineUsersTable({
               <th className="px-6 py-4">Tên Namecode (Đang Onl)</th>
               <th className="px-6 py-4">Team Lead</th>
               <th className="px-6 py-4 text-right pr-8">Thời gian Online</th>
+              {onNotify && <th className="px-6 py-4 text-right">Thông báo</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/20 text-sm">
@@ -136,11 +139,22 @@ export default function OnlineUsersTable({
                   <td className="py-3.5 px-6 text-right pr-8 text-slate-400 text-xs">
                     {formatOnlineDuration(user.onlineAt)}
                   </td>
+                  {onNotify && (
+                    <td className="px-6 py-3.5 text-right">
+                      {!leaving && user.namecode && user.teamLead && user.teamLead !== "Admin hệ thống" && (
+                        <button type="button" aria-label={`Gửi thông báo cho ${user.namecode}`}
+                          className="ops-action rounded-xl border border-sky-500/40 px-3 py-1.5 text-xs font-semibold"
+                          onClick={() => onNotify(user.namecode)}>
+                          Gửi thông báo
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="py-6 text-center text-slate-400">
+                <td colSpan={onNotify ? 5 : 4} className="py-6 text-center text-slate-400">
                   Không có nhân sự nào đang trực tuyến.
                 </td>
               </tr>

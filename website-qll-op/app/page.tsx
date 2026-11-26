@@ -14,6 +14,7 @@ import AdminStats from "./AdminStats";
 import TrafficCharts from "./TrafficCharts";
 import FilterDropdown from "./FilterDropdown";
 import OnlineUsersTable from "./OnlineUsersTable";
+import { QllNoticeComposer, QllNoticeInbox } from "./QllNoticePanel";
 import CountdownTimer from "./CountdownTimer";
 import SlotHeldTable from "./SlotHeldTable";
 import AdminManagement from "./AdminManagement";
@@ -35,6 +36,7 @@ const NGU_VAN_CAPACITY = new Map([
   ["1:4", 4],
   ["1:6", 6],
 ]);
+const QLL_NOTICES_ENABLED = process.env.NEXT_PUBLIC_QLL_NOTICES_ENABLED === "true";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -124,6 +126,7 @@ export default function Home() {
   const [loginError, setLoginError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [showUsernameNotice, setShowUsernameNotice] = useState(false);
+  const [noticeRecipient, setNoticeRecipient] = useState<string | null>(null);
   const [showBituWelcome, setShowBituWelcome] = useState(false);
   const finishBituWelcome = useCallback(() => setShowBituWelcome(false), []);
 
@@ -1009,6 +1012,7 @@ export default function Home() {
     localStorage.removeItem("qll_logged_user");
     setShowBituWelcome(false);
     setSlotSuccess(null);
+    setNoticeRecipient(null);
     setIsLoggedIn(false);
     setNamecode("");
     setAdminUsername("");
@@ -1914,6 +1918,10 @@ const loadData = (forceFresh = false) => {
       {showUsernameNotice && (
         <TelegramUsernameNotice onConfirm={() => setShowUsernameNotice(false)} />
       )}
+      {QLL_NOTICES_ENABLED && loginRole === "Admin" && noticeRecipient && (
+        <QllNoticeComposer key={noticeRecipient} recipient={noticeRecipient} theme={theme}
+          onClose={() => setNoticeRecipient(null)} />
+      )}
       {loginRole === "QLL" && displayName && (
         <ClassScheduleCancellationNotice
           key={displayName}
@@ -2035,6 +2043,9 @@ const loadData = (forceFresh = false) => {
           loadSlotHistory={loadSlotHistory}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
+        {QLL_NOTICES_ENABLED && loginRole === "QLL" && displayName && (
+          <QllNoticeInbox key={displayName} namecode={displayName} theme={theme} realtime={supabase} />
+        )}
         {loginRole === "Admin" && activeNav === "DanhSachHSAddLop" ? (
           <StudentAddRequestsPage
             theme={theme}
@@ -2116,6 +2127,7 @@ const loadData = (forceFresh = false) => {
               onlineUsers={onlineUsers}
               formatOnlineDuration={formatOnlineDuration}
               onRefresh={refreshOnlineUsers}
+              onNotify={QLL_NOTICES_ENABLED ? setNoticeRecipient : undefined}
               theme={theme}
             />
           </div>
