@@ -337,10 +337,10 @@ export default function StudentAddRequestsPage({
           <div className="flex min-w-0 max-w-full items-center gap-2">
             <input
               type="search"
-              aria-label="Tìm mã lớp, SID/CID hoặc QLL"
+              aria-label="Tìm mã lớp, SID/CID, tên học sinh hoặc QLL"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Tìm mã lớp, SID/CID, QLL..."
+              placeholder="Tìm mã lớp, SID/CID, tên HS, QLL..."
               className={`ops-field w-52 min-w-0 px-3 py-2 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-orange-500/30 xl:w-64 ${
                 theme === "dark"
                   ? "bg-[#0a0f1c] border-white/10 text-white placeholder:text-slate-500"
@@ -404,6 +404,7 @@ export default function StudentAddRequestsPage({
                 <th className="px-5 py-4">Mã lớp</th>
                 <th className="px-5 py-4">Môn học</th>
                 <th className="px-5 py-4">SID/CID</th>
+                <th scope="col" className="min-w-32 whitespace-nowrap px-5 py-4">Tên học sinh</th>
                 <th className="px-5 py-4">QLL</th>
                 <th className="ops-table-wide-column px-5 py-4">Team</th>
                 <th className="px-5 py-4">Người xử lý / thời gian</th>
@@ -420,7 +421,7 @@ export default function StudentAddRequestsPage({
             >
               {loading ? (
                 <tr>
-                  <td colSpan={11} className={`px-5 py-16 text-center ${muted}`}>
+                  <td colSpan={12} className={`px-5 py-16 text-center ${muted}`}>
                     <span role="status" className="inline-flex items-center gap-2">
                       {showLoadingIcon && (
                         <span aria-hidden="true" className="motion-safe:animate-[class-schedule-book_1.2s_ease-in-out_infinite]">📖</span>
@@ -431,7 +432,7 @@ export default function StudentAddRequestsPage({
                 </tr>
               ) : filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className={`px-5 py-16 text-center ${muted}`}>
+                  <td colSpan={12} className={`px-5 py-16 text-center ${muted}`}>
                     Không có yêu cầu phù hợp.
                   </td>
                 </tr>
@@ -480,7 +481,9 @@ export default function StudentAddRequestsPage({
                       </td>
                       <td className="px-5 py-4 font-semibold text-orange-500">
                         {request.sid_cid || "-"}
-                        {request.student_name && <span className={`mt-1 block max-w-44 whitespace-normal break-words font-medium ${heading}`}>{request.student_name}</span>}
+                      </td>
+                      <td className={`max-w-52 whitespace-normal break-words px-5 py-4 font-medium ${request.student_name ? heading : muted}`}>
+                        {request.student_name || "—"}
                       </td>
                       <td className={`px-5 py-4 font-bold ${heading}`}>
                         {request.nguoi_tao || "-"}
