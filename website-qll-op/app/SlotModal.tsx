@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useImperativeHandle, useState } from "react";
+import { maxStudentNameLength, parseStudentName } from "./studentName";
 
 type SlotActionMode = "hold" | "add-class";
 type SlotRow = Record<string, unknown>;
@@ -13,7 +14,7 @@ export interface SlotModalHandle {
 interface SlotModalProps {
   ref: React.Ref<SlotModalHandle>;
   theme: "light" | "dark";
-  onConfirm: (row: SlotRow, actionMode: SlotActionMode, sidCid: string) => Promise<string | void>;
+  onConfirm: (row: SlotRow, actionMode: SlotActionMode, sidCid: string, studentName?: string) => Promise<string | void>;
   isSubmitting: boolean;
 }
 
@@ -25,11 +26,13 @@ export default function SlotModal({
 }: SlotModalProps) {
   const [selection, setSelection] = useState<{ row: SlotRow; actionMode: SlotActionMode } | null>(null);
   const [inputValue, setInputValue] = useState("");
+  const [studentName, setStudentName] = useState("");
   const [inputError, setInputError] = useState("");
 
   useImperativeHandle(ref, () => ({
     open(row, actionMode) {
       setInputValue("");
+      setStudentName("");
       setInputError("");
       setSelection({ row, actionMode });
     },
@@ -56,7 +59,12 @@ export default function SlotModal({
       setInputError("Tối đa form 8 số!");
       return;
     }
-    const error = await onConfirm(row, actionMode, sidCid);
+    const name = actionMode === "add-class" ? parseStudentName(studentName) : undefined;
+    if (name === null) {
+      setInputError("Vui lòng nhập tên học sinh cần Add lớp.");
+      return;
+    }
+    const error = await onConfirm(row, actionMode, sidCid, name);
     if (error) setInputError(error);
   }
 
@@ -119,12 +127,19 @@ export default function SlotModal({
               }`}
               autoFocus
             />
-            {inputError && (
-              <p role="alert" className="text-[11px] font-bold text-red-500 mt-1.5">
-                {inputError}
-              </p>
-            )}
           </div>
+          {actionMode === "add-class" && (
+            <label className={`block text-xs font-bold uppercase tracking-wider ${theme === "dark" ? "text-slate-400" : "text-slate-700"}`}>
+              Tên học sinh <span className="text-red-500">*</span>
+              <input type="text" required maxLength={maxStudentNameLength} autoComplete="off"
+                value={studentName} onChange={(event) => {
+                  setStudentName(event.target.value);
+                  setInputError("");
+                }}
+                className={`mt-1.5 w-full rounded-2xl border px-4 py-3 text-sm font-bold normal-case tracking-normal focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${theme === "dark" ? "border-white/10 bg-[#0a0f1c] text-white" : "border-slate-200 bg-slate-50 text-slate-800"}`} />
+            </label>
+          )}
+          {inputError && <p role="alert" className="text-[11px] font-bold text-red-500">{inputError}</p>}
         </div>
 
         <div className="flex items-center justify-end gap-3 mt-6">

@@ -11,6 +11,7 @@ interface StudentAddRequest {
   nguoi_tao: string;
   team: string;
   sid_cid: string;
+  student_name?: string | null;
   timestamp: number | string;
   is_done: boolean;
   is_cancelled: boolean;
@@ -188,6 +189,7 @@ export default function StudentAddRequestsPage({
         request.nguoi_tao,
         request.team,
         request.sid_cid,
+        request.student_name,
       ]
         .join(" ")
         .toLocaleLowerCase()
@@ -478,6 +480,7 @@ export default function StudentAddRequestsPage({
                       </td>
                       <td className="px-5 py-4 font-semibold text-orange-500">
                         {request.sid_cid || "-"}
+                        {request.student_name && <span className={`mt-1 block max-w-44 whitespace-normal break-words font-medium ${heading}`}>{request.student_name}</span>}
                       </td>
                       <td className={`px-5 py-4 font-bold ${heading}`}>
                         {request.nguoi_tao || "-"}

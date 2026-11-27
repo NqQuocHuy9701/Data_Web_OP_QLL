@@ -1734,6 +1734,7 @@ const loadData = (forceFresh = false) => {
     row: Record<string, unknown>,
     slotActionMode: "hold" | "add-class",
     cleanVal: string,
+    studentName?: string,
   ) => {
     if (isSubmitting) return;
     const maLop = String(row["Mã lớp"] ?? "");
@@ -1779,6 +1780,7 @@ const loadData = (forceFresh = false) => {
                   nguoi_tao: displayName,
                   team: displayTeamOrRole,
                   sid_cid: cleanVal,
+                  student_name: studentName,
                   timestamp: Date.now(),
                 }
               : {

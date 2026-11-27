@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUsername, hasAdminSession } from "../_lib/admin-session";
+import { parseStudentName } from "../../studentName";
 import { CLASS_SCHEDULE_CANCELLED_TOPIC, CLASS_SCHEDULE_CHANGED, CLASS_SCHEDULE_TOPIC } from "../../classScheduleEvents";
 
 export const dynamic = "force-dynamic";
@@ -106,7 +107,7 @@ export async function GET(request: Request) {
 
     for (let offset = 0; ; offset += pageSize) {
       const selectedColumns = isListView
-        ? "id,ma_lop,mon_hoc,nguoi_tao,team,sid_cid,timestamp,is_done,is_cancelled,created_at,processed_by,processed_at,cancel_reason"
+        ? "id,ma_lop,mon_hoc,nguoi_tao,team,sid_cid,student_name,timestamp,is_done,is_cancelled,created_at,processed_by,processed_at,cancel_reason"
         : isQllListView
           ? "id,ma_lop,mon_hoc,sid_cid,timestamp,is_done,is_cancelled,cancel_reason"
           : "ma_lop";
@@ -216,6 +217,10 @@ export async function POST(request: Request) {
 
   const body = parsedBody as Record<string, unknown>;
   const { ma_lop, mon_hoc, nguoi_tao, team, sid_cid, timestamp } = body;
+  const studentName = parseStudentName(body.student_name);
+  if (!studentName) {
+    return NextResponse.json({ success: false, error: "Vui lòng nhập tên học sinh cần Add lớp." }, { status: 400 });
+  }
   if (
     typeof ma_lop !== "string" ||
     !ma_lop.trim() ||
@@ -238,6 +243,7 @@ export async function POST(request: Request) {
     nguoi_tao: nguoi_tao.trim(),
     team: typeof team === "string" ? team : "",
     sid_cid,
+    student_name: studentName,
     timestamp,
   };
 
